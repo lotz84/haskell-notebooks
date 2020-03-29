@@ -1,3 +1,13 @@
+data/ignore/*
+!data/ignore/.gitignore
+
+**/.ipynb_checkpoints/*
+
+.stack-work/
+haskell-notebooks.cabal
+*~
+
+
 *.swp
 ~*
 *~
