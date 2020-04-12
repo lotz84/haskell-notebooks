@@ -2,7 +2,7 @@
   
     
         "post0": {
-            "title": "GHCi の `:sprint` が便利",
+            "title": "GHCi の :sprint が便利",
             "content": "これは『Haskellによる並列・並行プログラミング』リモート輪講 #1で学んだことのメモです。 . :sprintは変数の評価を&quot;行わずに&quot;その内容を表示する機能。これを使えばサンクのまま詰まれていてまだ評価されていない部分も確認することができる . let x = 1 + 2 :: Int :sprint x . x = _ ↑アンダースコアはサンクを表しておりxがまだ評価されていないことが分かる . x :sprint x . 3 . x = 3 ↑xが評価されたので中身も見えるようになった . 次は変数が変数を参照している例 . x = 1 + 2 :: Int y = x + 1 :sprint x :sprint y . x = _ y = _ seq y () :sprint x :sprint y . () . x = 3 y = 4 ↑seqを使うと第一引数が弱頭部正規形（最初の構成子が見えるところ）まで強制的に評価される . x = 1 + 2 :: Int z = (x, x) :sprint z . z = _ あれ？これはへいへいHaskellでは z = (_, _) と見えるはずなんだけど違う結果になってしまった。 . import Data.Tuple z = swap (x, x + 1) :sprint z . z = _ seq z () :sprint z . () . z = (_,_) ↑今度はうまくタプルの構成子が見えるところまで評価された . seq x () :sprint z . () . z = (_,3) ↑xだけ評価すると3が見えるようになった。zが評価されていないのでx + 1の部分はサンク_のままである . 今度はリストと map を使ったときの挙動を見てみる . xs = map (+1) [1..10] :: [Int] :sprint xs . xs = _ seq xs () :sprint xs . () . xs = _ : _ ↑:はリストの構成子なのでここが弱頭部正規形 . length xs :sprint xs . 10 . xs = [_,_,_,_,_,_,_,_,_,_] ↑lengthは中身を評価しないので構造だけが評価されて中はサンクのまま . sum xs :sprint xs . 65 . xs = [2,3,4,5,6,7,8,9,10,11] ↑これで全部評価された . :sprint を使うとHaskellの遅延評価で何がどこまで評価されるのかインタラクティブに分かるので面白い。 .",
             "url": "https://lotz84.github.io/haskell-notebooks/2020/04/12/jclub-heyhey-note.html",
             "relUrl": "/2020/04/12/jclub-heyhey-note.html",
