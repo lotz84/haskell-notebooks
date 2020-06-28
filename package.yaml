@@ -14,11 +14,15 @@ dependencies:
 - cassava
 - Chart
 - extensible
+- hmatrix
 - ihaskell-charts
 - microlens
+- random-fu
+- recursion-schemes
+- semirings
 - split
 - unordered-containers
 
 library:
-  source-dirs: notebooks
+  source-dirs: _notebooks
 
