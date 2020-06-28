@@ -1,0 +1,722 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+  <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1"><!-- Begin Jekyll SEO tag v2.6.1 -->
+<title>Haskellの非同期処理を使った入出力の重ね合わせ | lotz’s Haskell notebooks</title>
+<meta name="generator" content="Jekyll v4.0.0" />
+<meta property="og:title" content="Haskellの非同期処理を使った入出力の重ね合わせ" />
+<meta property="og:locale" content="en_US" />
+<meta name="description" content="並行並列Haskell 第8章" />
+<meta property="og:description" content="並行並列Haskell 第8章" />
+<link rel="canonical" href="https://lotz84.github.io/haskell-notebooks/2020/06/29/concurrent-haskell-8.html" />
+<meta property="og:url" content="https://lotz84.github.io/haskell-notebooks/2020/06/29/concurrent-haskell-8.html" />
+<meta property="og:site_name" content="lotz’s Haskell notebooks" />
+<meta property="og:type" content="article" />
+<meta property="article:published_time" content="2020-06-29T00:00:00-05:00" />
+<script type="application/ld+json">
+{"description":"並行並列Haskell 第8章","headline":"Haskellの非同期処理を使った入出力の重ね合わせ","dateModified":"2020-06-29T00:00:00-05:00","datePublished":"2020-06-29T00:00:00-05:00","@type":"BlogPosting","mainEntityOfPage":{"@type":"WebPage","@id":"https://lotz84.github.io/haskell-notebooks/2020/06/29/concurrent-haskell-8.html"},"url":"https://lotz84.github.io/haskell-notebooks/2020/06/29/concurrent-haskell-8.html","@context":"https://schema.org"}</script>
+<!-- End Jekyll SEO tag -->
+<link rel="stylesheet" href="/haskell-notebooks/assets/css/style.css"><link type="application/atom+xml" rel="alternate" href="https://lotz84.github.io/haskell-notebooks/feed.xml" title="lotz's Haskell notebooks" /><!-- the google_analytics_id gets auto inserted from the config file -->
+
+
+
+<script>(function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){(i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)})(window,document,'script','//www.google-analytics.com/analytics.js','ga');ga('create','UA-38246049-20','auto');ga('require','displayfeatures');ga('send','pageview');</script>
+
+<link rel="shortcut icon" type="image/x-icon" href="/haskell-notebooks/images/favicon.ico"><!-- Begin Jekyll SEO tag v2.6.1 -->
+<title>Haskellの非同期処理を使った入出力の重ね合わせ | lotz’s Haskell notebooks</title>
+<meta name="generator" content="Jekyll v4.0.0" />
+<meta property="og:title" content="Haskellの非同期処理を使った入出力の重ね合わせ" />
+<meta property="og:locale" content="en_US" />
+<meta name="description" content="並行並列Haskell 第8章" />
+<meta property="og:description" content="並行並列Haskell 第8章" />
+<link rel="canonical" href="https://lotz84.github.io/haskell-notebooks/2020/06/29/concurrent-haskell-8.html" />
+<meta property="og:url" content="https://lotz84.github.io/haskell-notebooks/2020/06/29/concurrent-haskell-8.html" />
+<meta property="og:site_name" content="lotz’s Haskell notebooks" />
+<meta property="og:type" content="article" />
+<meta property="article:published_time" content="2020-06-29T00:00:00-05:00" />
+<script type="application/ld+json">
+{"description":"並行並列Haskell 第8章","headline":"Haskellの非同期処理を使った入出力の重ね合わせ","dateModified":"2020-06-29T00:00:00-05:00","datePublished":"2020-06-29T00:00:00-05:00","@type":"BlogPosting","mainEntityOfPage":{"@type":"WebPage","@id":"https://lotz84.github.io/haskell-notebooks/2020/06/29/concurrent-haskell-8.html"},"url":"https://lotz84.github.io/haskell-notebooks/2020/06/29/concurrent-haskell-8.html","@context":"https://schema.org"}</script>
+<!-- End Jekyll SEO tag -->
+
+<link href="https://unpkg.com/@primer/css/dist/primer.css" rel="stylesheet" />
+<link rel="stylesheet" href="//use.fontawesome.com/releases/v5.0.7/css/all.css"><link type="application/atom+xml" rel="alternate" href="https://lotz84.github.io/haskell-notebooks/feed.xml" title="lotz's Haskell notebooks" /><!-- the google_analytics_id gets auto inserted from the config file -->
+
+
+
+<script>(function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){(i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)})(window,document,'script','//www.google-analytics.com/analytics.js','ga');ga('create','UA-38246049-20','auto');ga('require','displayfeatures');ga('send','pageview');</script>
+
+
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.11.1/dist/katex.min.css" integrity="sha384-zB1R0rpPzHqg7Kpt0Aljp8JPLqbXI3bhnPWROx27a9N0Ll6ZP/+DiW/UqRcLbRjq" crossorigin="anonymous">
+    <script type="text/javascript" async src="https://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-MML-AM_CHTML"> </script>
+    <script defer src="https://cdn.jsdelivr.net/npm/katex@0.11.1/dist/katex.min.js" integrity="sha384-y23I5Q6l+B6vatafAwxRu/0oK/79VlbSz7Q9aiSZUvyWYIYsd+qj+o24G5ZU2zJz" crossorigin="anonymous"></script>
+    <script defer src="https://cdn.jsdelivr.net/npm/katex@0.11.1/dist/contrib/auto-render.min.js" integrity="sha384-kWPLUVMOks5AQFrykwIup5lo0m3iMkkHrD0uJ4H5cjeGihAutqP0yW0J6dpFiVkI" crossorigin="anonymous"></script>
+    <script>
+    document.addEventListener("DOMContentLoaded", function() {
+        renderMathInElement( document.body, {
+        delimiters: [
+            {left: "$$", right: "$$", display: true},
+            {left: "[%", right: "%]", display: true},
+            {left: "$", right: "$", display: false}
+        ]}
+        );
+    });
+    </script>
+
+
+<script>
+function wrap_img(fn) {
+    if (document.attachEvent ? document.readyState === "complete" : document.readyState !== "loading") {
+        var elements = document.querySelectorAll(".post img");
+        Array.prototype.forEach.call(elements, function(el, i) {
+            if (el.getAttribute("title")) {
+                const caption = document.createElement('figcaption');
+                var node = document.createTextNode(el.getAttribute("title"));
+                caption.appendChild(node);
+                const wrapper = document.createElement('figure');
+                wrapper.className = 'image';
+                el.parentNode.insertBefore(wrapper, el);
+                el.parentNode.removeChild(el);
+                wrapper.appendChild(el);
+                wrapper.appendChild(caption);
+            }
+        });
+    } else { document.addEventListener('DOMContentLoaded', fn); }
+}
+window.onload = wrap_img;
+</script>
+
+<script>
+    document.addEventListener("DOMContentLoaded", function(){
+    // add link icon to anchor tags
+    var elem = document.querySelectorAll(".anchor-link")
+    elem.forEach(e => (e.innerHTML = '<i class="fas fa-link fa-xs"></i>'));
+    });
+</script>
+</head><body><header class="site-header">
+
+  <div class="wrapper"><a class="site-title" rel="author" href="/haskell-notebooks/">lotz&#39;s Haskell notebooks</a><nav class="site-nav">
+        <input type="checkbox" id="nav-trigger" class="nav-trigger" />
+        <label for="nav-trigger">
+          <span class="menu-icon">
+            <svg viewBox="0 0 18 15" width="18px" height="15px">
+              <path d="M18,1.484c0,0.82-0.665,1.484-1.484,1.484H1.484C0.665,2.969,0,2.304,0,1.484l0,0C0,0.665,0.665,0,1.484,0 h15.032C17.335,0,18,0.665,18,1.484L18,1.484z M18,7.516C18,8.335,17.335,9,16.516,9H1.484C0.665,9,0,8.335,0,7.516l0,0 c0-0.82,0.665-1.484,1.484-1.484h15.032C17.335,6.031,18,6.696,18,7.516L18,7.516z M18,13.516C18,14.335,17.335,15,16.516,15H1.484 C0.665,15,0,14.335,0,13.516l0,0c0-0.82,0.665-1.483,1.484-1.483h15.032C17.335,12.031,18,12.695,18,13.516L18,13.516z"/>
+            </svg>
+          </span>
+        </label>
+
+        <div class="trigger"><a class="page-link" href="/haskell-notebooks/search/">Search</a><a class="page-link" href="/haskell-notebooks/categories/">Tags</a></div>
+      </nav></div>
+</header>
+<main class="page-content" aria-label="Content">
+      <div class="wrapper">
+        <article class="post h-entry" itemscope itemtype="http://schema.org/BlogPosting">
+
+  <header class="post-header">
+    <h1 class="post-title p-name" itemprop="name headline">Haskellの非同期処理を使った入出力の重ね合わせ</h1><p class="page-description">並行並列Haskell 第8章</p><p class="post-meta post-meta-title"><time class="dt-published" datetime="2020-06-29T00:00:00-05:00" itemprop="datePublished">
+        Jun 29, 2020
+      </time>
+       • <span class="read-time" title="Estimated read time">
+    
+    
+      3 min read
+    
+</span></p>
+
+    
+
+    
+      
+        <div class="pb-5 d-flex flex-wrap flex-justify-end">
+          <div class="px-2">
+
+    <a href="https://github.com/lotz84/haskell-notebooks/tree/master/_notebooks/2020-06-29-concurrent-haskell-8.ipynb" role="button" target="_blank">
+<img class="notebook-badge-image" src="/haskell-notebooks/assets/badges/github.svg" alt="View On GitHub">
+    </a>
+</div>
+
+          
+          
+        </div>
+      </header>
+
+  <div class="post-content e-content" itemprop="articleBody">
+    <!--
+#################################################
+### THIS FILE WAS AUTOGENERATED! DO NOT EDIT! ###
+#################################################
+# file to edit: _notebooks/2020-06-29-concurrent-haskell-8.ipynb
+-->
+
+<div class="container" id="notebook-container">
+        
+    
+    
+<div class="cell border-box-sizing code_cell rendered">
+
+</div>
+    
+
+<div class="cell border-box-sizing text_cell rendered"><div class="inner_cell">
+<div class="text_cell_render border-box-sizing rendered_html">
+<p>これは<a href="https://jclub-heyhey.connpass.com/event/180807/">『Haskellによる並列・並行プログラミング』リモート輪講 #10</a>の発表資料です。</p>
+<p>Haskellの非同期処理を使って並行に入出力を伴う処理を行うプログラムを書く方法について見ていきます。まず、複数のWebページを並行にダウンロードするようなタスクを考えます</p>
+
+</div>
+</div>
+</div>
+    
+    
+<div class="cell border-box-sizing code_cell rendered">
+<div class="input">
+
+<div class="inner_cell">
+    <div class="input_area">
+<div class=" highlight hl-ipython3"><pre><span></span><span class="o">--</span> <span class="n">https</span><span class="p">:</span><span class="o">//</span><span class="n">github</span><span class="o">.</span><span class="n">com</span><span class="o">/</span><span class="n">simonmar</span><span class="o">/</span><span class="n">parconc</span><span class="o">-</span><span class="n">examples</span><span class="o">/</span><span class="n">blob</span><span class="o">/</span><span class="n">master</span><span class="o">/</span><span class="n">geturls1</span><span class="o">.</span><span class="n">hs</span>
+
+<span class="kn">import</span> <span class="nn">Control.Concurrent</span>
+<span class="kn">import</span> <span class="nn">Data.ByteString.Char8</span> <span class="k">as</span> <span class="nn">B</span>
+<span class="kn">import</span> <span class="nn">System.Random</span>
+
+<span class="n">getURL</span> <span class="p">::</span> <span class="n">String</span> <span class="o">-&gt;</span> <span class="n">IO</span> <span class="n">ByteString</span>
+<span class="n">getURL</span> <span class="n">url</span> <span class="o">=</span> <span class="n">do</span>
+  <span class="n">delay</span> <span class="o">&lt;-</span> <span class="n">randomRIO</span> <span class="p">(</span><span class="mi">500000</span><span class="p">,</span> <span class="mi">1500000</span><span class="p">)</span> <span class="o">--</span> <span class="n">URLのコンテンツを取得する時間ということにする</span>
+  <span class="n">threadDelay</span> <span class="n">delay</span>
+  <span class="n">pure</span> <span class="p">(</span><span class="n">B</span><span class="o">.</span><span class="n">pack</span> <span class="n">url</span><span class="p">)</span>
+
+<span class="n">example1</span> <span class="p">::</span> <span class="n">IO</span> <span class="p">()</span>
+<span class="n">example1</span> <span class="o">=</span> <span class="n">do</span>
+  <span class="n">m1</span> <span class="o">&lt;-</span> <span class="n">newEmptyMVar</span>
+  <span class="n">m2</span> <span class="o">&lt;-</span> <span class="n">newEmptyMVar</span>
+  
+  <span class="n">forkIO</span> <span class="err">$</span> <span class="n">do</span>
+    <span class="n">r</span> <span class="o">&lt;-</span> <span class="n">getURL</span> <span class="s2">&quot;https://en.wikipedia.org/wiki/Shovel&quot;</span>
+    <span class="n">putMVar</span> <span class="n">m1</span> <span class="n">r</span>
+
+  <span class="n">forkIO</span> <span class="err">$</span> <span class="n">do</span>
+    <span class="n">r</span> <span class="o">&lt;-</span> <span class="n">getURL</span> <span class="s2">&quot;https://en.wikipedia.org/wiki/Spade&quot;</span>
+    <span class="n">putMVar</span> <span class="n">m2</span> <span class="n">r</span>
+
+  <span class="n">r1</span> <span class="o">&lt;-</span> <span class="n">takeMVar</span> <span class="n">m1</span>
+  <span class="n">r2</span> <span class="o">&lt;-</span> <span class="n">takeMVar</span> <span class="n">m2</span>
+  <span class="nb">print</span> <span class="p">(</span><span class="n">B</span><span class="o">.</span><span class="n">length</span> <span class="n">r1</span><span class="p">,</span> <span class="n">B</span><span class="o">.</span><span class="n">length</span> <span class="n">r2</span><span class="p">)</span>
+</pre></div>
+
+    </div>
+</div>
+</div>
+
+</div>
+    
+
+<div class="cell border-box-sizing text_cell rendered"><div class="inner_cell">
+<div class="text_cell_render border-box-sizing rendered_html">
+<ul>
+<li><code>newEmptyMVar</code>で結果を受け取る箱を作る</li>
+<li>非同期に取得処理を行い、結果を<code>MVar</code>に詰める</li>
+<li><code>MVar</code>に結果が入るのを待つ</li>
+</ul>
+<p>という共通する実装のパターンが見え隠れしているので共通化してみましょう</p>
+
+</div>
+</div>
+</div>
+    
+    
+<div class="cell border-box-sizing code_cell rendered">
+<div class="input">
+
+<div class="inner_cell">
+    <div class="input_area">
+<div class=" highlight hl-ipython3"><pre><span></span><span class="o">--</span> <span class="n">https</span><span class="p">:</span><span class="o">//</span><span class="n">github</span><span class="o">.</span><span class="n">com</span><span class="o">/</span><span class="n">simonmar</span><span class="o">/</span><span class="n">parconc</span><span class="o">-</span><span class="n">examples</span><span class="o">/</span><span class="n">blob</span><span class="o">/</span><span class="n">master</span><span class="o">/</span><span class="n">geturls2</span><span class="o">.</span><span class="n">hs</span>
+
+<span class="n">newtype</span> <span class="n">Async</span> <span class="n">a</span> <span class="o">=</span> <span class="n">Async</span> <span class="p">(</span><span class="n">MVar</span> <span class="n">a</span><span class="p">)</span>
+
+<span class="k">async</span> <span class="p">::</span> <span class="n">IO</span> <span class="n">a</span> <span class="o">-&gt;</span> <span class="n">IO</span> <span class="p">(</span><span class="n">Async</span> <span class="n">a</span><span class="p">)</span>
+<span class="k">async</span> <span class="n">action</span> <span class="o">=</span> <span class="n">do</span>
+  <span class="n">var</span> <span class="o">&lt;-</span> <span class="n">newEmptyMVar</span>
+  <span class="n">forkIO</span> <span class="p">(</span><span class="n">action</span> <span class="o">&gt;&gt;=</span> <span class="n">putMVar</span> <span class="n">var</span><span class="p">)</span>
+  <span class="n">pure</span> <span class="p">(</span><span class="n">Async</span> <span class="n">var</span><span class="p">)</span>
+
+<span class="n">wait</span> <span class="p">::</span> <span class="n">Async</span> <span class="n">a</span> <span class="o">-&gt;</span> <span class="n">IO</span> <span class="n">a</span>
+<span class="n">wait</span> <span class="p">(</span><span class="n">Async</span> <span class="n">var</span><span class="p">)</span> <span class="o">=</span> <span class="n">readMVar</span> <span class="n">var</span>
+</pre></div>
+
+    </div>
+</div>
+</div>
+
+</div>
+    
+
+<div class="cell border-box-sizing text_cell rendered"><div class="inner_cell">
+<div class="text_cell_render border-box-sizing rendered_html">
+<p>意図しないデッドロックを防ぐために <code>wait</code> では <code>takeMVar</code> ではなく <code>readMVar</code> を使っています</p>
+<p>これを使えば <code>example1</code> を以下のように書き換えることができます</p>
+
+</div>
+</div>
+</div>
+    
+    
+<div class="cell border-box-sizing code_cell rendered">
+<div class="input">
+
+<div class="inner_cell">
+    <div class="input_area">
+<div class=" highlight hl-ipython3"><pre><span></span><span class="o">--</span> <span class="n">https</span><span class="p">:</span><span class="o">//</span><span class="n">github</span><span class="o">.</span><span class="n">com</span><span class="o">/</span><span class="n">simonmar</span><span class="o">/</span><span class="n">parconc</span><span class="o">-</span><span class="n">examples</span><span class="o">/</span><span class="n">blob</span><span class="o">/</span><span class="n">master</span><span class="o">/</span><span class="n">geturls2</span><span class="o">.</span><span class="n">hs</span>
+
+<span class="n">example2</span> <span class="p">::</span> <span class="n">IO</span> <span class="p">()</span>
+<span class="n">example2</span> <span class="o">=</span> <span class="n">do</span>
+  <span class="n">a1</span> <span class="o">&lt;-</span> <span class="k">async</span> <span class="p">(</span><span class="n">getURL</span> <span class="s2">&quot;https://en.wikipedia.org/wiki/Shovel&quot;</span><span class="p">)</span>
+  <span class="n">a2</span> <span class="o">&lt;-</span> <span class="k">async</span> <span class="p">(</span><span class="n">getURL</span> <span class="s2">&quot;https://en.wikipedia.org/wiki/Spade&quot;</span><span class="p">)</span>
+  <span class="n">r1</span> <span class="o">&lt;-</span> <span class="n">wait</span> <span class="n">a1</span>
+  <span class="n">r2</span> <span class="o">&lt;-</span> <span class="n">wait</span> <span class="n">a2</span>
+  <span class="nb">print</span> <span class="p">(</span><span class="n">B</span><span class="o">.</span><span class="n">length</span> <span class="n">r1</span><span class="p">,</span> <span class="n">B</span><span class="o">.</span><span class="n">length</span> <span class="n">r2</span><span class="p">)</span>
+
+<span class="n">example2</span>
+</pre></div>
+
+    </div>
+</div>
+</div>
+
+<div class="output_wrapper">
+<div class="output">
+
+<div class="output_area">
+
+
+
+<div class="output_text output_subarea ">
+<pre>(36,35)</pre>
+</div>
+
+</div>
+
+</div>
+</div>
+
+</div>
+    
+
+<div class="cell border-box-sizing text_cell rendered"><div class="inner_cell">
+<div class="text_cell_render border-box-sizing rendered_html">
+<p>モナディックなコンビネータを使って更に簡潔に書くことも可能です</p>
+
+</div>
+</div>
+</div>
+    
+    
+<div class="cell border-box-sizing code_cell rendered">
+<div class="input">
+
+<div class="inner_cell">
+    <div class="input_area">
+<div class=" highlight hl-ipython3"><pre><span></span><span class="o">--</span> <span class="n">https</span><span class="p">:</span><span class="o">//</span><span class="n">github</span><span class="o">.</span><span class="n">com</span><span class="o">/</span><span class="n">simonmar</span><span class="o">/</span><span class="n">parconc</span><span class="o">-</span><span class="n">examples</span><span class="o">/</span><span class="n">blob</span><span class="o">/</span><span class="n">master</span><span class="o">/</span><span class="n">geturls3</span><span class="o">.</span><span class="n">hs</span>
+
+<span class="n">sites</span> <span class="o">=</span>
+  <span class="p">[</span> <span class="s2">&quot;http://www.google.com&quot;</span>
+  <span class="p">,</span> <span class="s2">&quot;http://www.bing.com&quot;</span>
+  <span class="p">,</span> <span class="s2">&quot;http://www.yahoo.com&quot;</span>
+  <span class="p">,</span> <span class="s2">&quot;http://www.wikipedia.com/wiki/Spade&quot;</span>
+  <span class="p">,</span> <span class="s2">&quot;http://www.wikipedia.com/wiki/Shovel&quot;</span>
+  <span class="p">]</span>
+
+<span class="n">example3</span> <span class="p">::</span> <span class="n">IO</span> <span class="p">()</span>
+<span class="n">example3</span> <span class="o">=</span> <span class="n">do</span>
+  <span class="k">as</span> <span class="o">&lt;-</span> <span class="n">mapM</span> <span class="p">(</span><span class="k">async</span> <span class="o">.</span> <span class="n">getURL</span><span class="p">)</span> <span class="n">sites</span>
+  <span class="n">result</span> <span class="o">&lt;-</span> <span class="n">mapM</span> <span class="n">wait</span> <span class="k">as</span>
+  <span class="nb">print</span> <span class="err">$</span> <span class="n">fmap</span> <span class="n">B</span><span class="o">.</span><span class="n">length</span> <span class="n">result</span>
+
+<span class="n">example3</span>
+</pre></div>
+
+    </div>
+</div>
+</div>
+
+<div class="output_wrapper">
+<div class="output">
+
+<div class="output_area">
+
+
+
+<div class="output_text output_subarea ">
+<pre>[21,19,20,35,36]</pre>
+</div>
+
+</div>
+
+</div>
+</div>
+
+</div>
+    
+
+<div class="cell border-box-sizing text_cell rendered"><div class="inner_cell">
+<div class="text_cell_render border-box-sizing rendered_html">
+<h2 id="Async&#12391;&#12398;&#12456;&#12521;&#12540;&#20966;&#29702;">Async&#12391;&#12398;&#12456;&#12521;&#12540;&#20966;&#29702;<a class="anchor-link" href="#Async&#12391;&#12398;&#12456;&#12521;&#12540;&#20966;&#29702;"> </a></h2><p><code>getURL</code> の中でエラーが起こった場合の挙動を見てみましょう</p>
+
+</div>
+</div>
+</div>
+    
+    
+<div class="cell border-box-sizing code_cell rendered">
+<div class="input">
+
+<div class="inner_cell">
+    <div class="input_area">
+<div class=" highlight hl-ipython3"><pre><span></span><span class="kn">import</span> <span class="nn">Control.Exception</span>
+
+<span class="n">getURL</span><span class="s1">&#39; :: String -&gt; IO ByteString</span>
+<span class="n">getURL</span><span class="s1">&#39; url = do</span>
+  <span class="n">throwIO</span> <span class="p">(</span><span class="n">ErrorCall</span> <span class="s2">&quot;oops!&quot;</span><span class="p">)</span>
+  <span class="n">pure</span> <span class="p">(</span><span class="n">B</span><span class="o">.</span><span class="n">pack</span> <span class="n">url</span><span class="p">)</span>
+
+<span class="n">example4</span> <span class="p">::</span> <span class="n">IO</span> <span class="p">()</span>
+<span class="n">example4</span> <span class="o">=</span> <span class="n">do</span>
+  <span class="k">as</span> <span class="o">&lt;-</span> <span class="n">mapM</span> <span class="p">(</span><span class="k">async</span> <span class="o">.</span> <span class="n">getURL</span><span class="s1">&#39;) sites</span>
+  <span class="n">result</span> <span class="o">&lt;-</span> <span class="n">mapM</span> <span class="n">wait</span> <span class="k">as</span>
+  <span class="nb">print</span> <span class="err">$</span> <span class="n">fmap</span> <span class="n">B</span><span class="o">.</span><span class="n">length</span> <span class="n">result</span>
+
+<span class="n">example4</span>
+</pre></div>
+
+    </div>
+</div>
+</div>
+
+<div class="output_wrapper">
+<div class="output">
+
+<div class="output_area">
+
+<div class="output_subarea output_text output_error">
+<pre>
+thread blocked indefinitely in an MVar operation</pre>
+</div>
+</div>
+
+</div>
+</div>
+
+</div>
+    
+
+<div class="cell border-box-sizing text_cell rendered"><div class="inner_cell">
+<div class="text_cell_render border-box-sizing rendered_html">
+<p><code>getURL'</code> では <code>async</code> の中で <code>putMVar</code> が実行される前に例外が投げられてしまうので <code>wait</code> における <code>readMVar</code> が永遠にスレッドをブロックしてしまいます</p>
+<p>これを安全な挙動に変えるために <code>Async</code> 周りの実装を修正してみしましょう</p>
+
+</div>
+</div>
+</div>
+    
+    
+<div class="cell border-box-sizing code_cell rendered">
+<div class="input">
+
+<div class="inner_cell">
+    <div class="input_area">
+<div class=" highlight hl-ipython3"><pre><span></span><span class="o">--</span> <span class="n">https</span><span class="p">:</span><span class="o">//</span><span class="n">github</span><span class="o">.</span><span class="n">com</span><span class="o">/</span><span class="n">simonmar</span><span class="o">/</span><span class="n">parconc</span><span class="o">-</span><span class="n">examples</span><span class="o">/</span><span class="n">blob</span><span class="o">/</span><span class="n">master</span><span class="o">/</span><span class="n">geturls4</span><span class="o">.</span><span class="n">hs</span>
+
+<span class="n">newtype</span> <span class="n">Async</span> <span class="n">a</span> <span class="o">=</span> <span class="n">Async</span> <span class="p">(</span><span class="n">MVar</span> <span class="p">(</span><span class="n">Either</span> <span class="n">SomeException</span> <span class="n">a</span><span class="p">))</span>
+
+<span class="k">async</span> <span class="p">::</span> <span class="n">IO</span> <span class="n">a</span> <span class="o">-&gt;</span> <span class="n">IO</span> <span class="p">(</span><span class="n">Async</span> <span class="n">a</span><span class="p">)</span>
+<span class="k">async</span> <span class="n">action</span> <span class="o">=</span> <span class="n">do</span>
+  <span class="n">var</span> <span class="o">&lt;-</span> <span class="n">newEmptyMVar</span>
+  <span class="n">forkIO</span> <span class="p">(</span><span class="k">try</span> <span class="n">action</span> <span class="o">&gt;&gt;=</span> <span class="n">putMVar</span> <span class="n">var</span><span class="p">)</span>
+  <span class="n">pure</span> <span class="p">(</span><span class="n">Async</span> <span class="n">var</span><span class="p">)</span>
+
+<span class="n">waitCatch</span> <span class="p">::</span> <span class="n">Async</span> <span class="n">a</span> <span class="o">-&gt;</span> <span class="n">IO</span> <span class="p">(</span><span class="n">Either</span> <span class="n">SomeException</span> <span class="n">a</span><span class="p">)</span>
+<span class="n">waitCatch</span> <span class="p">(</span><span class="n">Async</span> <span class="n">var</span><span class="p">)</span> <span class="o">=</span> <span class="n">readMVar</span> <span class="n">var</span>
+
+<span class="n">wait</span> <span class="p">::</span> <span class="n">Async</span> <span class="n">a</span> <span class="o">-&gt;</span> <span class="n">IO</span> <span class="n">a</span>
+<span class="n">wait</span> <span class="n">a</span> <span class="o">=</span> <span class="n">do</span>
+  <span class="n">r</span> <span class="o">&lt;-</span> <span class="n">waitCatch</span> <span class="n">a</span>
+  <span class="n">case</span> <span class="n">r</span> <span class="n">of</span>
+    <span class="n">Left</span> <span class="n">e</span>  <span class="o">-&gt;</span> <span class="n">throwIO</span> <span class="n">e</span>
+    <span class="n">Right</span> <span class="n">a</span> <span class="o">-&gt;</span> <span class="n">pure</span> <span class="n">a</span>
+</pre></div>
+
+    </div>
+</div>
+</div>
+
+</div>
+    
+
+<div class="cell border-box-sizing text_cell rendered"><div class="inner_cell">
+<div class="text_cell_render border-box-sizing rendered_html">
+<p><code>async</code> と <code>wait</code> は以前のものと同じ型ですが、例外を適切に伝搬する仕組みを備えています</p>
+
+</div>
+</div>
+</div>
+    
+    
+<div class="cell border-box-sizing code_cell rendered">
+<div class="input">
+
+<div class="inner_cell">
+    <div class="input_area">
+<div class=" highlight hl-ipython3"><pre><span></span><span class="n">example5</span> <span class="p">::</span> <span class="n">IO</span> <span class="p">()</span>
+<span class="n">example5</span> <span class="o">=</span> <span class="n">do</span>
+  <span class="k">as</span> <span class="o">&lt;-</span> <span class="n">mapM</span> <span class="p">(</span><span class="k">async</span> <span class="o">.</span> <span class="n">getURL</span><span class="s1">&#39;) sites</span>
+  <span class="n">result</span> <span class="o">&lt;-</span> <span class="n">mapM</span> <span class="n">wait</span> <span class="k">as</span>
+  <span class="nb">print</span> <span class="err">$</span> <span class="n">fmap</span> <span class="n">B</span><span class="o">.</span><span class="n">length</span> <span class="n">result</span>
+
+<span class="n">example5</span>
+</pre></div>
+
+    </div>
+</div>
+</div>
+
+<div class="output_wrapper">
+<div class="output">
+
+<div class="output_area">
+
+<div class="output_subarea output_text output_error">
+<pre>
+oops!</pre>
+</div>
+</div>
+
+</div>
+</div>
+
+</div>
+    
+
+<div class="cell border-box-sizing text_cell rendered"><div class="inner_cell">
+<div class="text_cell_render border-box-sizing rendered_html">
+<p>最初に非同期処理が例外を投げた時点でプログラム全体が停止しているのが分かります</p>
+
+</div>
+</div>
+</div>
+<div class="cell border-box-sizing text_cell rendered"><div class="inner_cell">
+<div class="text_cell_render border-box-sizing rendered_html">
+<h2 id="&#38750;&#21516;&#26399;&#20966;&#29702;&#12398;&#21512;&#27969;">&#38750;&#21516;&#26399;&#20966;&#29702;&#12398;&#21512;&#27969;<a class="anchor-link" href="#&#38750;&#21516;&#26399;&#20966;&#29702;&#12398;&#21512;&#27969;"> </a></h2><p>ここでは並行に実行している非同期処理のどれか一つでも結果を返した時点で何らかの処理を行いたいような場合について見ていきます。</p>
+<p>以下の例は並行に複数のWebサイトをダウンロードして</p>
+<ul>
+<li>最初にダウンロードが完了したWebサイトの情報を表示する</li>
+<li>残りのダウンロードが完了するのを待つ</li>
+</ul>
+<p>という挙動を実装しています。</p>
+
+</div>
+</div>
+</div>
+    
+    
+<div class="cell border-box-sizing code_cell rendered">
+<div class="input">
+
+<div class="inner_cell">
+    <div class="input_area">
+<div class=" highlight hl-ipython3"><pre><span></span><span class="o">--</span> <span class="n">https</span><span class="p">:</span><span class="o">//</span><span class="n">github</span><span class="o">.</span><span class="n">com</span><span class="o">/</span><span class="n">simonmar</span><span class="o">/</span><span class="n">parconc</span><span class="o">-</span><span class="n">examples</span><span class="o">/</span><span class="n">blob</span><span class="o">/</span><span class="n">master</span><span class="o">/</span><span class="n">geturls5</span><span class="o">.</span><span class="n">hs</span>
+
+<span class="kn">import</span> <span class="nn">Control.Monad</span>
+
+<span class="n">example6</span> <span class="p">::</span> <span class="n">IO</span> <span class="p">()</span>
+<span class="n">example6</span> <span class="o">=</span> <span class="n">do</span>
+  <span class="n">m</span> <span class="o">&lt;-</span> <span class="n">newEmptyMVar</span>
+  <span class="n">let</span> <span class="n">download</span> <span class="n">url</span> <span class="o">=</span> <span class="n">do</span>
+        <span class="n">r</span> <span class="o">&lt;-</span> <span class="n">getURL</span> <span class="n">url</span>
+        <span class="n">putMVar</span> <span class="n">m</span> <span class="p">(</span><span class="n">url</span><span class="p">,</span> <span class="n">r</span><span class="p">)</span>
+
+  <span class="n">mapM_</span> <span class="p">(</span><span class="n">forkIO</span> <span class="o">.</span> <span class="n">download</span><span class="p">)</span> <span class="n">sites</span>
+  
+  <span class="p">(</span><span class="n">url</span><span class="p">,</span> <span class="n">r</span><span class="p">)</span> <span class="o">&lt;-</span> <span class="n">takeMVar</span> <span class="n">m</span>
+  <span class="nb">print</span> <span class="err">$</span> <span class="n">url</span> <span class="o">++</span> <span class="s2">&quot;: &quot;</span> <span class="o">++</span> <span class="n">show</span> <span class="p">(</span><span class="n">B</span><span class="o">.</span><span class="n">length</span> <span class="n">r</span><span class="p">)</span>
+  <span class="n">replicateM_</span> <span class="mi">4</span> <span class="p">(</span><span class="n">takeMVar</span> <span class="n">m</span><span class="p">)</span>
+
+<span class="o">--</span> <span class="n">実行するたびに結果が変わる</span>
+<span class="n">example6</span>
+</pre></div>
+
+    </div>
+</div>
+</div>
+
+<div class="output_wrapper">
+<div class="output">
+
+<div class="output_area">
+
+
+
+<div class="output_text output_subarea ">
+<pre>&#34;http://www.wikipedia.com/wiki/Shovel: 36&#34;</pre>
+</div>
+
+</div>
+
+</div>
+</div>
+
+</div>
+    
+
+<div class="cell border-box-sizing text_cell rendered"><div class="inner_cell">
+<div class="text_cell_render border-box-sizing rendered_html">
+<p>これを明示的に <code>MVar</code> を用いずに <code>Async</code> を使って実装する事を考えましょう。</p>
+<p>以下の <code>waitEither</code> は2つの <code>Async</code> を受け取って最初に完了した値を <code>IO</code> で返す関数です。</p>
+
+</div>
+</div>
+</div>
+    
+    
+<div class="cell border-box-sizing code_cell rendered">
+<div class="input">
+
+<div class="inner_cell">
+    <div class="input_area">
+<div class=" highlight hl-ipython3"><pre><span></span><span class="n">waitEither</span> <span class="p">::</span> <span class="n">Async</span> <span class="n">a</span> <span class="o">-&gt;</span> <span class="n">Async</span> <span class="n">b</span> <span class="o">-&gt;</span> <span class="n">IO</span> <span class="p">(</span><span class="n">Either</span> <span class="n">a</span> <span class="n">b</span><span class="p">)</span>
+<span class="n">waitEither</span> <span class="n">a</span> <span class="n">b</span> <span class="o">=</span> <span class="n">do</span>
+  <span class="n">m</span> <span class="o">&lt;-</span> <span class="n">newEmptyMVar</span>
+  <span class="n">forkIO</span> <span class="err">$</span> <span class="k">try</span> <span class="p">(</span><span class="n">fmap</span> <span class="n">Left</span>  <span class="p">(</span><span class="n">wait</span> <span class="n">a</span><span class="p">))</span> <span class="o">&gt;&gt;=</span> <span class="n">putMVar</span> <span class="n">m</span>
+  <span class="n">forkIO</span> <span class="err">$</span> <span class="k">try</span> <span class="p">(</span><span class="n">fmap</span> <span class="n">Right</span> <span class="p">(</span><span class="n">wait</span> <span class="n">b</span><span class="p">))</span> <span class="o">&gt;&gt;=</span> <span class="n">putMVar</span> <span class="n">m</span>
+  <span class="n">wait</span> <span class="p">(</span><span class="n">Async</span> <span class="n">m</span><span class="p">)</span>
+</pre></div>
+
+    </div>
+</div>
+</div>
+
+</div>
+    
+
+<div class="cell border-box-sizing text_cell rendered"><div class="inner_cell">
+<div class="text_cell_render border-box-sizing rendered_html">
+<p>この仕組は複数の <code>Async</code> のリストにも拡張することができます</p>
+
+</div>
+</div>
+</div>
+    
+    
+<div class="cell border-box-sizing code_cell rendered">
+<div class="input">
+
+<div class="inner_cell">
+    <div class="input_area">
+<div class=" highlight hl-ipython3"><pre><span></span><span class="n">waitAny</span> <span class="p">::</span> <span class="p">[</span><span class="n">Async</span> <span class="n">a</span><span class="p">]</span> <span class="o">-&gt;</span> <span class="n">IO</span> <span class="n">a</span>
+<span class="n">waitAny</span> <span class="k">as</span> <span class="o">=</span> <span class="n">do</span>
+  <span class="n">m</span> <span class="o">&lt;-</span> <span class="n">newEmptyMVar</span>
+  <span class="n">let</span> <span class="n">forkwait</span> <span class="n">a</span> <span class="o">=</span> <span class="n">forkIO</span> <span class="err">$</span> <span class="k">try</span> <span class="p">(</span><span class="n">wait</span> <span class="n">a</span><span class="p">)</span> <span class="o">&gt;&gt;=</span> <span class="n">putMVar</span> <span class="n">m</span>
+  <span class="n">mapM_</span> <span class="n">forkwait</span> <span class="k">as</span>
+  <span class="n">wait</span> <span class="p">(</span><span class="n">Async</span> <span class="n">m</span><span class="p">)</span>
+
+
+<span class="o">--</span> <span class="n">勉強会中に逆に全てのAsyncを待つようなコンビネータが作れるか</span><span class="err">？</span><span class="n">という質問があったので実装してみた例</span>
+<span class="n">waitAll</span> <span class="p">::</span> <span class="p">[</span><span class="n">Async</span> <span class="n">a</span><span class="p">]</span> <span class="o">-&gt;</span> <span class="n">IO</span> <span class="p">[</span><span class="n">a</span><span class="p">]</span>
+<span class="n">waitAll</span> <span class="o">=</span> <span class="n">mapM</span> <span class="n">wait</span>
+</pre></div>
+
+    </div>
+</div>
+</div>
+
+</div>
+    
+
+<div class="cell border-box-sizing text_cell rendered"><div class="inner_cell">
+<div class="text_cell_render border-box-sizing rendered_html">
+<p>以上の実装を使って <code>example6</code> は明示的に <code>MVar</code> を使わない形で書き換えることができます。</p>
+
+</div>
+</div>
+</div>
+    
+    
+<div class="cell border-box-sizing code_cell rendered">
+<div class="input">
+
+<div class="inner_cell">
+    <div class="input_area">
+<div class=" highlight hl-ipython3"><pre><span></span><span class="o">--</span> <span class="n">https</span><span class="p">:</span><span class="o">//</span><span class="n">github</span><span class="o">.</span><span class="n">com</span><span class="o">/</span><span class="n">simonmar</span><span class="o">/</span><span class="n">parconc</span><span class="o">-</span><span class="n">examples</span><span class="o">/</span><span class="n">blob</span><span class="o">/</span><span class="n">master</span><span class="o">/</span><span class="n">geturls6</span><span class="o">.</span><span class="n">hs</span>
+
+<span class="n">example7</span> <span class="p">::</span> <span class="n">IO</span> <span class="p">()</span>
+<span class="n">example7</span> <span class="o">=</span> <span class="n">do</span>
+  <span class="n">let</span> <span class="n">download</span> <span class="n">url</span> <span class="o">=</span> <span class="n">do</span>
+        <span class="n">r</span> <span class="o">&lt;-</span> <span class="n">getURL</span> <span class="n">url</span>
+        <span class="n">pure</span> <span class="p">(</span><span class="n">url</span><span class="p">,</span> <span class="n">r</span><span class="p">)</span>
+
+  <span class="k">as</span> <span class="o">&lt;-</span> <span class="n">mapM</span> <span class="p">(</span><span class="k">async</span> <span class="o">.</span> <span class="n">download</span><span class="p">)</span> <span class="n">sites</span>
+  
+  <span class="p">(</span><span class="n">url</span><span class="p">,</span> <span class="n">r</span><span class="p">)</span> <span class="o">&lt;-</span> <span class="n">waitAny</span> <span class="k">as</span>
+  
+  <span class="nb">print</span> <span class="err">$</span> <span class="n">url</span> <span class="o">++</span> <span class="s2">&quot;: &quot;</span> <span class="o">++</span> <span class="n">show</span> <span class="p">(</span><span class="n">B</span><span class="o">.</span><span class="n">length</span> <span class="n">r</span><span class="p">)</span>
+  <span class="n">mapM_</span> <span class="n">wait</span> <span class="k">as</span>
+
+<span class="n">example7</span>
+</pre></div>
+
+    </div>
+</div>
+</div>
+
+<div class="output_wrapper">
+<div class="output">
+
+<div class="output_area">
+
+
+
+<div class="output_text output_subarea ">
+<pre>&#34;http://www.wikipedia.com/wiki/Spade: 35&#34;</pre>
+</div>
+
+</div>
+
+</div>
+</div>
+
+</div>
+    
+
+</div>
+
+
+
+  </div><a class="u-url" href="/haskell-notebooks/2020/06/29/concurrent-haskell-8.html" hidden></a>
+</article>
+      </div>
+    </main><footer class="site-footer h-card">
+  <data class="u-url" href="/haskell-notebooks/"></data>
+
+  <div class="wrapper">
+
+    <div class="footer-col-wrapper">
+      <div class="footer-col">
+        <p class="feed-subscribe">
+          <a href="/haskell-notebooks/feed.xml">
+            <svg class="svg-icon orange">
+              <use xlink:href="/haskell-notebooks/assets/minima-social-icons.svg#rss"></use>
+            </svg><span>Subscribe</span>
+          </a>
+        </p>
+      </div>
+      <div class="footer-col">
+        <p>Haskellで書いたJupyter notebookを公開してます</p>
+      </div>
+    </div>
+
+    <div class="social-links"><ul class="social-media-list"><li><a rel="me" href="https://github.com/lotz84" title="lotz84"><svg class="svg-icon grey"><use xlink:href="/haskell-notebooks/assets/minima-social-icons.svg#github"></use></svg></a></li><li><a rel="me" href="https://twitter.com/lotz84_" title="lotz84_"><svg class="svg-icon grey"><use xlink:href="/haskell-notebooks/assets/minima-social-icons.svg#twitter"></use></svg></a></li></ul>
+</div>
+
+  </div>
+
+</footer>
+</body>
+
+</html>
