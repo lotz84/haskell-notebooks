@@ -10,6 +10,7 @@ extra-source-files:
 - README.md
 
 dependencies:
+- ad
 - base >= 4.7 && < 5
 - cassava
 - Chart
@@ -17,6 +18,7 @@ dependencies:
 - hmatrix
 - ihaskell-charts
 - microlens
+- numbers
 - random-fu
 - recursion-schemes
 - semirings
