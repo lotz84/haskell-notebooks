@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<urlset xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.sitemaps.org/schemas/sitemap/0.9 http://www.sitemaps.org/schemas/sitemap/0.9/sitemap.xsd" xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+<url>
+<loc>https://lotz84.github.io/haskell-notebooks/2020/03/29/fast-fourier-transform.html</loc>
+<lastmod>2020-03-29T00:00:00-05:00</lastmod>
+</url>
+<url>
+<loc>https://lotz84.github.io/haskell-notebooks/2020/04/12/jclub-heyhey-note.html</loc>
+<lastmod>2020-04-12T00:00:00-05:00</lastmod>
+</url>
+<url>
+<loc>https://lotz84.github.io/haskell-notebooks/2020/06/29/concurrent-haskell-8.html</loc>
+<lastmod>2020-06-29T00:00:00-05:00</lastmod>
+</url>
+<url>
+<loc>https://lotz84.github.io/haskell-notebooks/2020/07/09/two-point-taylor-expansion.html</loc>
+<lastmod>2020-07-09T00:00:00-05:00</lastmod>
+</url>
+<url>
+<loc>https://lotz84.github.io/haskell-notebooks/2020/07/11/on-the-surprising-behavior-of-distance-metrics-in-high-dimensional-spaces.html</loc>
+<lastmod>2020-07-11T00:00:00-05:00</lastmod>
+</url>
+<url>
+<loc>https://lotz84.github.io/haskell-notebooks/about/</loc>
+</url>
+<url>
+<loc>https://lotz84.github.io/haskell-notebooks/</loc>
+</url>
+<url>
+<loc>https://lotz84.github.io/haskell-notebooks/search/</loc>
+</url>
+<url>
+<loc>https://lotz84.github.io/haskell-notebooks/categories/</loc>
+</url>
+</urlset>
