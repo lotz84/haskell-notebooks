@@ -180,9 +180,9 @@ pre > code { border: 0; padding-right: 0; padding-left: 0; }
 .highlighter-rouge .highlight { background: #eeeeff; }
 
 /** Wrapper */
-.wrapper { max-width: calc(800px - (30px)); margin-right: auto; margin-left: auto; padding-right: 15px; padding-left: 15px; }
+.wrapper { max-width: calc(980px - (30px)); margin-right: auto; margin-left: auto; padding-right: 15px; padding-left: 15px; }
 
-@media screen and (min-width: 800px) { .wrapper { max-width: calc(800px - (30px * 2)); padding-right: 30px; padding-left: 30px; } }
+@media screen and (min-width: 800px) { .wrapper { max-width: calc(980px - (30px * 2)); padding-right: 30px; padding-left: 30px; } }
 
 /** Clearfix */
 .wrapper:after { content: ""; display: table; clear: both; }
@@ -433,6 +433,14 @@ table td { text-overflow: ellipsis; overflow: hidden; max-width: 15em; }
 
 /*-----------------------------------*/
 /*----- ADD YOUR STYLES BELOW -------*/
+.output_svg { display: flex; justify-content: center; align-items: center; }
+
+.PageNavigation { font-size: 14px; display: block; width: auto; overflow: hidden; }
+
+.PageNavigation a { display: block; width: 50%; float: left; margin: 1em 0; }
+
+.PageNavigation .next { text-align: right; }
+
 .language-python + .language-plaintext { border-left: 1px solid grey; margin-left: 1rem !important; }
 
 [class^="language-"]:not(.language-plaintext) pre, [class^="language-"]:not(.language-plaintext) code { background-color: #323443 !important; color: #f8f8f2; }
@@ -441,13 +449,13 @@ table td { text-overflow: ellipsis; overflow: hidden; max-width: 15em; }
 
 .language-python + .language-plaintext pre { background-color: white !important; }
 
-.input_area pre, .input_area div { margin-bottom: 2rem !important; margin-top: 1.5rem !important; padding-bottom: 0 !important; padding-top: 0 !important; background: #323443 !important; -webkit-font-smoothing: antialiased; text-rendering: optimizeLegibility; font-family: Menlo, Monaco, Consolas, "Lucida Console", Roboto, Ubuntu, monospace; border-radius: 5px; font-size: 100%; }
+.input_area pre, .input_area div { margin-bottom: 2rem !important; margin-top: 1.5rem !important; background: #323443 !important; -webkit-font-smoothing: antialiased; text-rendering: optimizeLegibility; font-family: Menlo, Monaco, Consolas, "Lucida Console", Roboto, Ubuntu, monospace; border-radius: 5px; font-size: 100%; }
 
-.output_area pre, .output_area div { margin-bottom: 1rem !important; margin-top: 1rem !important; padding-bottom: 0 !important; padding-top: 0 !important; }
+.output_area pre, .output_area div { margin-bottom: 1rem !important; font-size: 100%; }
 
 .input_area pre { border-left: 1px solid lightcoral; }
 
-.output_area pre { border-left: 1px solid grey; margin-left: 1rem !important; }
+.output_area pre { border-left: 1px solid grey; }
 
 .code_cell table { width: auto; }
 
