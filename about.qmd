@@ -1,0 +1,19 @@
+---
+title: "About"
+image: profile.jpg
+about:
+  template: jolla
+  links:
+    - icon: github
+      text: Github
+      href: https://github.com/lotz84
+    - icon: twitter
+      text: Twitter
+      href: https://twitter.com/lotz84_
+
+---
+
+IHaskellで書いたnotebookを公開する場所
+
+Zennにも記事を書いています  
+<https://zenn.dev/lotz>

@@ -1,0 +1,23 @@
+project:
+  type: website
+
+website:
+  title: "lotz's Haskell notebooks"
+  site-url: https://lotz84.github.io/haskell-notebooks
+  description: "IHaskellで書いたnotebookを公開する場所"
+  favicon: favicon.ico
+  twitter-card: true
+  open-graph: true
+  navbar:
+    right:
+      - about.qmd
+      - icon: github
+        href: https://github.com/lotz84
+      - icon: twitter
+        href: https://twitter.com/lotz84_
+      - icon: rss
+        href: index.xml
+format:
+  html:
+    toc: true
+    theme: cosmo
