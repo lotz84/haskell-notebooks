@@ -1,0 +1,788 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en"><head>
+
+<meta charset="utf-8">
+<meta name="generator" content="quarto-1.4.550">
+
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+
+
+<title>lotz’s Haskell notebooks - 2点テイラー展開の定義と数値実験</title>
+<style>
+code{white-space: pre-wrap;}
+span.smallcaps{font-variant: small-caps;}
+div.columns{display: flex; gap: min(4vw, 1.5em);}
+div.column{flex: auto; overflow-x: auto;}
+div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+ul.task-list{list-style: none;}
+ul.task-list li input[type="checkbox"] {
+  width: 0.8em;
+  margin: 0 0.8em 0.2em -1em; /* quarto-specific, see https://github.com/quarto-dev/quarto-cli/issues/4556 */ 
+  vertical-align: middle;
+}
+/* CSS for syntax highlighting */
+pre > code.sourceCode { white-space: pre; position: relative; }
+pre > code.sourceCode > span { line-height: 1.25; }
+pre > code.sourceCode > span:empty { height: 1.2em; }
+.sourceCode { overflow: visible; }
+code.sourceCode > span { color: inherit; text-decoration: inherit; }
+div.sourceCode { margin: 1em 0; }
+pre.sourceCode { margin: 0; }
+@media screen {
+div.sourceCode { overflow: auto; }
+}
+@media print {
+pre > code.sourceCode { white-space: pre-wrap; }
+pre > code.sourceCode > span { text-indent: -5em; padding-left: 5em; }
+}
+pre.numberSource code
+  { counter-reset: source-line 0; }
+pre.numberSource code > span
+  { position: relative; left: -4em; counter-increment: source-line; }
+pre.numberSource code > span > a:first-child::before
+  { content: counter(source-line);
+    position: relative; left: -1em; text-align: right; vertical-align: baseline;
+    border: none; display: inline-block;
+    -webkit-touch-callout: none; -webkit-user-select: none;
+    -khtml-user-select: none; -moz-user-select: none;
+    -ms-user-select: none; user-select: none;
+    padding: 0 4px; width: 4em;
+  }
+pre.numberSource { margin-left: 3em;  padding-left: 4px; }
+div.sourceCode
+  {   }
+@media screen {
+pre > code.sourceCode > span > a:first-child::before { text-decoration: underline; }
+}
+</style>
+
+
+<script src="../site_libs/quarto-nav/quarto-nav.js"></script>
+<script src="../site_libs/quarto-nav/headroom.min.js"></script>
+<script src="../site_libs/clipboard/clipboard.min.js"></script>
+<script src="../site_libs/quarto-search/autocomplete.umd.js"></script>
+<script src="../site_libs/quarto-search/fuse.min.js"></script>
+<script src="../site_libs/quarto-search/quarto-search.js"></script>
+<meta name="quarto:offset" content="../">
+<script src="../site_libs/quarto-html/quarto.js"></script>
+<script src="../site_libs/quarto-html/popper.min.js"></script>
+<script src="../site_libs/quarto-html/tippy.umd.min.js"></script>
+<script src="../site_libs/quarto-html/anchor.min.js"></script>
+<link href="../site_libs/quarto-html/tippy.css" rel="stylesheet">
+<link href="../site_libs/quarto-html/quarto-syntax-highlighting.css" rel="stylesheet" id="quarto-text-highlighting-styles">
+<script src="../site_libs/bootstrap/bootstrap.min.js"></script>
+<link href="../site_libs/bootstrap/bootstrap-icons.css" rel="stylesheet">
+<link href="../site_libs/bootstrap/bootstrap.min.css" rel="stylesheet" id="quarto-bootstrap" data-mode="light">
+<script id="quarto-search-options" type="application/json">{
+  "location": "navbar",
+  "copy-button": false,
+  "collapse-after": 3,
+  "panel-placement": "end",
+  "type": "overlay",
+  "limit": 50,
+  "keyboard-shortcut": [
+    "f",
+    "/",
+    "s"
+  ],
+  "show-item-context": false,
+  "language": {
+    "search-no-results-text": "No results",
+    "search-matching-documents-text": "matching documents",
+    "search-copy-link-title": "Copy link to search",
+    "search-hide-matches-text": "Hide additional matches",
+    "search-more-match-text": "more match in this document",
+    "search-more-matches-text": "more matches in this document",
+    "search-clear-button-title": "Clear",
+    "search-text-placeholder": "",
+    "search-detached-cancel-button-title": "Cancel",
+    "search-submit-button-title": "Submit",
+    "search-label": "Search"
+  }
+}</script>
+
+  <script src="https://polyfill.io/v3/polyfill.min.js?features=es6"></script>
+  <script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-chtml-full.js" type="text/javascript"></script>
+
+<script type="text/javascript">
+const typesetMath = (el) => {
+  if (window.MathJax) {
+    // MathJax Typeset
+    window.MathJax.typeset([el]);
+  } else if (window.katex) {
+    // KaTeX Render
+    var mathElements = el.getElementsByClassName("math");
+    var macros = [];
+    for (var i = 0; i < mathElements.length; i++) {
+      var texText = mathElements[i].firstChild;
+      if (mathElements[i].tagName == "SPAN") {
+        window.katex.render(texText.data, mathElements[i], {
+          displayMode: mathElements[i].classList.contains('display'),
+          throwOnError: false,
+          macros: macros,
+          fleqn: false
+        });
+      }
+    }
+  }
+}
+window.Quarto = {
+  typesetMath
+};
+</script>
+
+<link rel="stylesheet" href="../styles.css">
+</head>
+
+<body class="nav-fixed">
+
+<div id="quarto-search-results"></div>
+  <header id="quarto-header" class="headroom fixed-top quarto-banner">
+    <nav class="navbar navbar-expand-lg " data-bs-theme="dark">
+      <div class="navbar-container container-fluid">
+      <div class="navbar-brand-container mx-auto">
+    <a class="navbar-brand" href="../index.html">
+    <span class="navbar-title">lotz’s Haskell notebooks</span>
+    </a>
+  </div>
+            <div id="quarto-search" class="" title="Search"></div>
+          <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarCollapse" aria-controls="navbarCollapse" aria-expanded="false" aria-label="Toggle navigation" onclick="if (window.quartoToggleHeadroom) { window.quartoToggleHeadroom(); }">
+  <span class="navbar-toggler-icon"></span>
+</button>
+          <div class="collapse navbar-collapse" id="navbarCollapse">
+            <ul class="navbar-nav navbar-nav-scroll ms-auto">
+  <li class="nav-item">
+    <a class="nav-link" href="../about.html"> 
+<span class="menu-text">About</span></a>
+  </li>  
+  <li class="nav-item compact">
+    <a class="nav-link" href="https://github.com/lotz84"> <i class="bi bi-github" role="img">
+</i> 
+<span class="menu-text"></span></a>
+  </li>  
+  <li class="nav-item compact">
+    <a class="nav-link" href="https://twitter.com/lotz84_"> <i class="bi bi-twitter" role="img">
+</i> 
+<span class="menu-text"></span></a>
+  </li>  
+  <li class="nav-item compact">
+    <a class="nav-link" href="../index.xml"> <i class="bi bi-rss" role="img">
+</i> 
+<span class="menu-text"></span></a>
+  </li>  
+</ul>
+          </div> <!-- /navcollapse -->
+          <div class="quarto-navbar-tools">
+</div>
+      </div> <!-- /container-fluid -->
+    </nav>
+</header>
+<!-- content -->
+<header id="title-block-header" class="quarto-title-block default page-columns page-full">
+  <div class="quarto-title-banner page-columns page-full">
+    <div class="quarto-title column-body">
+      <h1 class="title">2点テイラー展開の定義と数値実験</h1>
+                      </div>
+  </div>
+    
+  
+  <div class="quarto-title-meta">
+
+      
+    
+      
+    </div>
+    
+  
+  </header><div id="quarto-content" class="quarto-container page-columns page-rows-contents page-layout-article page-navbar">
+<!-- sidebar -->
+<!-- margin-sidebar -->
+    <div id="quarto-margin-sidebar" class="sidebar margin-sidebar">
+        <nav id="TOC" role="doc-toc" class="toc-active">
+    <h2 id="toc-title">On this page</h2>
+   
+  <ul>
+  <li><a href="#点テイラー展開の定義と数値実験" id="toc-点テイラー展開の定義と数値実験" class="nav-link active" data-scroll-target="#点テイラー展開の定義と数値実験">2点テイラー展開の定義と数値実験</a>
+  <ul class="collapse">
+  <li><a href="#数値実験" id="toc-数値実験" class="nav-link" data-scroll-target="#数値実験">数値実験</a></li>
+  <li><a href="#参考文献" id="toc-参考文献" class="nav-link" data-scroll-target="#参考文献">参考文献</a></li>
+  </ul></li>
+  </ul>
+</nav>
+    </div>
+<!-- main -->
+<main class="content quarto-banner-title-block" id="quarto-document-content">
+
+
+
+
+
+<section id="点テイラー展開の定義と数値実験" class="level1">
+<h1>2点テイラー展開の定義と数値実験</h1>
+<blockquote class="blockquote">
+<p>“自動微分でテイラー展開と2点テイラー展開を実装してみた” - toc: false - badges: true - comments: false - categories: []</p>
+</blockquote>
+<p>テイラー展開は滑らかな関数の一点における値や微分の値を使ったべき級数によって元の関数を表す方法でした。</p>
+<p><span class="math display">\[
+f(x) = f(a) + f'(a)(x - a) + \frac{f''(a)}{2!}\left(x-a\right)^2 + \frac{f'''(a)}{3!}\left(x-a\right)^3 + \cdots
+\]</span></p>
+<p>これを2点以上に拡張したテイラー展開が存在していて、特に2点でテイラー展開を行うものは2点テイラー展開と呼ばれているそうです。</p>
+<p>なんで2点でテイラー展開したくなるのかというと、普通のテイラー展開だと1点における2n階までの微分値を使わないと達成できない近似精度を2点テイラー展開だと2点におけるn階までの微分値で達成できたりするそうなのですが（スゴイ！）[^1]、個人的には2点でテイラー展開することで区分的に定義された関数も近似できるのが面白いなと思いました。</p>
+<p>テイラー展開は1点の周りにおける情報しか使わないので通常近似できる範囲はその1点の近くまでです。特に関数が折れ線だったり、[ReLU](https://en.wikipedia.org/wiki/Rectifier_(neural_networks)のように各領域によって違う関数の組み合わせで表されている場合には領域を区分する点をまたいで近似できる範囲を拡張することができません。そこで2点テイラー展開を使えば区分する点をまたいだ2点の周りで展開することによりそれぞれの点の周りの情報を使ってテイラー展開よりも近似できる範囲を拡張することができるのです。以下の定理はこのことをより正確に表しています[^2]。</p>
+<hr>
+<p>Theorem. <span class="math inline">\(f\)</span>を<span class="math inline">\({\mathbb R}\)</span>上の以下のように表される関数とする。</p>
+<p><span class="math display">\[
+f(x) = \begin{cases} p(x)\ \ x \in [0, \infty) \\ q(x)\ \ x \in (-\infty, 0) \end{cases}
+\]</span></p>
+<p>ここで<span class="math inline">\(p, q\)</span>は高々<span class="math inline">\(m\)</span>次の多項式とする。この時、もし<span class="math inline">\(p(0)=q(0)\)</span>であるならば<span class="math inline">\(f(x)\)</span>は-1, 1において2点テイラー展開可能であり、<span class="math inline">\(p_{f,\{-1, 1\}(n, n)}(x)\)</span>をエルミート補間多項式だとすると以下が成り立つ。</p>
+<p><span class="math display">\[
+\underset{n \rightarrow \infty}{\lim}p_{f,\{-1, 1\}(n, n)}(x)=f(x), \forall x \in \left(-\sqrt 2, \sqrt 2\right)
+\]</span></p>
+<hr>
+<p>ところでまだ2点テイラー展開の定義をしていませんでした。2点テイラー展開は多項式補間の考え方を経由して定義されます。<br>
+（以下の説明は[^2]の導入部分を大いに参考にしています）</p>
+<p>十分になめらかな実数値関数<span class="math inline">\(f(x)\)</span>に対して<span class="math inline">\(n\)</span>個の点<span class="math inline">\(X = \{x_0,\dots,x_n\}\)</span>とそれぞれの点に対応する自然数<span class="math inline">\(k_i(0\leq i\leq n)\)</span>が与えられた時、高々<span class="math inline">\(m(=k_0+\cdots+k_n-1)\)</span>次の多項式<span class="math inline">\(p_{f,X(k_0,\dots,k_n)}(x)\)</span>が存在して</p>
+<p><span class="math display">\[
+p^{(j)}_{f,X(k_0,\dots,k_n)}(x_i) = f^{(j)}(x_i), 0\leq j \leq k_i-1, 0 \leq i \leq n
+\]</span></p>
+<p>を満たす時、<span class="math inline">\(p_{f,X(k_0,\dots,k_n)}(x)\)</span>を<span class="math inline">\(f(x)\)</span>のエルミート補間多項式と呼びます。</p>
+<p>もし<span class="math inline">\(f(x)\)</span>が一点<span class="math inline">\(x_0\)</span>の周りで無限回微分可能であり、ある正の実数<span class="math inline">\(\rho\)</span>が存在して</p>
+<p><span class="math display">\[
+\underset{n \rightarrow \infty}{\lim} p_{f,X(n)}(x) = f(x), \forall x \in (x_0-\rho, x_0+\rho)
+\]</span></p>
+<p>となるならば<span class="math inline">\(f(x)\)</span>は同じ範囲でテイラー展開可能であることが分かります。</p>
+<p>この事実を発展させて<span class="math inline">\(n\)</span>点テイラー展開は以下のように定義されます。</p>
+<hr>
+<p><span class="math inline">\(f\)</span>をある区間<span class="math inline">\(I\)</span>で定義された実数値関数とし、<span class="math inline">\(I\)</span>に含まれる<span class="math inline">\(n\)</span>個の点<span class="math inline">\(X=\{x_0,\dots x_{n-1}\}\)</span>で<span class="math inline">\(f\)</span>が無限回微分可能であったとする。もし</p>
+<p><span class="math display">\[
+\underset{m \rightarrow \infty}{\lim} p_{f,X(m,\dots,m)}(x) = f(x), \forall x \in I
+\]</span></p>
+<p>が成り立つならば<span class="math inline">\(f\)</span>は<span class="math inline">\(I\)</span>において<span class="math inline">\(n\)</span>点テイラー展開可能であるという。</p>
+<hr>
+<p><span class="math inline">\(n\)</span>点テイラー展開の具体的な形は、エルミート補間多項式の一般公式が知られているので[^3]そちらから計算可能でしょう。特に2点テイラー展開の場合の級数の計算式は以下のようにできるとTwitterで教えてもらいました[^4]。（そもそも2点テイラー展開を知ったきっかけも、このnotebookを書こうと思ったのも島田さんのTweetに触発されてでした。感謝🙏）</p>
+<p><img src="https://pbs.twimg.com/media/EcLJ_9xVcAEmtes?format=jpg&amp;name=medium.png" class="img-fluid"></p>
+<section id="数値実験" class="level2">
+<h2 class="anchored" data-anchor-id="数値実験">数値実験</h2>
+<p>比較のためにまずは通常のテイラー展開を実装してみます</p>
+<div id="cell-3" class="cell" data-execution_count="1">
+<div class="sourceCode cell-code" id="cb1"><pre class="sourceCode haskell code-with-copy"><code class="sourceCode haskell"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="ot">{-# LANGUAGE RankNTypes #-}</span></span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a><span class="kw">import</span> <span class="dt">Data.Number.Symbolic</span></span>
+<span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-5"><a href="#cb1-5" aria-hidden="true" tabindex="-1"></a><span class="kw">import</span> <span class="dt">Numeric.AD</span></span>
+<span id="cb1-6"><a href="#cb1-6" aria-hidden="true" tabindex="-1"></a><span class="kw">import</span> <span class="dt">Numeric.AD.Mode.Tower</span></span>
+<span id="cb1-7"><a href="#cb1-7" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-8"><a href="#cb1-8" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-9"><a href="#cb1-9" aria-hidden="true" tabindex="-1"></a><span class="co">-- 階乗</span></span>
+<span id="cb1-10"><a href="#cb1-10" aria-hidden="true" tabindex="-1"></a><span class="ot">fact ::</span> <span class="dt">Int</span> <span class="ot">-&gt;</span> <span class="dt">Int</span></span>
+<span id="cb1-11"><a href="#cb1-11" aria-hidden="true" tabindex="-1"></a>fact n <span class="ot">=</span> <span class="fu">product</span> [<span class="dv">1</span><span class="op">..</span>n]</span>
+<span id="cb1-12"><a href="#cb1-12" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-13"><a href="#cb1-13" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-14"><a href="#cb1-14" aria-hidden="true" tabindex="-1"></a><span class="co">-- テイラー展開</span></span>
+<span id="cb1-15"><a href="#cb1-15" aria-hidden="true" tabindex="-1"></a><span class="ot">taylorSeries ::</span> <span class="dt">Fractional</span> a</span>
+<span id="cb1-16"><a href="#cb1-16" aria-hidden="true" tabindex="-1"></a>             <span class="ot">=&gt;</span> <span class="dt">Int</span>                                          <span class="co">-- この次数以下の級数まで展開する</span></span>
+<span id="cb1-17"><a href="#cb1-17" aria-hidden="true" tabindex="-1"></a>             <span class="ot">-&gt;</span> (<span class="kw">forall</span> s<span class="op">.</span> <span class="dt">AD</span> s (<span class="dt">Tower</span> a) <span class="ot">-&gt;</span> <span class="dt">AD</span> s (<span class="dt">Tower</span> a)) <span class="co">-- テイラー展開する関数</span></span>
+<span id="cb1-18"><a href="#cb1-18" aria-hidden="true" tabindex="-1"></a>             <span class="ot">-&gt;</span> a                                            <span class="co">-- 展開する点</span></span>
+<span id="cb1-19"><a href="#cb1-19" aria-hidden="true" tabindex="-1"></a>             <span class="ot">-&gt;</span> (a <span class="ot">-&gt;</span> a)                                     <span class="co">-- 展開後の級数</span></span>
+<span id="cb1-20"><a href="#cb1-20" aria-hidden="true" tabindex="-1"></a>taylorSeries n f a x <span class="ot">=</span> <span class="fu">sum</span> <span class="op">$</span> <span class="fu">take</span> n <span class="op">$</span> coefficients <span class="op">|*|</span> polynomials</span>
+<span id="cb1-21"><a href="#cb1-21" aria-hidden="true" tabindex="-1"></a>  <span class="kw">where</span></span>
+<span id="cb1-22"><a href="#cb1-22" aria-hidden="true" tabindex="-1"></a>  coefficients <span class="ot">=</span> diffs f a <span class="op">|/|</span> factorials      <span class="co">-- f(a)/0!, f'(a)/1!, f''(a)/2!, f'''(a)/3!, ...</span></span>
+<span id="cb1-23"><a href="#cb1-23" aria-hidden="true" tabindex="-1"></a>  factorials <span class="ot">=</span> <span class="fu">map</span> (<span class="fu">fromIntegral</span> <span class="op">.</span> fact) [<span class="dv">0</span><span class="op">..</span>] <span class="co">-- 0!, 1!, 2!, 3!, ...</span></span>
+<span id="cb1-24"><a href="#cb1-24" aria-hidden="true" tabindex="-1"></a>  polynomials <span class="ot">=</span> ((x <span class="op">-</span> a)<span class="op">^</span>) <span class="op">&lt;$&gt;</span> [<span class="dv">0</span><span class="op">..</span>]           <span class="co">-- 1, x-a, (x-a)^2, (x-a)^3, ...</span></span>
+<span id="cb1-25"><a href="#cb1-25" aria-hidden="true" tabindex="-1"></a>  (<span class="op">|/|</span>) <span class="ot">=</span> <span class="fu">zipWith</span> (<span class="op">/</span>)</span>
+<span id="cb1-26"><a href="#cb1-26" aria-hidden="true" tabindex="-1"></a>  (<span class="op">|*|</span>) <span class="ot">=</span> <span class="fu">zipWith</span> (<span class="op">*</span>)</span>
+<span id="cb1-27"><a href="#cb1-27" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-28"><a href="#cb1-28" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-29"><a href="#cb1-29" aria-hidden="true" tabindex="-1"></a>taylorSeries <span class="dv">4</span> <span class="fu">exp</span> <span class="dv">0</span> (var <span class="st">"x"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-display">
+<pre><code>1.0+x+0.5*x*x+0.16666666666666666*x*x*x</code></pre>
+</div>
+</div>
+<p>4次までの指数関数のテイラー展開をちゃんと計算できていますね</p>
+<p><span class="math display">\[
+1 + x + \frac{x^2}{2!} + \frac{x^3}{3!}
+\]</span></p>
+<p>次は2点テイラー展開を実装してみましょう</p>
+<div id="cell-5" class="cell" data-execution_count="2">
+<div class="sourceCode cell-code" id="cb3"><pre class="sourceCode haskell code-with-copy"><code class="sourceCode haskell"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="co">-- 2点テイラー展開</span></span>
+<span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a><span class="ot">twoPointTaylorSeries ::</span> <span class="dt">Fractional</span> a</span>
+<span id="cb3-3"><a href="#cb3-3" aria-hidden="true" tabindex="-1"></a>                     <span class="ot">=&gt;</span> <span class="dt">Int</span>                                          <span class="co">-- この次数以下の級数まで展開する</span></span>
+<span id="cb3-4"><a href="#cb3-4" aria-hidden="true" tabindex="-1"></a>                     <span class="ot">-&gt;</span> (<span class="kw">forall</span> s<span class="op">.</span> <span class="dt">AD</span> s (<span class="dt">Tower</span> a) <span class="ot">-&gt;</span> <span class="dt">AD</span> s (<span class="dt">Tower</span> a)) <span class="co">-- テイラー展開する関数</span></span>
+<span id="cb3-5"><a href="#cb3-5" aria-hidden="true" tabindex="-1"></a>                     <span class="ot">-&gt;</span> a                                            <span class="co">-- 展開する点1</span></span>
+<span id="cb3-6"><a href="#cb3-6" aria-hidden="true" tabindex="-1"></a>                     <span class="ot">-&gt;</span> a                                            <span class="co">-- 展開する点2</span></span>
+<span id="cb3-7"><a href="#cb3-7" aria-hidden="true" tabindex="-1"></a>                     <span class="ot">-&gt;</span> (a <span class="ot">-&gt;</span> a)                                     <span class="co">-- 展開後の級数</span></span>
+<span id="cb3-8"><a href="#cb3-8" aria-hidden="true" tabindex="-1"></a>twoPointTaylorSeries n f a b x <span class="ot">=</span> seriesA <span class="op">+</span> seriesB</span>
+<span id="cb3-9"><a href="#cb3-9" aria-hidden="true" tabindex="-1"></a>  <span class="kw">where</span></span>
+<span id="cb3-10"><a href="#cb3-10" aria-hidden="true" tabindex="-1"></a>  seriesA <span class="ot">=</span> (x <span class="op">-</span> a) <span class="op">^</span> n <span class="op">*</span> <span class="fu">sum</span> (<span class="fu">take</span> n <span class="op">$</span> coefB <span class="op">|*|</span> polyB)</span>
+<span id="cb3-11"><a href="#cb3-11" aria-hidden="true" tabindex="-1"></a>  seriesB <span class="ot">=</span> (x <span class="op">-</span> b) <span class="op">^</span> n <span class="op">*</span> <span class="fu">sum</span> (<span class="fu">take</span> n <span class="op">$</span> coefA <span class="op">|*|</span> polyA)</span>
+<span id="cb3-12"><a href="#cb3-12" aria-hidden="true" tabindex="-1"></a>  fa x <span class="ot">=</span> f x <span class="op">/</span> (x <span class="op">-</span> auto b)<span class="op">^</span>n        <span class="co">-- A(x)</span></span>
+<span id="cb3-13"><a href="#cb3-13" aria-hidden="true" tabindex="-1"></a>  fb x <span class="ot">=</span> f x <span class="op">/</span> (x <span class="op">-</span> auto a)<span class="op">^</span>n        <span class="co">-- B(x)</span></span>
+<span id="cb3-14"><a href="#cb3-14" aria-hidden="true" tabindex="-1"></a>  coefA <span class="ot">=</span> diffs fa a <span class="op">|/|</span> factorials  <span class="co">-- A(a)/0!, A'(a)/1!, A''(a)/2!, A'''(a)/3!, ...</span></span>
+<span id="cb3-15"><a href="#cb3-15" aria-hidden="true" tabindex="-1"></a>  coefB <span class="ot">=</span> diffs fb b <span class="op">|/|</span> factorials  <span class="co">-- B(b)/0!, B'(b)/1!, B''(b)/2!, B'''(b)/3!, ...</span></span>
+<span id="cb3-16"><a href="#cb3-16" aria-hidden="true" tabindex="-1"></a>  polyA <span class="ot">=</span> ((x <span class="op">-</span> a)<span class="op">^</span>) <span class="op">&lt;$&gt;</span> [<span class="dv">0</span><span class="op">..</span>]       <span class="co">-- 1, x-a, (x-a)^2, (x-a)^3, ...</span></span>
+<span id="cb3-17"><a href="#cb3-17" aria-hidden="true" tabindex="-1"></a>  polyB <span class="ot">=</span> ((x <span class="op">-</span> b)<span class="op">^</span>) <span class="op">&lt;$&gt;</span> [<span class="dv">0</span><span class="op">..</span>]       <span class="co">-- 1, x-b, (x-b)^2, (x-b)^3, ...</span></span>
+<span id="cb3-18"><a href="#cb3-18" aria-hidden="true" tabindex="-1"></a>  factorials <span class="ot">=</span> <span class="fu">map</span> (<span class="fu">fromIntegral</span> <span class="op">.</span> fact) [<span class="dv">0</span><span class="op">..</span>] <span class="co">-- 0!, 1!, 2!, 3!, ...</span></span>
+<span id="cb3-19"><a href="#cb3-19" aria-hidden="true" tabindex="-1"></a>  (<span class="op">|/|</span>) <span class="ot">=</span> <span class="fu">zipWith</span> (<span class="op">/</span>)</span>
+<span id="cb3-20"><a href="#cb3-20" aria-hidden="true" tabindex="-1"></a>  (<span class="op">|*|</span>) <span class="ot">=</span> <span class="fu">zipWith</span> (<span class="op">*</span>)</span>
+<span id="cb3-21"><a href="#cb3-21" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-22"><a href="#cb3-22" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-23"><a href="#cb3-23" aria-hidden="true" tabindex="-1"></a>twoPointTaylorSeries <span class="dv">2</span> <span class="fu">id</span> (<span class="op">-</span><span class="dv">1</span>) <span class="dv">1</span> (var <span class="st">"x"</span>) <span class="co">-- id ≡ f(x) = x</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-display">
+<pre><code>0.25*(1.0+x)*(1.0+x)+(-0.25)*(-1.0+x)*(-1.0+x)</code></pre>
+</div>
+</div>
+<p>式が複雑になるので<span class="math inline">\(f(x)=x\)</span>という単純な関数を展開して確かめてみました。式を整理するとちゃんと正しい答えになってるのが分かります。</p>
+<p>それでは実際に関数を近似してみましょう</p>
+<p>まずは</p>
+<p><span class="math display">\[
+\frac{1}{1+x^2}
+\]</span></p>
+<p>という関数を展開してみましょう</p>
+<div id="cell-7" class="cell" data-execution_count="3">
+<div class="sourceCode cell-code" id="cb5"><pre class="sourceCode haskell code-with-copy"><code class="sourceCode haskell"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a><span class="kw">import</span> <span class="dt">Graphics.Rendering.Chart.Easy</span></span>
+<span id="cb5-2"><a href="#cb5-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb5-3"><a href="#cb5-3" aria-hidden="true" tabindex="-1"></a><span class="ot">cauchy ::</span> <span class="dt">Floating</span> a <span class="ot">=&gt;</span> a <span class="ot">-&gt;</span> a</span>
+<span id="cb5-4"><a href="#cb5-4" aria-hidden="true" tabindex="-1"></a>cauchy x <span class="ot">=</span> <span class="dv">1</span> <span class="op">/</span> (<span class="dv">1</span> <span class="op">+</span> x<span class="op">^</span><span class="dv">2</span>)</span>
+<span id="cb5-5"><a href="#cb5-5" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb5-6"><a href="#cb5-6" aria-hidden="true" tabindex="-1"></a><span class="ot">domain ::</span> [<span class="dt">Double</span>]</span>
+<span id="cb5-7"><a href="#cb5-7" aria-hidden="true" tabindex="-1"></a>domain <span class="ot">=</span> <span class="fu">map</span> (\n <span class="ot">-&gt;</span> <span class="fu">fromIntegral</span> n <span class="op">/</span> <span class="dv">100</span>) [<span class="op">-</span><span class="dv">100</span><span class="op">..</span><span class="dv">100</span>]</span>
+<span id="cb5-8"><a href="#cb5-8" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb5-9"><a href="#cb5-9" aria-hidden="true" tabindex="-1"></a>toRenderable <span class="op">$</span> <span class="kw">do</span></span>
+<span id="cb5-10"><a href="#cb5-10" aria-hidden="true" tabindex="-1"></a>    plot (line <span class="st">"cauchy"</span>    [<span class="fu">flip</span> <span class="fu">map</span> domain <span class="op">$</span> \x <span class="ot">-&gt;</span> (x, cauchy x)])</span>
+<span id="cb5-11"><a href="#cb5-11" aria-hidden="true" tabindex="-1"></a>    plot (line <span class="st">"one point"</span> [<span class="fu">flip</span> <span class="fu">map</span> domain <span class="op">$</span> \x <span class="ot">-&gt;</span> (x, taylorSeries <span class="dv">5</span> cauchy <span class="dv">0</span> x)])</span>
+<span id="cb5-12"><a href="#cb5-12" aria-hidden="true" tabindex="-1"></a>    plot (line <span class="st">"two point"</span> [<span class="fu">flip</span> <span class="fu">map</span> domain <span class="op">$</span> \x <span class="ot">-&gt;</span> (x, twoPointTaylorSeries <span class="dv">5</span> cauchy (<span class="op">-</span><span class="dv">1</span>) <span class="dv">1</span> x)])</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-display">
+<div>
+<figure class="figure">
+<p><img src="2020-07-09-two-point-taylor-expansion_files/figure-html/cell-4-output-1.svg" class="img-fluid figure-img"></p>
+</figure>
+</div>
+</div>
+</div>
+<p>青線が元の関数、緑線が<span class="math inline">\(0\)</span>周りでの5次までのテイラー展開、赤線が<span class="math inline">\(-1, 1\)</span>周りでの5次までの2点テイラー展開です。同じ次数までの展開ですが2点テイラー展開のほうがより高い精度で近似できているのが分かります</p>
+<p>次に区分的に定義された関数であるReLUを展開してみましょう</p>
+<div id="cell-9" class="cell" data-execution_count="4">
+<div class="sourceCode cell-code" id="cb6"><pre class="sourceCode haskell code-with-copy"><code class="sourceCode haskell"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a><span class="ot">relu ::</span> (<span class="dt">Ord</span> a, <span class="dt">Floating</span> a) <span class="ot">=&gt;</span> a <span class="ot">-&gt;</span> a</span>
+<span id="cb6-2"><a href="#cb6-2" aria-hidden="true" tabindex="-1"></a>relu <span class="ot">=</span> <span class="fu">max</span> <span class="dv">0</span></span>
+<span id="cb6-3"><a href="#cb6-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb6-4"><a href="#cb6-4" aria-hidden="true" tabindex="-1"></a>toRenderable <span class="op">$</span> <span class="kw">do</span></span>
+<span id="cb6-5"><a href="#cb6-5" aria-hidden="true" tabindex="-1"></a>    plot (line <span class="st">"ReLU"</span>      [<span class="fu">flip</span> <span class="fu">map</span> domain <span class="op">$</span> \x <span class="ot">-&gt;</span> (x, relu x)])</span>
+<span id="cb6-6"><a href="#cb6-6" aria-hidden="true" tabindex="-1"></a>    plot (line <span class="st">"one point"</span> [<span class="fu">flip</span> <span class="fu">map</span> domain <span class="op">$</span> \x <span class="ot">-&gt;</span> (x, taylorSeries <span class="dv">5</span> relu <span class="dv">1</span> x)])</span>
+<span id="cb6-7"><a href="#cb6-7" aria-hidden="true" tabindex="-1"></a>    plot (line <span class="st">"two point"</span> [<span class="fu">flip</span> <span class="fu">map</span> domain <span class="op">$</span> \x <span class="ot">-&gt;</span> (x, twoPointTaylorSeries <span class="dv">5</span> relu (<span class="op">-</span><span class="dv">1</span>) <span class="dv">1</span> x)])</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-display">
+<div>
+<figure class="figure">
+<p><img src="2020-07-09-two-point-taylor-expansion_files/figure-html/cell-5-output-1.svg" class="img-fluid figure-img"></p>
+</figure>
+</div>
+</div>
+</div>
+<p>テイラー展開は<span class="math inline">\(1\)</span>の周りで展開していますがやはり0以下で関数が変わっていることには対応できていません。一方で2点テイラー展開は<span class="math inline">\(1\)</span>の周りに加えて<span class="math inline">\(-1\)</span>の周りの情報もつかえているのでReLUの形をより正確に近似できているのが分かります。</p>
+</section>
+<section id="参考文献" class="level2">
+<h2 class="anchored" data-anchor-id="参考文献">参考文献</h2>
+<ul>
+<li>[1] Estes, R. H., and E. R. Lancaster. “Two-point Taylor series expansions.” (1966).</li>
+<li>[2] Kitahara, Kazuaki, Taizo Chiyonobu, and Hirokazu Tsukamoto. “A note on two point Taylor expansion.” International Journal of Pure and Applied Mathematics 75.3 (2012): 327-338.</li>
+<li>[3] 鈴木 実, “エルミート補間の一般公式（Generalized Hermite interpolation）” <a href="http://totoha.web.fc2.com/Hermite_interpolation.pdf" class="uri">http://totoha.web.fc2.com/Hermite_interpolation.pdf</a></li>
+<li>[4] <a href="https://twitter.com/KS_Mathematics/status/1279807348391854080" class="uri">https://twitter.com/KS_Mathematics/status/1279807348391854080</a></li>
+</ul>
+
+
+</section>
+</section>
+
+</main> <!-- /main -->
+<script id="quarto-html-after-body" type="application/javascript">
+window.document.addEventListener("DOMContentLoaded", function (event) {
+  const toggleBodyColorMode = (bsSheetEl) => {
+    const mode = bsSheetEl.getAttribute("data-mode");
+    const bodyEl = window.document.querySelector("body");
+    if (mode === "dark") {
+      bodyEl.classList.add("quarto-dark");
+      bodyEl.classList.remove("quarto-light");
+    } else {
+      bodyEl.classList.add("quarto-light");
+      bodyEl.classList.remove("quarto-dark");
+    }
+  }
+  const toggleBodyColorPrimary = () => {
+    const bsSheetEl = window.document.querySelector("link#quarto-bootstrap");
+    if (bsSheetEl) {
+      toggleBodyColorMode(bsSheetEl);
+    }
+  }
+  toggleBodyColorPrimary();  
+  const icon = "";
+  const anchorJS = new window.AnchorJS();
+  anchorJS.options = {
+    placement: 'right',
+    icon: icon
+  };
+  anchorJS.add('.anchored');
+  const isCodeAnnotation = (el) => {
+    for (const clz of el.classList) {
+      if (clz.startsWith('code-annotation-')) {                     
+        return true;
+      }
+    }
+    return false;
+  }
+  const clipboard = new window.ClipboardJS('.code-copy-button', {
+    text: function(trigger) {
+      const codeEl = trigger.previousElementSibling.cloneNode(true);
+      for (const childEl of codeEl.children) {
+        if (isCodeAnnotation(childEl)) {
+          childEl.remove();
+        }
+      }
+      return codeEl.innerText;
+    }
+  });
+  clipboard.on('success', function(e) {
+    // button target
+    const button = e.trigger;
+    // don't keep focus
+    button.blur();
+    // flash "checked"
+    button.classList.add('code-copy-button-checked');
+    var currentTitle = button.getAttribute("title");
+    button.setAttribute("title", "Copied!");
+    let tooltip;
+    if (window.bootstrap) {
+      button.setAttribute("data-bs-toggle", "tooltip");
+      button.setAttribute("data-bs-placement", "left");
+      button.setAttribute("data-bs-title", "Copied!");
+      tooltip = new bootstrap.Tooltip(button, 
+        { trigger: "manual", 
+          customClass: "code-copy-button-tooltip",
+          offset: [0, -8]});
+      tooltip.show();    
+    }
+    setTimeout(function() {
+      if (tooltip) {
+        tooltip.hide();
+        button.removeAttribute("data-bs-title");
+        button.removeAttribute("data-bs-toggle");
+        button.removeAttribute("data-bs-placement");
+      }
+      button.setAttribute("title", currentTitle);
+      button.classList.remove('code-copy-button-checked');
+    }, 1000);
+    // clear code selection
+    e.clearSelection();
+  });
+  function tippyHover(el, contentFn, onTriggerFn, onUntriggerFn) {
+    const config = {
+      allowHTML: true,
+      maxWidth: 500,
+      delay: 100,
+      arrow: false,
+      appendTo: function(el) {
+          return el.parentElement;
+      },
+      interactive: true,
+      interactiveBorder: 10,
+      theme: 'quarto',
+      placement: 'bottom-start',
+    };
+    if (contentFn) {
+      config.content = contentFn;
+    }
+    if (onTriggerFn) {
+      config.onTrigger = onTriggerFn;
+    }
+    if (onUntriggerFn) {
+      config.onUntrigger = onUntriggerFn;
+    }
+    window.tippy(el, config); 
+  }
+  const noterefs = window.document.querySelectorAll('a[role="doc-noteref"]');
+  for (var i=0; i<noterefs.length; i++) {
+    const ref = noterefs[i];
+    tippyHover(ref, function() {
+      // use id or data attribute instead here
+      let href = ref.getAttribute('data-footnote-href') || ref.getAttribute('href');
+      try { href = new URL(href).hash; } catch {}
+      const id = href.replace(/^#\/?/, "");
+      const note = window.document.getElementById(id);
+      return note.innerHTML;
+    });
+  }
+  const xrefs = window.document.querySelectorAll('a.quarto-xref');
+  const processXRef = (id, note) => {
+    // Strip column container classes
+    const stripColumnClz = (el) => {
+      el.classList.remove("page-full", "page-columns");
+      if (el.children) {
+        for (const child of el.children) {
+          stripColumnClz(child);
+        }
+      }
+    }
+    stripColumnClz(note)
+    if (id === null || id.startsWith('sec-')) {
+      // Special case sections, only their first couple elements
+      const container = document.createElement("div");
+      if (note.children && note.children.length > 2) {
+        container.appendChild(note.children[0].cloneNode(true));
+        for (let i = 1; i < note.children.length; i++) {
+          const child = note.children[i];
+          if (child.tagName === "P" && child.innerText === "") {
+            continue;
+          } else {
+            container.appendChild(child.cloneNode(true));
+            break;
+          }
+        }
+        if (window.Quarto?.typesetMath) {
+          window.Quarto.typesetMath(container);
+        }
+        return container.innerHTML
+      } else {
+        if (window.Quarto?.typesetMath) {
+          window.Quarto.typesetMath(note);
+        }
+        return note.innerHTML;
+      }
+    } else {
+      // Remove any anchor links if they are present
+      const anchorLink = note.querySelector('a.anchorjs-link');
+      if (anchorLink) {
+        anchorLink.remove();
+      }
+      if (window.Quarto?.typesetMath) {
+        window.Quarto.typesetMath(note);
+      }
+      // TODO in 1.5, we should make sure this works without a callout special case
+      if (note.classList.contains("callout")) {
+        return note.outerHTML;
+      } else {
+        return note.innerHTML;
+      }
+    }
+  }
+  for (var i=0; i<xrefs.length; i++) {
+    const xref = xrefs[i];
+    tippyHover(xref, undefined, function(instance) {
+      instance.disable();
+      let url = xref.getAttribute('href');
+      let hash = undefined; 
+      if (url.startsWith('#')) {
+        hash = url;
+      } else {
+        try { hash = new URL(url).hash; } catch {}
+      }
+      if (hash) {
+        const id = hash.replace(/^#\/?/, "");
+        const note = window.document.getElementById(id);
+        if (note !== null) {
+          try {
+            const html = processXRef(id, note.cloneNode(true));
+            instance.setContent(html);
+          } finally {
+            instance.enable();
+            instance.show();
+          }
+        } else {
+          // See if we can fetch this
+          fetch(url.split('#')[0])
+          .then(res => res.text())
+          .then(html => {
+            const parser = new DOMParser();
+            const htmlDoc = parser.parseFromString(html, "text/html");
+            const note = htmlDoc.getElementById(id);
+            if (note !== null) {
+              const html = processXRef(id, note);
+              instance.setContent(html);
+            } 
+          }).finally(() => {
+            instance.enable();
+            instance.show();
+          });
+        }
+      } else {
+        // See if we can fetch a full url (with no hash to target)
+        // This is a special case and we should probably do some content thinning / targeting
+        fetch(url)
+        .then(res => res.text())
+        .then(html => {
+          const parser = new DOMParser();
+          const htmlDoc = parser.parseFromString(html, "text/html");
+          const note = htmlDoc.querySelector('main.content');
+          if (note !== null) {
+            // This should only happen for chapter cross references
+            // (since there is no id in the URL)
+            // remove the first header
+            if (note.children.length > 0 && note.children[0].tagName === "HEADER") {
+              note.children[0].remove();
+            }
+            const html = processXRef(null, note);
+            instance.setContent(html);
+          } 
+        }).finally(() => {
+          instance.enable();
+          instance.show();
+        });
+      }
+    }, function(instance) {
+    });
+  }
+      let selectedAnnoteEl;
+      const selectorForAnnotation = ( cell, annotation) => {
+        let cellAttr = 'data-code-cell="' + cell + '"';
+        let lineAttr = 'data-code-annotation="' +  annotation + '"';
+        const selector = 'span[' + cellAttr + '][' + lineAttr + ']';
+        return selector;
+      }
+      const selectCodeLines = (annoteEl) => {
+        const doc = window.document;
+        const targetCell = annoteEl.getAttribute("data-target-cell");
+        const targetAnnotation = annoteEl.getAttribute("data-target-annotation");
+        const annoteSpan = window.document.querySelector(selectorForAnnotation(targetCell, targetAnnotation));
+        const lines = annoteSpan.getAttribute("data-code-lines").split(",");
+        const lineIds = lines.map((line) => {
+          return targetCell + "-" + line;
+        })
+        let top = null;
+        let height = null;
+        let parent = null;
+        if (lineIds.length > 0) {
+            //compute the position of the single el (top and bottom and make a div)
+            const el = window.document.getElementById(lineIds[0]);
+            top = el.offsetTop;
+            height = el.offsetHeight;
+            parent = el.parentElement.parentElement;
+          if (lineIds.length > 1) {
+            const lastEl = window.document.getElementById(lineIds[lineIds.length - 1]);
+            const bottom = lastEl.offsetTop + lastEl.offsetHeight;
+            height = bottom - top;
+          }
+          if (top !== null && height !== null && parent !== null) {
+            // cook up a div (if necessary) and position it 
+            let div = window.document.getElementById("code-annotation-line-highlight");
+            if (div === null) {
+              div = window.document.createElement("div");
+              div.setAttribute("id", "code-annotation-line-highlight");
+              div.style.position = 'absolute';
+              parent.appendChild(div);
+            }
+            div.style.top = top - 2 + "px";
+            div.style.height = height + 4 + "px";
+            div.style.left = 0;
+            let gutterDiv = window.document.getElementById("code-annotation-line-highlight-gutter");
+            if (gutterDiv === null) {
+              gutterDiv = window.document.createElement("div");
+              gutterDiv.setAttribute("id", "code-annotation-line-highlight-gutter");
+              gutterDiv.style.position = 'absolute';
+              const codeCell = window.document.getElementById(targetCell);
+              const gutter = codeCell.querySelector('.code-annotation-gutter');
+              gutter.appendChild(gutterDiv);
+            }
+            gutterDiv.style.top = top - 2 + "px";
+            gutterDiv.style.height = height + 4 + "px";
+          }
+          selectedAnnoteEl = annoteEl;
+        }
+      };
+      const unselectCodeLines = () => {
+        const elementsIds = ["code-annotation-line-highlight", "code-annotation-line-highlight-gutter"];
+        elementsIds.forEach((elId) => {
+          const div = window.document.getElementById(elId);
+          if (div) {
+            div.remove();
+          }
+        });
+        selectedAnnoteEl = undefined;
+      };
+        // Handle positioning of the toggle
+    window.addEventListener(
+      "resize",
+      throttle(() => {
+        elRect = undefined;
+        if (selectedAnnoteEl) {
+          selectCodeLines(selectedAnnoteEl);
+        }
+      }, 10)
+    );
+    function throttle(fn, ms) {
+    let throttle = false;
+    let timer;
+      return (...args) => {
+        if(!throttle) { // first call gets through
+            fn.apply(this, args);
+            throttle = true;
+        } else { // all the others get throttled
+            if(timer) clearTimeout(timer); // cancel #2
+            timer = setTimeout(() => {
+              fn.apply(this, args);
+              timer = throttle = false;
+            }, ms);
+        }
+      };
+    }
+      // Attach click handler to the DT
+      const annoteDls = window.document.querySelectorAll('dt[data-target-cell]');
+      for (const annoteDlNode of annoteDls) {
+        annoteDlNode.addEventListener('click', (event) => {
+          const clickedEl = event.target;
+          if (clickedEl !== selectedAnnoteEl) {
+            unselectCodeLines();
+            const activeEl = window.document.querySelector('dt[data-target-cell].code-annotation-active');
+            if (activeEl) {
+              activeEl.classList.remove('code-annotation-active');
+            }
+            selectCodeLines(clickedEl);
+            clickedEl.classList.add('code-annotation-active');
+          } else {
+            // Unselect the line
+            unselectCodeLines();
+            clickedEl.classList.remove('code-annotation-active');
+          }
+        });
+      }
+  const findCites = (el) => {
+    const parentEl = el.parentElement;
+    if (parentEl) {
+      const cites = parentEl.dataset.cites;
+      if (cites) {
+        return {
+          el,
+          cites: cites.split(' ')
+        };
+      } else {
+        return findCites(el.parentElement)
+      }
+    } else {
+      return undefined;
+    }
+  };
+  var bibliorefs = window.document.querySelectorAll('a[role="doc-biblioref"]');
+  for (var i=0; i<bibliorefs.length; i++) {
+    const ref = bibliorefs[i];
+    const citeInfo = findCites(ref);
+    if (citeInfo) {
+      tippyHover(citeInfo.el, function() {
+        var popup = window.document.createElement('div');
+        citeInfo.cites.forEach(function(cite) {
+          var citeDiv = window.document.createElement('div');
+          citeDiv.classList.add('hanging-indent');
+          citeDiv.classList.add('csl-entry');
+          var biblioDiv = window.document.getElementById('ref-' + cite);
+          if (biblioDiv) {
+            citeDiv.innerHTML = biblioDiv.innerHTML;
+          }
+          popup.appendChild(citeDiv);
+        });
+        return popup.innerHTML;
+      });
+    }
+  }
+});
+</script>
+</div> <!-- /content -->
+
+
+
+
+</body></html>

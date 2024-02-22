@@ -1,0 +1,3973 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<rss  xmlns:atom="http://www.w3.org/2005/Atom" 
+      xmlns:media="http://search.yahoo.com/mrss/" 
+      xmlns:content="http://purl.org/rss/1.0/modules/content/" 
+      xmlns:dc="http://purl.org/dc/elements/1.1/" 
+      version="2.0">
+<channel>
+<title>lotz&#39;s Haskell notebooks</title>
+<link>https://lotz84.github.io/haskell-notebooks/</link>
+<atom:link href="https://lotz84.github.io/haskell-notebooks/index.xml" rel="self" type="application/rss+xml"/>
+<description>IHaskellで書いたnotebookを公開する場所</description>
+<generator>quarto-1.4.550</generator>
+<lastBuildDate>Fri, 10 Jul 2020 15:00:00 GMT</lastBuildDate>
+<item>
+  <title>高次元空間ではL1距離を使うのが良さそう</title>
+  <dc:creator>lotz </dc:creator>
+  <link>https://lotz84.github.io/haskell-notebooks/posts/2020-07-11/</link>
+  <description><![CDATA[ 
+
+
+
+
+
+<p><a href="https://www.semanticscholar.org/paper/On-the-Surprising-Behavior-of-Distance-Metrics-in-Aggarwal-Hinneburg/88fc7fc6ed73db6251967cfe40507a92008e5949">“On the Surprising Behavior of Distance Metrics in High Dimensional Spaces”</a>という論文を読んで面白かったのでまとめておきます。</p>
+<p><img src="https://latex.codecogs.com/png.latex?d">次元空間の立方体<img src="https://latex.codecogs.com/png.latex?(0,1)%5Ed">中に分布する確率変数<img src="https://latex.codecogs.com/png.latex?X_d">を考えます。例えばモノクロ画像なんかは正規化すれば今考えてる確率変数になるでしょう。今<img src="https://latex.codecogs.com/png.latex?(0,%201)">上の任意の分布<img src="https://latex.codecogs.com/png.latex?F">を考え<img src="https://latex.codecogs.com/png.latex?F%5Ed">を確率分布とする<img src="https://latex.codecogs.com/png.latex?X_d">から<img src="https://latex.codecogs.com/png.latex?n">個のサンプルが得られたとします。サンプルにおける<img src="https://latex.codecogs.com/png.latex?L_k">ノルムの最大値を<img src="https://latex.codecogs.com/png.latex?Dmax%5Ek_d">、最小値を<img src="https://latex.codecogs.com/png.latex?Dmin%5Ek_d">とすると、<img src="https://latex.codecogs.com/png.latex?F">と<img src="https://latex.codecogs.com/png.latex?k">のみに依存する定数<img src="https://latex.codecogs.com/png.latex?C_k">が存在して</p>
+<p><img src="https://latex.codecogs.com/png.latex?%0AC_k%20%5Cleq%20%5Cunderset%7Bd%20%5Crightarrow%20%5Cinfty%7D%7B%5Clim%7D%7B%5Crm%20E%7D%5Cleft%5B%5Cfrac%7BDmax%5Ek_d%20-%20Dmin%5Ek_d%7D%7Bd%5E%7B%5Cfrac%7B1%7D%7Bk%7D-%5Cfrac%7B1%7D%7B2%7D%7D%7D%5Cright%5D%20%5Cleq%20(n-1)C_k%0A"></p>
+<p>が成り立ちます。ここで<img src="https://latex.codecogs.com/png.latex?%7B%5Crm%20E%7D%5BX%5D">は<img src="https://latex.codecogs.com/png.latex?X">の期待値を表します。</p>
+<p>つまりデータの存在する次元が上がるにつれて原点に近いものと遠いものの差が変化するスピードは<img src="https://latex.codecogs.com/png.latex?d%5E%7B%5Cfrac%7B1%7D%7Bk%7D-%5Cfrac%7B1%7D%7B2%7D%7D">ぐらいになるということです。証明を読めば分かりますが、差の漸近的な振る舞いを決める<img src="https://latex.codecogs.com/png.latex?d%5E%7B%5Cfrac%7B1%7D%7Bk%7D-%5Cfrac%7B1%7D%7B2%7D%7D">の<img src="https://latex.codecogs.com/png.latex?%5Cfrac%7B1%7D%7B2%7D">は中心極限定理から出てきます。もし<img src="https://latex.codecogs.com/png.latex?k%20%5Cgeq%203">であればこれは減衰するので、どんどん近いデータと遠いデータの間に差がなくなってくるということを意味しています。これは原点を任意の注目する点に置き換えて考えれば、例えばサンプルの近傍を考えるときに次元が高くなると遠いものと近いものの区別がどんどんつかなくなっていくことを表しています。一方もし<img src="https://latex.codecogs.com/png.latex?k=2">であればこの差は一定に落ち着き、<img src="https://latex.codecogs.com/png.latex?k=1">であれば（期待通り？）大きくなってくれます。</p>
+<p>次元が高くなれば立方体の対角線の長さも大きくなるので直感的には最大値と最小値の差はどんどん大きくなっていきそうですが、同時に、すべての次元で0付近の値が出る確率や1付近の値が出る確率は次元が高くなるとどんどん小さくなるので、差の期待値がどう振る舞うかはこれらの綱引きになりそうなことは直感的には分かります。この綱引きの勝敗が距離の測り方で決まるのは面白いですね。</p>
+<p>この挙動を実際に確かめてみましょう。</p>
+<div id="cell-2" class="cell" data-execution_count="1">
+<div class="sourceCode cell-code" id="cb1" style="background: #f1f3f5;"><pre class="sourceCode haskell code-with-copy"><code class="sourceCode haskell"><span id="cb1-1"><span class="kw" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">import</span> <span class="dt" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">Control.Monad</span> (replicateM)</span>
+<span id="cb1-2"><span class="kw" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">import</span> <span class="dt" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">System.Random.MWC</span></span>
+<span id="cb1-3"></span>
+<span id="cb1-4"></span>
+<span id="cb1-5"><span class="co" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">-- | 確率変数</span></span>
+<span id="cb1-6"><span class="kw" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">type</span> <span class="dt" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">RVar</span> a <span class="ot" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">=</span> <span class="dt" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">GenIO</span> <span class="ot" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">-&gt;</span> <span class="dt" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">IO</span> a</span>
+<span id="cb1-7"></span>
+<span id="cb1-8"></span>
+<span id="cb1-9"><span class="co" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">-- | n個のリストの確率変数</span></span>
+<span id="cb1-10"><span class="ot" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">randomNs ::</span> <span class="dt" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">Int</span> <span class="ot" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">-&gt;</span> <span class="dt" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">RVar</span> a <span class="ot" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">-&gt;</span> <span class="dt" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">RVar</span> [a]</span>
+<span id="cb1-11">randomNs n x <span class="ot" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">=</span> sample n</span>
+<span id="cb1-12">  <span class="kw" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">where</span></span>
+<span id="cb1-13">    sample <span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">0</span> _ <span class="ot" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">=</span> <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">pure</span> []</span>
+<span id="cb1-14">    sample n g <span class="ot" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">=</span> <span class="kw" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">do</span></span>
+<span id="cb1-15">      a <span class="ot" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">&lt;-</span> x g</span>
+<span id="cb1-16">      as <span class="ot" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">&lt;-</span> sample (n<span class="op" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">-</span><span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">1</span>) g</span>
+<span id="cb1-17">      <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">pure</span> (a<span class="op" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">:</span>as)</span>
+<span id="cb1-18"></span>
+<span id="cb1-19"></span>
+<span id="cb1-20"><span class="co" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">-- L_kノルム</span></span>
+<span id="cb1-21"><span class="ot" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">lk ::</span> <span class="dt" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">Int</span> <span class="ot" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">-&gt;</span> [<span class="dt" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">Double</span>] <span class="ot" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">-&gt;</span> <span class="dt" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">Double</span></span>
+<span id="cb1-22">lk k xs <span class="ot" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">=</span> <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">sum</span> (<span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">map</span> (<span class="op" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">^</span>k) xs) <span class="op" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">**</span> (<span class="fl" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">1.0</span> <span class="op" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">/</span> <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">fromIntegral</span> k)</span>
+<span id="cb1-23"></span>
+<span id="cb1-24"></span>
+<span id="cb1-25"><span class="co" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">-- | Dmax^k_d - Dmin^k_d</span></span>
+<span id="cb1-26"><span class="ot" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">diameter ::</span> <span class="dt" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">Int</span> <span class="co" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">-- 直径計算のためのサンプルを生成する数</span></span>
+<span id="cb1-27">         <span class="ot" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">-&gt;</span> <span class="dt" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">Int</span> <span class="co" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">-- L_kノルムのk</span></span>
+<span id="cb1-28">         <span class="ot" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">-&gt;</span> <span class="dt" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">Int</span> <span class="co" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">-- 次元d</span></span>
+<span id="cb1-29">         <span class="ot" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">-&gt;</span> <span class="dt" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">RVar</span> <span class="dt" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">Double</span></span>
+<span id="cb1-30">diameter n k d g <span class="ot" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">=</span></span>
+<span id="cb1-31">  <span class="kw" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">let</span> xs g <span class="ot" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">=</span> replicateM d (uniformR (<span class="fl" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">0.0</span>, <span class="fl" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">1.0</span>) g)</span>
+<span id="cb1-32">   <span class="kw" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">in</span> <span class="kw" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">do</span></span>
+<span id="cb1-33">     xss <span class="ot" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">&lt;-</span> randomNs n xs g</span>
+<span id="cb1-34">     <span class="kw" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">let</span> ds <span class="ot" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">=</span> <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">map</span> (lk k) xss</span>
+<span id="cb1-35">     <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">pure</span> <span class="op" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">$</span> <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">maximum</span> ds <span class="op" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">-</span> <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">minimum</span> ds</span>
+<span id="cb1-36"></span>
+<span id="cb1-37"></span>
+<span id="cb1-38"><span class="co" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">-- | 確率変数の期待値</span></span>
+<span id="cb1-39"><span class="ot" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">expected ::</span> <span class="dt" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">Fractional</span> a</span>
+<span id="cb1-40">         <span class="ot" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">=&gt;</span> <span class="dt" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">Int</span>    <span class="co" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">-- 期待値を計算するのに用いるサンプル数</span></span>
+<span id="cb1-41">         <span class="ot" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">-&gt;</span> <span class="dt" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">RVar</span> a <span class="co" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">-- 期待値を求める確率変数</span></span>
+<span id="cb1-42">         <span class="ot" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">-&gt;</span> <span class="dt" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">RVar</span> a <span class="co" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">-- 期待値の確率変数</span></span>
+<span id="cb1-43">expected n x g <span class="ot" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">=</span> <span class="kw" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">do</span></span>
+<span id="cb1-44">  as <span class="ot" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">&lt;-</span> randomNs n x g</span>
+<span id="cb1-45">  <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">pure</span> <span class="op" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">$</span> <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">sum</span> as <span class="op" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">/</span> <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">fromIntegral</span> n</span></code></pre></div>
+</div>
+<div id="cell-3" class="cell" data-execution_count="2">
+<div class="sourceCode cell-code" id="cb2" style="background: #f1f3f5;"><pre class="sourceCode haskell code-with-copy"><code class="sourceCode haskell"><span id="cb2-1"><span class="kw" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">import</span> <span class="dt" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">Data.Traversable</span> (forM)</span>
+<span id="cb2-2"><span class="kw" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">import</span> <span class="dt" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">Graphics.Rendering.Chart.Easy</span></span>
+<span id="cb2-3"></span>
+<span id="cb2-4"><span class="ot" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">ds ::</span> [<span class="dt" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">Int</span>]</span>
+<span id="cb2-5">ds <span class="ot" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">=</span> [<span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">1</span><span class="op" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">..</span><span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">50</span>]</span>
+<span id="cb2-6"></span>
+<span id="cb2-7">withSystemRandom <span class="op" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">$</span> \gen <span class="ot" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">-&gt;</span> <span class="kw" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">do</span></span>
+<span id="cb2-8">  diff1 <span class="ot" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">&lt;-</span> forM ds <span class="op" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">$</span> \d <span class="ot" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">-&gt;</span> expected <span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">100</span> (diameter <span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">100</span> <span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">1</span> d) gen</span>
+<span id="cb2-9">  diff2 <span class="ot" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">&lt;-</span> forM ds <span class="op" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">$</span> \d <span class="ot" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">-&gt;</span> expected <span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">100</span> (diameter <span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">100</span> <span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">2</span> d) gen</span>
+<span id="cb2-10">  diff3 <span class="ot" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">&lt;-</span> forM ds <span class="op" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">$</span> \d <span class="ot" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">-&gt;</span> expected <span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">100</span> (diameter <span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">100</span> <span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">3</span> d) gen</span>
+<span id="cb2-11">  diff4 <span class="ot" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">&lt;-</span> forM ds <span class="op" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">$</span> \d <span class="ot" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">-&gt;</span> expected <span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">100</span> (diameter <span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">100</span> <span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">4</span> d) gen</span>
+<span id="cb2-12">  <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">pure</span> <span class="op" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">.</span> toRenderable <span class="op" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">$</span> <span class="kw" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">do</span></span>
+<span id="cb2-13">      plot (line <span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"k = 1"</span> [<span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">zip</span> ds diff1])</span>
+<span id="cb2-14">      plot (line <span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"k = 2"</span> [<span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">zip</span> ds diff2])</span>
+<span id="cb2-15">      plot (line <span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"k = 3"</span> [<span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">zip</span> ds diff3])</span>
+<span id="cb2-16">      plot (line <span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"k = 4"</span> [<span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">zip</span> ds diff4])</span></code></pre></div>
+<div class="cell-output cell-output-display">
+<div>
+<figure class="figure">
+<p><img src="https://lotz84.github.io/haskell-notebooks/posts/2020-07-11/index_files/figure-html/cell-3-output-1.svg" class="img-fluid figure-img"></p>
+</figure>
+</div>
+</div>
+</div>
+<p>次元を増やすにつれて<img src="https://latex.codecogs.com/png.latex?k=1">の時は最小値と最大値の差が大きくなっていきますが、<img src="https://latex.codecogs.com/png.latex?k=2">の場合は一定に落ち着き、<img src="https://latex.codecogs.com/png.latex?k=3,4">の場合は差がどんどんなくなっていき、この傾向は<img src="https://latex.codecogs.com/png.latex?k">が大きければより強いことが分かります。</p>
+<p>論文ではもう一つ面白い式が導かれています。先程の不等式は最大値と最小値の差についてでしたが、今度は比についてです。</p>
+<p><img src="https://latex.codecogs.com/png.latex?%0A%5Cunderset%7Bd%20%5Crightarrow%20%5Cinfty%7D%7B%5Clim%7D%20%7B%5Crm%20E%7D%5Cleft%5B%5Csqrt%7Bd%7D%5Cleft(%5Cfrac%7BDmax%5Ek_d%7D%7BDmin%5Ek_d%7D%20-%201%5Cright)%5Cright%5D%20=%20C%5Csqrt%7B%5Cfrac%7B1%7D%7B2k+1%7D%7D%0A"></p>
+<p>ただしこの式は<img src="https://latex.codecogs.com/png.latex?F">が一様分布でサンプルが2点である時という制約がついています。この式が示唆するのは最大値と最小値の比は<img src="https://latex.codecogs.com/png.latex?%5Cfrac%7B1%7D%7B%5Csqrt%7Bd%7D%7D">ぐらいのスピードで1に近づいていくということで、この挙動は<img src="https://latex.codecogs.com/png.latex?k">が1,2のときでも変わりません。</p>
+
+
+
+ ]]></description>
+  <guid>https://lotz84.github.io/haskell-notebooks/posts/2020-07-11/</guid>
+  <pubDate>Fri, 10 Jul 2020 15:00:00 GMT</pubDate>
+</item>
+<item>
+  <title>2点テイラー展開の定義と数値実験</title>
+  <dc:creator>lotz </dc:creator>
+  <link>https://lotz84.github.io/haskell-notebooks/posts/2020-07-09/</link>
+  <description><![CDATA[ 
+
+
+
+
+
+<p>テイラー展開は滑らかな関数の一点における値や微分の値を使ったべき級数によって元の関数を表す方法でした。</p>
+<p><img src="https://latex.codecogs.com/png.latex?%0Af(x)%20=%20f(a)%20+%20f'(a)(x%20-%20a)%20+%20%5Cfrac%7Bf''(a)%7D%7B2!%7D%5Cleft(x-a%5Cright)%5E2%20+%20%5Cfrac%7Bf'''(a)%7D%7B3!%7D%5Cleft(x-a%5Cright)%5E3%20+%20%5Ccdots%0A"></p>
+<p>これを2点以上に拡張したテイラー展開が存在していて、特に2点でテイラー展開を行うものは2点テイラー展開と呼ばれているそうです。</p>
+<p>なんで2点でテイラー展開したくなるのかというと、普通のテイラー展開だと1点における2n階までの微分値を使わないと達成できない近似精度を2点テイラー展開だと2点におけるn階までの微分値で達成できたりするそうなのですが（スゴイ！）[^1]、個人的には2点でテイラー展開することで区分的に定義された関数も近似できるのが面白いなと思いました。</p>
+<p>テイラー展開は1点の周りにおける情報しか使わないので通常近似できる範囲はその1点の近くまでです。特に関数が折れ線だったり、<a href="https://en.wikipedia.org/wiki/Rectifier_(neural_networks)">ReLU</a>のように各領域によって違う関数の組み合わせで表されている場合には領域を区分する点をまたいで近似できる範囲を拡張することができません。そこで2点テイラー展開を使えば区分する点をまたいだ2点の周りで展開することによりそれぞれの点の周りの情報を使ってテイラー展開よりも近似できる範囲を拡張することができるのです。以下の定理はこのことをより正確に表しています[^2]。</p>
+<hr>
+<p>Theorem. <img src="https://latex.codecogs.com/png.latex?f">を<img src="https://latex.codecogs.com/png.latex?%7B%5Cmathbb%20R%7D">上の以下のように表される関数とする。</p>
+<p><img src="https://latex.codecogs.com/png.latex?%0Af(x)%20=%20%5Cbegin%7Bcases%7D%20p(x)%5C%20%5C%20x%20%5Cin%20%5B0,%20%5Cinfty)%20%5C%5C%20q(x)%5C%20%5C%20x%20%5Cin%20(-%5Cinfty,%200)%20%5Cend%7Bcases%7D%0A"></p>
+<p>ここで<img src="https://latex.codecogs.com/png.latex?p,%20q">は高々<img src="https://latex.codecogs.com/png.latex?m">次の多項式とする。この時、もし<img src="https://latex.codecogs.com/png.latex?p(0)=q(0)">であるならば<img src="https://latex.codecogs.com/png.latex?f(x)">は-1, 1において2点テイラー展開可能であり、<img src="https://latex.codecogs.com/png.latex?p_%7Bf,%5C%7B-1,%201%5C%7D(n,%20n)%7D(x)">をエルミート補間多項式だとすると以下が成り立つ。</p>
+<p><img src="https://latex.codecogs.com/png.latex?%0A%5Cunderset%7Bn%20%5Crightarrow%20%5Cinfty%7D%7B%5Clim%7Dp_%7Bf,%5C%7B-1,%201%5C%7D(n,%20n)%7D(x)=f(x),%20%5Cforall%20x%20%5Cin%20%5Cleft(-%5Csqrt%202,%20%5Csqrt%202%5Cright)%0A"></p>
+<hr>
+<p>ところでまだ2点テイラー展開の定義をしていませんでした。2点テイラー展開は多項式補間の考え方を経由して定義されます。<br>
+（以下の説明は[^2]の導入部分を大いに参考にしています）</p>
+<p>十分になめらかな実数値関数<img src="https://latex.codecogs.com/png.latex?f(x)">に対して<img src="https://latex.codecogs.com/png.latex?n">個の点<img src="https://latex.codecogs.com/png.latex?X%20=%20%5C%7Bx_0,%5Cdots,x_n%5C%7D">とそれぞれの点に対応する自然数<img src="https://latex.codecogs.com/png.latex?k_i(0%5Cleq%20i%5Cleq%20n)">が与えられた時、高々<img src="https://latex.codecogs.com/png.latex?m(=k_0+%5Ccdots+k_n-1)">次の多項式<img src="https://latex.codecogs.com/png.latex?p_%7Bf,X(k_0,%5Cdots,k_n)%7D(x)">が存在して</p>
+<p><img src="https://latex.codecogs.com/png.latex?%0Ap%5E%7B(j)%7D_%7Bf,X(k_0,%5Cdots,k_n)%7D(x_i)%20=%20f%5E%7B(j)%7D(x_i),%200%5Cleq%20j%20%5Cleq%20k_i-1,%200%20%5Cleq%20i%20%5Cleq%20n%0A"></p>
+<p>を満たす時、<img src="https://latex.codecogs.com/png.latex?p_%7Bf,X(k_0,%5Cdots,k_n)%7D(x)">を<img src="https://latex.codecogs.com/png.latex?f(x)">のエルミート補間多項式と呼びます。</p>
+<p>もし<img src="https://latex.codecogs.com/png.latex?f(x)">が一点<img src="https://latex.codecogs.com/png.latex?x_0">の周りで無限回微分可能であり、ある正の実数<img src="https://latex.codecogs.com/png.latex?%5Crho">が存在して</p>
+<p><img src="https://latex.codecogs.com/png.latex?%0A%5Cunderset%7Bn%20%5Crightarrow%20%5Cinfty%7D%7B%5Clim%7D%20p_%7Bf,X(n)%7D(x)%20=%20f(x),%20%5Cforall%20x%20%5Cin%20(x_0-%5Crho,%20x_0+%5Crho)%0A"></p>
+<p>となるならば<img src="https://latex.codecogs.com/png.latex?f(x)">は同じ範囲でテイラー展開可能であることが分かります。</p>
+<p>この事実を発展させて<img src="https://latex.codecogs.com/png.latex?n">点テイラー展開は以下のように定義されます。</p>
+<hr>
+<p><img src="https://latex.codecogs.com/png.latex?f">をある区間<img src="https://latex.codecogs.com/png.latex?I">で定義された実数値関数とし、<img src="https://latex.codecogs.com/png.latex?I">に含まれる<img src="https://latex.codecogs.com/png.latex?n">個の点<img src="https://latex.codecogs.com/png.latex?X=%5C%7Bx_0,%5Cdots%20x_%7Bn-1%7D%5C%7D">で<img src="https://latex.codecogs.com/png.latex?f">が無限回微分可能であったとする。もし</p>
+<p><img src="https://latex.codecogs.com/png.latex?%0A%5Cunderset%7Bm%20%5Crightarrow%20%5Cinfty%7D%7B%5Clim%7D%20p_%7Bf,X(m,%5Cdots,m)%7D(x)%20=%20f(x),%20%5Cforall%20x%20%5Cin%20I%0A"></p>
+<p>が成り立つならば<img src="https://latex.codecogs.com/png.latex?f">は<img src="https://latex.codecogs.com/png.latex?I">において<img src="https://latex.codecogs.com/png.latex?n">点テイラー展開可能であるという。</p>
+<hr>
+<p><img src="https://latex.codecogs.com/png.latex?n">点テイラー展開の具体的な形は、エルミート補間多項式の一般公式が知られているので[^3]そちらから計算可能でしょう。特に2点テイラー展開の場合の級数の計算式は以下のようにできるとTwitterで教えてもらいました[^4]。（そもそも2点テイラー展開を知ったきっかけも、このnotebookを書こうと思ったのも島田さんのTweetに触発されてでした。感謝🙏）</p>
+<section id="数値実験" class="level2">
+<h2 class="anchored" data-anchor-id="数値実験">数値実験</h2>
+<p>比較のためにまずは通常のテイラー展開を実装してみます</p>
+<div id="cell-3" class="cell" data-execution_count="1">
+<div class="sourceCode cell-code" id="cb1" style="background: #f1f3f5;"><pre class="sourceCode haskell code-with-copy"><code class="sourceCode haskell"><span id="cb1-1"><span class="ot" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">{-# LANGUAGE RankNTypes #-}</span></span>
+<span id="cb1-2"></span>
+<span id="cb1-3"><span class="kw" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">import</span> <span class="dt" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">Data.Number.Symbolic</span></span>
+<span id="cb1-4"></span>
+<span id="cb1-5"><span class="kw" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">import</span> <span class="dt" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">Numeric.AD</span></span>
+<span id="cb1-6"><span class="kw" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">import</span> <span class="dt" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">Numeric.AD.Mode.Tower</span></span>
+<span id="cb1-7"></span>
+<span id="cb1-8"></span>
+<span id="cb1-9"><span class="co" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">-- 階乗</span></span>
+<span id="cb1-10"><span class="ot" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">fact ::</span> <span class="dt" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">Int</span> <span class="ot" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">-&gt;</span> <span class="dt" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">Int</span></span>
+<span id="cb1-11">fact n <span class="ot" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">=</span> <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">product</span> [<span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">1</span><span class="op" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">..</span>n]</span>
+<span id="cb1-12"></span>
+<span id="cb1-13"></span>
+<span id="cb1-14"><span class="co" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">-- テイラー展開</span></span>
+<span id="cb1-15"><span class="ot" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">taylorSeries ::</span> <span class="dt" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">Fractional</span> a</span>
+<span id="cb1-16">             <span class="ot" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">=&gt;</span> <span class="dt" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">Int</span>                                          <span class="co" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">-- この次数以下の級数まで展開する</span></span>
+<span id="cb1-17">             <span class="ot" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">-&gt;</span> (<span class="kw" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">forall</span> s<span class="op" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">.</span> <span class="dt" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">AD</span> s (<span class="dt" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">Tower</span> a) <span class="ot" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">-&gt;</span> <span class="dt" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">AD</span> s (<span class="dt" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">Tower</span> a)) <span class="co" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">-- テイラー展開する関数</span></span>
+<span id="cb1-18">             <span class="ot" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">-&gt;</span> a                                            <span class="co" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">-- 展開する点</span></span>
+<span id="cb1-19">             <span class="ot" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">-&gt;</span> (a <span class="ot" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">-&gt;</span> a)                                     <span class="co" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">-- 展開後の級数</span></span>
+<span id="cb1-20">taylorSeries n f a x <span class="ot" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">=</span> <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">sum</span> <span class="op" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">$</span> <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">take</span> n <span class="op" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">$</span> coefficients <span class="op" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">|*|</span> polynomials</span>
+<span id="cb1-21">  <span class="kw" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">where</span></span>
+<span id="cb1-22">  coefficients <span class="ot" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">=</span> diffs f a <span class="op" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">|/|</span> factorials      <span class="co" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">-- f(a)/0!, f'(a)/1!, f''(a)/2!, f'''(a)/3!, ...</span></span>
+<span id="cb1-23">  factorials <span class="ot" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">=</span> <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">map</span> (<span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">fromIntegral</span> <span class="op" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">.</span> fact) [<span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">0</span><span class="op" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">..</span>] <span class="co" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">-- 0!, 1!, 2!, 3!, ...</span></span>
+<span id="cb1-24">  polynomials <span class="ot" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">=</span> ((x <span class="op" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">-</span> a)<span class="op" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">^</span>) <span class="op" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">&lt;$&gt;</span> [<span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">0</span><span class="op" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">..</span>]           <span class="co" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">-- 1, x-a, (x-a)^2, (x-a)^3, ...</span></span>
+<span id="cb1-25">  (<span class="op" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">|/|</span>) <span class="ot" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">=</span> <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">zipWith</span> (<span class="op" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">/</span>)</span>
+<span id="cb1-26">  (<span class="op" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">|*|</span>) <span class="ot" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">=</span> <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">zipWith</span> (<span class="op" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">*</span>)</span>
+<span id="cb1-27"></span>
+<span id="cb1-28"></span>
+<span id="cb1-29">taylorSeries <span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">4</span> <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">exp</span> <span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">0</span> (var <span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"x"</span>)</span></code></pre></div>
+<div class="cell-output cell-output-display">
+<pre><code>1.0+x+0.5*x*x+0.16666666666666666*x*x*x</code></pre>
+</div>
+</div>
+<p>4次までの指数関数のテイラー展開をちゃんと計算できていますね</p>
+<p><img src="https://latex.codecogs.com/png.latex?%0A1%20+%20x%20+%20%5Cfrac%7Bx%5E2%7D%7B2!%7D%20+%20%5Cfrac%7Bx%5E3%7D%7B3!%7D%0A"></p>
+<p>次は2点テイラー展開を実装してみましょう</p>
+<div id="cell-5" class="cell" data-execution_count="2">
+<div class="sourceCode cell-code" id="cb3" style="background: #f1f3f5;"><pre class="sourceCode haskell code-with-copy"><code class="sourceCode haskell"><span id="cb3-1"><span class="co" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">-- 2点テイラー展開</span></span>
+<span id="cb3-2"><span class="ot" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">twoPointTaylorSeries ::</span> <span class="dt" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">Fractional</span> a</span>
+<span id="cb3-3">                     <span class="ot" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">=&gt;</span> <span class="dt" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">Int</span>                                          <span class="co" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">-- この次数以下の級数まで展開する</span></span>
+<span id="cb3-4">                     <span class="ot" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">-&gt;</span> (<span class="kw" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">forall</span> s<span class="op" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">.</span> <span class="dt" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">AD</span> s (<span class="dt" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">Tower</span> a) <span class="ot" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">-&gt;</span> <span class="dt" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">AD</span> s (<span class="dt" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">Tower</span> a)) <span class="co" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">-- テイラー展開する関数</span></span>
+<span id="cb3-5">                     <span class="ot" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">-&gt;</span> a                                            <span class="co" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">-- 展開する点1</span></span>
+<span id="cb3-6">                     <span class="ot" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">-&gt;</span> a                                            <span class="co" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">-- 展開する点2</span></span>
+<span id="cb3-7">                     <span class="ot" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">-&gt;</span> (a <span class="ot" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">-&gt;</span> a)                                     <span class="co" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">-- 展開後の級数</span></span>
+<span id="cb3-8">twoPointTaylorSeries n f a b x <span class="ot" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">=</span> seriesA <span class="op" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">+</span> seriesB</span>
+<span id="cb3-9">  <span class="kw" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">where</span></span>
+<span id="cb3-10">  seriesA <span class="ot" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">=</span> (x <span class="op" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">-</span> a) <span class="op" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">^</span> n <span class="op" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">*</span> <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">sum</span> (<span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">take</span> n <span class="op" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">$</span> coefB <span class="op" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">|*|</span> polyB)</span>
+<span id="cb3-11">  seriesB <span class="ot" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">=</span> (x <span class="op" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">-</span> b) <span class="op" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">^</span> n <span class="op" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">*</span> <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">sum</span> (<span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">take</span> n <span class="op" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">$</span> coefA <span class="op" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">|*|</span> polyA)</span>
+<span id="cb3-12">  fa x <span class="ot" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">=</span> f x <span class="op" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">/</span> (x <span class="op" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">-</span> auto b)<span class="op" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">^</span>n        <span class="co" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">-- A(x)</span></span>
+<span id="cb3-13">  fb x <span class="ot" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">=</span> f x <span class="op" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">/</span> (x <span class="op" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">-</span> auto a)<span class="op" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">^</span>n        <span class="co" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">-- B(x)</span></span>
+<span id="cb3-14">  coefA <span class="ot" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">=</span> diffs fa a <span class="op" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">|/|</span> factorials  <span class="co" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">-- A(a)/0!, A'(a)/1!, A''(a)/2!, A'''(a)/3!, ...</span></span>
+<span id="cb3-15">  coefB <span class="ot" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">=</span> diffs fb b <span class="op" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">|/|</span> factorials  <span class="co" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">-- B(b)/0!, B'(b)/1!, B''(b)/2!, B'''(b)/3!, ...</span></span>
+<span id="cb3-16">  polyA <span class="ot" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">=</span> ((x <span class="op" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">-</span> a)<span class="op" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">^</span>) <span class="op" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">&lt;$&gt;</span> [<span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">0</span><span class="op" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">..</span>]       <span class="co" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">-- 1, x-a, (x-a)^2, (x-a)^3, ...</span></span>
+<span id="cb3-17">  polyB <span class="ot" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">=</span> ((x <span class="op" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">-</span> b)<span class="op" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">^</span>) <span class="op" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">&lt;$&gt;</span> [<span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">0</span><span class="op" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">..</span>]       <span class="co" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">-- 1, x-b, (x-b)^2, (x-b)^3, ...</span></span>
+<span id="cb3-18">  factorials <span class="ot" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">=</span> <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">map</span> (<span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">fromIntegral</span> <span class="op" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">.</span> fact) [<span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">0</span><span class="op" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">..</span>] <span class="co" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">-- 0!, 1!, 2!, 3!, ...</span></span>
+<span id="cb3-19">  (<span class="op" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">|/|</span>) <span class="ot" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">=</span> <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">zipWith</span> (<span class="op" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">/</span>)</span>
+<span id="cb3-20">  (<span class="op" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">|*|</span>) <span class="ot" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">=</span> <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">zipWith</span> (<span class="op" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">*</span>)</span>
+<span id="cb3-21"></span>
+<span id="cb3-22"></span>
+<span id="cb3-23">twoPointTaylorSeries <span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">2</span> <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">id</span> (<span class="op" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">-</span><span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">1</span>) <span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">1</span> (var <span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"x"</span>) <span class="co" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">-- id ≡ f(x) = x</span></span></code></pre></div>
+<div class="cell-output cell-output-display">
+<pre><code>0.25*(1.0+x)*(1.0+x)+(-0.25)*(-1.0+x)*(-1.0+x)</code></pre>
+</div>
+</div>
+<p>式が複雑になるので<img src="https://latex.codecogs.com/png.latex?f(x)=x">という単純な関数を展開して確かめてみました。式を整理するとちゃんと正しい答えになってるのが分かります。</p>
+<p>それでは実際に関数を近似してみましょう</p>
+<p>まずは</p>
+<p><img src="https://latex.codecogs.com/png.latex?%0A%5Cfrac%7B1%7D%7B1+x%5E2%7D%0A"></p>
+<p>という関数を展開してみましょう</p>
+<div id="cell-7" class="cell" data-execution_count="3">
+<div class="sourceCode cell-code" id="cb5" style="background: #f1f3f5;"><pre class="sourceCode haskell code-with-copy"><code class="sourceCode haskell"><span id="cb5-1"><span class="kw" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">import</span> <span class="dt" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">Graphics.Rendering.Chart.Easy</span></span>
+<span id="cb5-2"></span>
+<span id="cb5-3"><span class="ot" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">cauchy ::</span> <span class="dt" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">Floating</span> a <span class="ot" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">=&gt;</span> a <span class="ot" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">-&gt;</span> a</span>
+<span id="cb5-4">cauchy x <span class="ot" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">=</span> <span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">1</span> <span class="op" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">/</span> (<span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">1</span> <span class="op" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">+</span> x<span class="op" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">^</span><span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">2</span>)</span>
+<span id="cb5-5"></span>
+<span id="cb5-6"><span class="ot" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">domain ::</span> [<span class="dt" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">Double</span>]</span>
+<span id="cb5-7">domain <span class="ot" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">=</span> <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">map</span> (\n <span class="ot" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">-&gt;</span> <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">fromIntegral</span> n <span class="op" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">/</span> <span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">100</span>) [<span class="op" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">-</span><span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">100</span><span class="op" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">..</span><span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">100</span>]</span>
+<span id="cb5-8"></span>
+<span id="cb5-9">toRenderable <span class="op" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">$</span> <span class="kw" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">do</span></span>
+<span id="cb5-10">    plot (line <span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"cauchy"</span>    [<span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">flip</span> <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">map</span> domain <span class="op" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">$</span> \x <span class="ot" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">-&gt;</span> (x, cauchy x)])</span>
+<span id="cb5-11">    plot (line <span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"one point"</span> [<span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">flip</span> <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">map</span> domain <span class="op" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">$</span> \x <span class="ot" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">-&gt;</span> (x, taylorSeries <span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">5</span> cauchy <span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">0</span> x)])</span>
+<span id="cb5-12">    plot (line <span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"two point"</span> [<span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">flip</span> <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">map</span> domain <span class="op" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">$</span> \x <span class="ot" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">-&gt;</span> (x, twoPointTaylorSeries <span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">5</span> cauchy (<span class="op" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">-</span><span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">1</span>) <span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">1</span> x)])</span></code></pre></div>
+<div class="cell-output cell-output-display">
+<div>
+<figure class="figure">
+<p><img src="https://lotz84.github.io/haskell-notebooks/posts/2020-07-09/index_files/figure-html/cell-4-output-1.svg" class="img-fluid figure-img"></p>
+</figure>
+</div>
+</div>
+</div>
+<p>青線が元の関数、緑線が<img src="https://latex.codecogs.com/png.latex?0">周りでの5次までのテイラー展開、赤線が<img src="https://latex.codecogs.com/png.latex?-1,%201">周りでの5次までの2点テイラー展開です。同じ次数までの展開ですが2点テイラー展開のほうがより高い精度で近似できているのが分かります</p>
+<p>次に区分的に定義された関数であるReLUを展開してみましょう</p>
+<div id="cell-9" class="cell" data-execution_count="4">
+<div class="sourceCode cell-code" id="cb6" style="background: #f1f3f5;"><pre class="sourceCode haskell code-with-copy"><code class="sourceCode haskell"><span id="cb6-1"><span class="ot" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">relu ::</span> (<span class="dt" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">Ord</span> a, <span class="dt" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">Floating</span> a) <span class="ot" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">=&gt;</span> a <span class="ot" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">-&gt;</span> a</span>
+<span id="cb6-2">relu <span class="ot" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">=</span> <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">max</span> <span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">0</span></span>
+<span id="cb6-3"></span>
+<span id="cb6-4">toRenderable <span class="op" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">$</span> <span class="kw" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">do</span></span>
+<span id="cb6-5">    plot (line <span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"ReLU"</span>      [<span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">flip</span> <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">map</span> domain <span class="op" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">$</span> \x <span class="ot" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">-&gt;</span> (x, relu x)])</span>
+<span id="cb6-6">    plot (line <span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"one point"</span> [<span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">flip</span> <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">map</span> domain <span class="op" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">$</span> \x <span class="ot" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">-&gt;</span> (x, taylorSeries <span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">5</span> relu <span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">1</span> x)])</span>
+<span id="cb6-7">    plot (line <span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"two point"</span> [<span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">flip</span> <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">map</span> domain <span class="op" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">$</span> \x <span class="ot" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">-&gt;</span> (x, twoPointTaylorSeries <span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">5</span> relu (<span class="op" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">-</span><span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">1</span>) <span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">1</span> x)])</span></code></pre></div>
+<div class="cell-output cell-output-display">
+<div>
+<figure class="figure">
+<p><img src="https://lotz84.github.io/haskell-notebooks/posts/2020-07-09/index_files/figure-html/cell-5-output-1.svg" class="img-fluid figure-img"></p>
+</figure>
+</div>
+</div>
+</div>
+<p>テイラー展開は<img src="https://latex.codecogs.com/png.latex?1">の周りで展開していますがやはり0以下で関数が変わっていることには対応できていません。一方で2点テイラー展開は<img src="https://latex.codecogs.com/png.latex?1">の周りに加えて<img src="https://latex.codecogs.com/png.latex?-1">の周りの情報もつかえているのでReLUの形をより正確に近似できているのが分かります。</p>
+</section>
+<section id="参考文献" class="level2">
+<h2 class="anchored" data-anchor-id="参考文献">参考文献</h2>
+<ul>
+<li>[1] Estes, R. H., and E. R. Lancaster. “Two-point Taylor series expansions.” (1966).</li>
+<li>[2] Kitahara, Kazuaki, Taizo Chiyonobu, and Hirokazu Tsukamoto. “A note on two point Taylor expansion.” International Journal of Pure and Applied Mathematics 75.3 (2012): 327-338.</li>
+<li>[3] 鈴木 実, “エルミート補間の一般公式（Generalized Hermite interpolation）” <a href="http://totoha.web.fc2.com/Hermite_interpolation.pdf" class="uri">http://totoha.web.fc2.com/Hermite_interpolation.pdf</a></li>
+<li>[4] <a href="https://twitter.com/KS_Mathematics/status/1279807348391854080" class="uri">https://twitter.com/KS_Mathematics/status/1279807348391854080</a></li>
+</ul>
+
+
+</section>
+
+ ]]></description>
+  <guid>https://lotz84.github.io/haskell-notebooks/posts/2020-07-09/</guid>
+  <pubDate>Wed, 08 Jul 2020 15:00:00 GMT</pubDate>
+</item>
+<item>
+  <title>Haskellの非同期処理を使った入出力の重ね合わせ</title>
+  <dc:creator>lotz </dc:creator>
+  <link>https://lotz84.github.io/haskell-notebooks/posts/2020-06-29/</link>
+  <description><![CDATA[ 
+
+
+
+
+
+<p>これは<a href="https://jclub-heyhey.connpass.com/event/180807/">『Haskellによる並列・並行プログラミング』リモート輪講 #10</a>の発表資料です。</p>
+<p>Haskellの非同期処理を使って並行に入出力を伴う処理を行うプログラムを書く方法について見ていきます。まず、複数のWebページを並行にダウンロードするようなタスクを考えます</p>
+<div id="cell-2" class="cell" data-execution_count="1">
+<div class="sourceCode cell-code" id="cb1" style="background: #f1f3f5;"><pre class="sourceCode haskell code-with-copy"><code class="sourceCode haskell"><span id="cb1-1"><span class="co" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">-- https://github.com/simonmar/parconc-examples/blob/master/geturls1.hs</span></span>
+<span id="cb1-2"></span>
+<span id="cb1-3"><span class="kw" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">import</span> <span class="dt" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">Control.Concurrent</span></span>
+<span id="cb1-4"><span class="kw" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">import</span> <span class="dt" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">Data.ByteString.Char8</span> <span class="kw" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">as</span> <span class="dt" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">B</span></span>
+<span id="cb1-5"><span class="kw" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">import</span> <span class="dt" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">System.Random</span></span>
+<span id="cb1-6"></span>
+<span id="cb1-7"><span class="ot" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">getURL ::</span> <span class="dt" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">String</span> <span class="ot" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">-&gt;</span> <span class="dt" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">IO</span> <span class="dt" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">ByteString</span></span>
+<span id="cb1-8">getURL url <span class="ot" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">=</span> <span class="kw" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">do</span></span>
+<span id="cb1-9">  delay <span class="ot" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">&lt;-</span> randomRIO (<span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">500000</span>, <span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">1500000</span>) <span class="co" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">-- URLのコンテンツを取得する時間ということにする</span></span>
+<span id="cb1-10">  threadDelay delay</span>
+<span id="cb1-11">  <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">pure</span> (B.pack url)</span>
+<span id="cb1-12"></span>
+<span id="cb1-13"><span class="ot" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">example1 ::</span> <span class="dt" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">IO</span> ()</span>
+<span id="cb1-14">example1 <span class="ot" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">=</span> <span class="kw" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">do</span></span>
+<span id="cb1-15">  m1 <span class="ot" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">&lt;-</span> newEmptyMVar</span>
+<span id="cb1-16">  m2 <span class="ot" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">&lt;-</span> newEmptyMVar</span>
+<span id="cb1-17">  </span>
+<span id="cb1-18">  forkIO <span class="op" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">$</span> <span class="kw" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">do</span></span>
+<span id="cb1-19">    r <span class="ot" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">&lt;-</span> getURL <span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"https://en.wikipedia.org/wiki/Shovel"</span></span>
+<span id="cb1-20">    putMVar m1 r</span>
+<span id="cb1-21"></span>
+<span id="cb1-22">  forkIO <span class="op" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">$</span> <span class="kw" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">do</span></span>
+<span id="cb1-23">    r <span class="ot" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">&lt;-</span> getURL <span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"https://en.wikipedia.org/wiki/Spade"</span></span>
+<span id="cb1-24">    putMVar m2 r</span>
+<span id="cb1-25"></span>
+<span id="cb1-26">  r1 <span class="ot" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">&lt;-</span> takeMVar m1</span>
+<span id="cb1-27">  r2 <span class="ot" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">&lt;-</span> takeMVar m2</span>
+<span id="cb1-28">  <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">print</span> (B.length r1, B.length r2)</span>
+<span id="cb1-29"></span></code></pre></div>
+</div>
+<ul>
+<li><code>newEmptyMVar</code>で結果を受け取る箱を作る</li>
+<li>非同期に取得処理を行い、結果を<code>MVar</code>に詰める</li>
+<li><code>MVar</code>に結果が入るのを待つ</li>
+</ul>
+<p>という共通する実装のパターンが見え隠れしているので共通化してみましょう</p>
+<div id="cell-4" class="cell" data-execution_count="2">
+<div class="sourceCode cell-code" id="cb2" style="background: #f1f3f5;"><pre class="sourceCode haskell code-with-copy"><code class="sourceCode haskell"><span id="cb2-1"><span class="co" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">-- https://github.com/simonmar/parconc-examples/blob/master/geturls2.hs</span></span>
+<span id="cb2-2"></span>
+<span id="cb2-3"><span class="kw" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">newtype</span> <span class="dt" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">Async</span> a <span class="ot" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">=</span> <span class="dt" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">Async</span> (<span class="dt" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">MVar</span> a)</span>
+<span id="cb2-4"></span>
+<span id="cb2-5"><span class="ot" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">async ::</span> <span class="dt" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">IO</span> a <span class="ot" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">-&gt;</span> <span class="dt" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">IO</span> (<span class="dt" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">Async</span> a)</span>
+<span id="cb2-6">async action <span class="ot" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">=</span> <span class="kw" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">do</span></span>
+<span id="cb2-7">  var <span class="ot" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">&lt;-</span> newEmptyMVar</span>
+<span id="cb2-8">  forkIO (action <span class="op" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">&gt;&gt;=</span> putMVar var)</span>
+<span id="cb2-9">  <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">pure</span> (<span class="dt" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">Async</span> var)</span>
+<span id="cb2-10"></span>
+<span id="cb2-11"><span class="ot" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">wait ::</span> <span class="dt" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">Async</span> a <span class="ot" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">-&gt;</span> <span class="dt" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">IO</span> a</span>
+<span id="cb2-12">wait (<span class="dt" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">Async</span> var) <span class="ot" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">=</span> readMVar var</span></code></pre></div>
+</div>
+<p>意図しないデッドロックを防ぐために <code>wait</code> では <code>takeMVar</code> ではなく <code>readMVar</code> を使っています</p>
+<p>これを使えば <code>example1</code> を以下のように書き換えることができます</p>
+<div id="cell-6" class="cell" data-execution_count="3">
+<div class="sourceCode cell-code" id="cb3" style="background: #f1f3f5;"><pre class="sourceCode haskell code-with-copy"><code class="sourceCode haskell"><span id="cb3-1"><span class="co" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">-- https://github.com/simonmar/parconc-examples/blob/master/geturls2.hs</span></span>
+<span id="cb3-2"></span>
+<span id="cb3-3"><span class="ot" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">example2 ::</span> <span class="dt" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">IO</span> ()</span>
+<span id="cb3-4">example2 <span class="ot" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">=</span> <span class="kw" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">do</span></span>
+<span id="cb3-5">  a1 <span class="ot" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">&lt;-</span> async (getURL <span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"https://en.wikipedia.org/wiki/Shovel"</span>)</span>
+<span id="cb3-6">  a2 <span class="ot" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">&lt;-</span> async (getURL <span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"https://en.wikipedia.org/wiki/Spade"</span>)</span>
+<span id="cb3-7">  r1 <span class="ot" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">&lt;-</span> wait a1</span>
+<span id="cb3-8">  r2 <span class="ot" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">&lt;-</span> wait a2</span>
+<span id="cb3-9">  <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">print</span> (B.length r1, B.length r2)</span>
+<span id="cb3-10"></span>
+<span id="cb3-11">example2</span></code></pre></div>
+<div class="cell-output cell-output-display">
+<pre><code>(36,35)</code></pre>
+</div>
+</div>
+<p>モナディックなコンビネータを使って更に簡潔に書くことも可能です</p>
+<div id="cell-8" class="cell" data-execution_count="4">
+<div class="sourceCode cell-code" id="cb5" style="background: #f1f3f5;"><pre class="sourceCode haskell code-with-copy"><code class="sourceCode haskell"><span id="cb5-1"><span class="co" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">-- https://github.com/simonmar/parconc-examples/blob/master/geturls3.hs</span></span>
+<span id="cb5-2"></span>
+<span id="cb5-3">sites <span class="ot" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">=</span></span>
+<span id="cb5-4">  [ <span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"http://www.google.com"</span></span>
+<span id="cb5-5">  , <span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"http://www.bing.com"</span></span>
+<span id="cb5-6">  , <span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"http://www.yahoo.com"</span></span>
+<span id="cb5-7">  , <span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"http://www.wikipedia.com/wiki/Spade"</span></span>
+<span id="cb5-8">  , <span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"http://www.wikipedia.com/wiki/Shovel"</span></span>
+<span id="cb5-9">  ]</span>
+<span id="cb5-10"></span>
+<span id="cb5-11"><span class="ot" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">example3 ::</span> <span class="dt" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">IO</span> ()</span>
+<span id="cb5-12">example3 <span class="ot" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">=</span> <span class="kw" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">do</span></span>
+<span id="cb5-13">  as <span class="ot" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">&lt;-</span> <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">mapM</span> (async <span class="op" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">.</span> getURL) sites</span>
+<span id="cb5-14">  result <span class="ot" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">&lt;-</span> <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">mapM</span> wait as</span>
+<span id="cb5-15">  <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">print</span> <span class="op" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">$</span> <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">fmap</span> B.length result</span>
+<span id="cb5-16"></span>
+<span id="cb5-17">example3</span></code></pre></div>
+<div class="cell-output cell-output-display">
+<pre><code>[21,19,20,35,36]</code></pre>
+</div>
+</div>
+<section id="asyncでのエラー処理" class="level2">
+<h2 class="anchored" data-anchor-id="asyncでのエラー処理">Asyncでのエラー処理</h2>
+<p><code>getURL</code> の中でエラーが起こった場合の挙動を見てみましょう</p>
+<div id="cell-10" class="cell" data-execution_count="5">
+<div class="sourceCode cell-code" id="cb7" style="background: #f1f3f5;"><pre class="sourceCode haskell code-with-copy"><code class="sourceCode haskell"><span id="cb7-1"><span class="kw" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">import</span> <span class="dt" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">Control.Exception</span></span>
+<span id="cb7-2"></span>
+<span id="cb7-3"><span class="ot" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">getURL' ::</span> <span class="dt" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">String</span> <span class="ot" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">-&gt;</span> <span class="dt" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">IO</span> <span class="dt" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">ByteString</span></span>
+<span id="cb7-4">getURL' url <span class="ot" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">=</span> <span class="kw" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">do</span></span>
+<span id="cb7-5">  throwIO (<span class="dt" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">ErrorCall</span> <span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"oops!"</span>)</span>
+<span id="cb7-6">  <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">pure</span> (B.pack url)</span>
+<span id="cb7-7"></span>
+<span id="cb7-8"><span class="ot" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">example4 ::</span> <span class="dt" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">IO</span> ()</span>
+<span id="cb7-9">example4 <span class="ot" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">=</span> <span class="kw" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">do</span></span>
+<span id="cb7-10">  as <span class="ot" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">&lt;-</span> <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">mapM</span> (async <span class="op" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">.</span> getURL') sites</span>
+<span id="cb7-11">  result <span class="ot" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">&lt;-</span> <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">mapM</span> wait as</span>
+<span id="cb7-12">  <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">print</span> <span class="op" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">$</span> <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">fmap</span> B.length result</span>
+<span id="cb7-13"></span>
+<span id="cb7-14">example4</span></code></pre></div>
+<div class="cell-output cell-output-error">
+<pre><code>: </code></pre>
+</div>
+</div>
+<p><code>getURL'</code> では <code>async</code> の中で <code>putMVar</code> が実行される前に例外が投げられてしまうので <code>wait</code> における <code>readMVar</code> が永遠にスレッドをブロックしてしまいます</p>
+<p>これを安全な挙動に変えるために <code>Async</code> 周りの実装を修正してみしましょう</p>
+<div id="cell-12" class="cell" data-execution_count="6">
+<div class="sourceCode cell-code" id="cb9" style="background: #f1f3f5;"><pre class="sourceCode haskell code-with-copy"><code class="sourceCode haskell"><span id="cb9-1"><span class="co" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">-- https://github.com/simonmar/parconc-examples/blob/master/geturls4.hs</span></span>
+<span id="cb9-2"></span>
+<span id="cb9-3"><span class="kw" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">newtype</span> <span class="dt" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">Async</span> a <span class="ot" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">=</span> <span class="dt" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">Async</span> (<span class="dt" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">MVar</span> (<span class="dt" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">Either</span> <span class="dt" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">SomeException</span> a))</span>
+<span id="cb9-4"></span>
+<span id="cb9-5"><span class="ot" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">async ::</span> <span class="dt" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">IO</span> a <span class="ot" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">-&gt;</span> <span class="dt" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">IO</span> (<span class="dt" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">Async</span> a)</span>
+<span id="cb9-6">async action <span class="ot" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">=</span> <span class="kw" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">do</span></span>
+<span id="cb9-7">  var <span class="ot" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">&lt;-</span> newEmptyMVar</span>
+<span id="cb9-8">  forkIO (try action <span class="op" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">&gt;&gt;=</span> putMVar var)</span>
+<span id="cb9-9">  <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">pure</span> (<span class="dt" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">Async</span> var)</span>
+<span id="cb9-10"></span>
+<span id="cb9-11"><span class="ot" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">waitCatch ::</span> <span class="dt" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">Async</span> a <span class="ot" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">-&gt;</span> <span class="dt" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">IO</span> (<span class="dt" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">Either</span> <span class="dt" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">SomeException</span> a)</span>
+<span id="cb9-12">waitCatch (<span class="dt" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">Async</span> var) <span class="ot" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">=</span> readMVar var</span>
+<span id="cb9-13"></span>
+<span id="cb9-14"><span class="ot" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">wait ::</span> <span class="dt" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">Async</span> a <span class="ot" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">-&gt;</span> <span class="dt" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">IO</span> a</span>
+<span id="cb9-15">wait a <span class="ot" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">=</span> <span class="kw" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">do</span></span>
+<span id="cb9-16">  r <span class="ot" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">&lt;-</span> waitCatch a</span>
+<span id="cb9-17">  <span class="kw" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">case</span> r <span class="kw" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">of</span></span>
+<span id="cb9-18">    <span class="dt" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">Left</span> e  <span class="ot" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">-&gt;</span> throwIO e</span>
+<span id="cb9-19">    <span class="dt" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">Right</span> a <span class="ot" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">-&gt;</span> <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">pure</span> a</span></code></pre></div>
+</div>
+<p><code>async</code> と <code>wait</code> は以前のものと同じ型ですが、例外を適切に伝搬する仕組みを備えています</p>
+<div id="cell-14" class="cell" data-execution_count="7">
+<div class="sourceCode cell-code" id="cb10" style="background: #f1f3f5;"><pre class="sourceCode haskell code-with-copy"><code class="sourceCode haskell"><span id="cb10-1"><span class="ot" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">example5 ::</span> <span class="dt" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">IO</span> ()</span>
+<span id="cb10-2">example5 <span class="ot" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">=</span> <span class="kw" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">do</span></span>
+<span id="cb10-3">  as <span class="ot" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">&lt;-</span> <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">mapM</span> (async <span class="op" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">.</span> getURL') sites</span>
+<span id="cb10-4">  result <span class="ot" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">&lt;-</span> <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">mapM</span> wait as</span>
+<span id="cb10-5">  <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">print</span> <span class="op" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">$</span> <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">fmap</span> B.length result</span>
+<span id="cb10-6"></span>
+<span id="cb10-7">example5</span></code></pre></div>
+<div class="cell-output cell-output-error">
+<pre><code>: </code></pre>
+</div>
+</div>
+<p>最初に非同期処理が例外を投げた時点でプログラム全体が停止しているのが分かります</p>
+</section>
+<section id="非同期処理の合流" class="level2">
+<h2 class="anchored" data-anchor-id="非同期処理の合流">非同期処理の合流</h2>
+<p>ここでは並行に実行している非同期処理のどれか一つでも結果を返した時点で何らかの処理を行いたいような場合について見ていきます。</p>
+<p>以下の例は並行に複数のWebサイトをダウンロードして</p>
+<ul>
+<li>最初にダウンロードが完了したWebサイトの情報を表示する</li>
+<li>残りのダウンロードが完了するのを待つ</li>
+</ul>
+<p>という挙動を実装しています。</p>
+<div id="cell-17" class="cell" data-execution_count="8">
+<div class="sourceCode cell-code" id="cb12" style="background: #f1f3f5;"><pre class="sourceCode haskell code-with-copy"><code class="sourceCode haskell"><span id="cb12-1"><span class="co" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">-- https://github.com/simonmar/parconc-examples/blob/master/geturls5.hs</span></span>
+<span id="cb12-2"></span>
+<span id="cb12-3"><span class="kw" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">import</span> <span class="dt" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">Control.Monad</span></span>
+<span id="cb12-4"></span>
+<span id="cb12-5"><span class="ot" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">example6 ::</span> <span class="dt" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">IO</span> ()</span>
+<span id="cb12-6">example6 <span class="ot" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">=</span> <span class="kw" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">do</span></span>
+<span id="cb12-7">  m <span class="ot" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">&lt;-</span> newEmptyMVar</span>
+<span id="cb12-8">  <span class="kw" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">let</span> download url <span class="ot" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">=</span> <span class="kw" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">do</span></span>
+<span id="cb12-9">        r <span class="ot" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">&lt;-</span> getURL url</span>
+<span id="cb12-10">        putMVar m (url, r)</span>
+<span id="cb12-11"></span>
+<span id="cb12-12">  <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">mapM_</span> (forkIO <span class="op" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">.</span> download) sites</span>
+<span id="cb12-13">  </span>
+<span id="cb12-14">  (url, r) <span class="ot" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">&lt;-</span> takeMVar m</span>
+<span id="cb12-15">  <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">print</span> <span class="op" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">$</span> url <span class="op" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">++</span> <span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">": "</span> <span class="op" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">++</span> <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">show</span> (B.length r)</span>
+<span id="cb12-16">  replicateM_ <span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">4</span> (takeMVar m)</span>
+<span id="cb12-17"></span>
+<span id="cb12-18"><span class="co" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">-- 実行するたびに結果が変わる</span></span>
+<span id="cb12-19">example6</span></code></pre></div>
+<div class="cell-output cell-output-display">
+<pre><code>"http://www.wikipedia.com/wiki/Shovel: 36"</code></pre>
+</div>
+</div>
+<p>これを明示的に <code>MVar</code> を用いずに <code>Async</code> を使って実装する事を考えましょう。</p>
+<p>以下の <code>waitEither</code> は2つの <code>Async</code> を受け取って最初に完了した値を <code>IO</code> で返す関数です。</p>
+<div id="cell-19" class="cell" data-execution_count="9">
+<div class="sourceCode cell-code" id="cb14" style="background: #f1f3f5;"><pre class="sourceCode haskell code-with-copy"><code class="sourceCode haskell"><span id="cb14-1"><span class="ot" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">waitEither ::</span> <span class="dt" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">Async</span> a <span class="ot" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">-&gt;</span> <span class="dt" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">Async</span> b <span class="ot" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">-&gt;</span> <span class="dt" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">IO</span> (<span class="dt" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">Either</span> a b)</span>
+<span id="cb14-2">waitEither a b <span class="ot" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">=</span> <span class="kw" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">do</span></span>
+<span id="cb14-3">  m <span class="ot" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">&lt;-</span> newEmptyMVar</span>
+<span id="cb14-4">  forkIO <span class="op" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">$</span> try (<span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">fmap</span> <span class="dt" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">Left</span>  (wait a)) <span class="op" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">&gt;&gt;=</span> putMVar m</span>
+<span id="cb14-5">  forkIO <span class="op" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">$</span> try (<span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">fmap</span> <span class="dt" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">Right</span> (wait b)) <span class="op" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">&gt;&gt;=</span> putMVar m</span>
+<span id="cb14-6">  wait (<span class="dt" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">Async</span> m)</span></code></pre></div>
+</div>
+<p>この仕組は複数の <code>Async</code> のリストにも拡張することができます</p>
+<div id="cell-21" class="cell" data-execution_count="10">
+<div class="sourceCode cell-code" id="cb15" style="background: #f1f3f5;"><pre class="sourceCode haskell code-with-copy"><code class="sourceCode haskell"><span id="cb15-1"><span class="ot" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">waitAny ::</span> [<span class="dt" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">Async</span> a] <span class="ot" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">-&gt;</span> <span class="dt" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">IO</span> a</span>
+<span id="cb15-2">waitAny as <span class="ot" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">=</span> <span class="kw" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">do</span></span>
+<span id="cb15-3">  m <span class="ot" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">&lt;-</span> newEmptyMVar</span>
+<span id="cb15-4">  <span class="kw" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">let</span> forkwait a <span class="ot" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">=</span> forkIO <span class="op" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">$</span> try (wait a) <span class="op" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">&gt;&gt;=</span> putMVar m</span>
+<span id="cb15-5">  <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">mapM_</span> forkwait as</span>
+<span id="cb15-6">  wait (<span class="dt" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">Async</span> m)</span>
+<span id="cb15-7"></span>
+<span id="cb15-8"></span>
+<span id="cb15-9"><span class="co" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">-- 勉強会中に逆に全てのAsyncを待つようなコンビネータが作れるか？という質問があったので実装してみた例</span></span>
+<span id="cb15-10"><span class="ot" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">waitAll ::</span> [<span class="dt" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">Async</span> a] <span class="ot" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">-&gt;</span> <span class="dt" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">IO</span> [a]</span>
+<span id="cb15-11">waitAll <span class="ot" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">=</span> <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">mapM</span> wait</span></code></pre></div>
+</div>
+<p>以上の実装を使って <code>example6</code> は明示的に <code>MVar</code> を使わない形で書き換えることができます。</p>
+<div id="cell-23" class="cell" data-execution_count="11">
+<div class="sourceCode cell-code" id="cb16" style="background: #f1f3f5;"><pre class="sourceCode haskell code-with-copy"><code class="sourceCode haskell"><span id="cb16-1"><span class="co" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">-- https://github.com/simonmar/parconc-examples/blob/master/geturls6.hs</span></span>
+<span id="cb16-2"></span>
+<span id="cb16-3"><span class="ot" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">example7 ::</span> <span class="dt" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">IO</span> ()</span>
+<span id="cb16-4">example7 <span class="ot" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">=</span> <span class="kw" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">do</span></span>
+<span id="cb16-5">  <span class="kw" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">let</span> download url <span class="ot" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">=</span> <span class="kw" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">do</span></span>
+<span id="cb16-6">        r <span class="ot" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">&lt;-</span> getURL url</span>
+<span id="cb16-7">        <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">pure</span> (url, r)</span>
+<span id="cb16-8"></span>
+<span id="cb16-9">  as <span class="ot" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">&lt;-</span> <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">mapM</span> (async <span class="op" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">.</span> download) sites</span>
+<span id="cb16-10">  </span>
+<span id="cb16-11">  (url, r) <span class="ot" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">&lt;-</span> waitAny as</span>
+<span id="cb16-12">  </span>
+<span id="cb16-13">  <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">print</span> <span class="op" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">$</span> url <span class="op" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">++</span> <span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">": "</span> <span class="op" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">++</span> <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">show</span> (B.length r)</span>
+<span id="cb16-14">  <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">mapM_</span> wait as</span>
+<span id="cb16-15"></span>
+<span id="cb16-16">example7</span></code></pre></div>
+<div class="cell-output cell-output-display">
+<pre><code>"http://www.wikipedia.com/wiki/Spade: 35"</code></pre>
+</div>
+</div>
+
+
+</section>
+
+ ]]></description>
+  <guid>https://lotz84.github.io/haskell-notebooks/posts/2020-06-29/</guid>
+  <pubDate>Sun, 28 Jun 2020 15:00:00 GMT</pubDate>
+</item>
+<item>
+  <title>GHCi の :sprint が便利</title>
+  <dc:creator>lotz </dc:creator>
+  <link>https://lotz84.github.io/haskell-notebooks/posts/2020-04-12/</link>
+  <description><![CDATA[ 
+
+
+
+
+
+<p>これは<a href="https://eigenspace.connpass.com/event/172164/">『Haskellによる並列・並行プログラミング』リモート輪講 #1</a>で学んだことのメモです。</p>
+<p><a href="https://downloads.haskell.org/~ghc/latest/docs/html/users_guide/ghci.html#ghci-cmd-:sprint"><code>:sprint</code></a>は変数の評価を”行わずに”その内容を表示する機能。これを使えばサンクのまま詰まれていてまだ評価されていない部分も確認することができる</p>
+<div id="cell-2" class="cell" data-execution_count="1">
+<div class="sourceCode cell-code" id="cb1" style="background: #f1f3f5;"><pre class="sourceCode haskell code-with-copy"><code class="sourceCode haskell"><span id="cb1-1"><span class="kw" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">let</span> x <span class="ot" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">=</span> <span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">1</span> <span class="op" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">+</span> <span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">2</span><span class="ot" style="color: #003B4F;
+background-color: null;
+font-style: inherit;"> ::</span> <span class="dt" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">Int</span></span>
+<span id="cb1-2"></span>
+<span id="cb1-3"><span class="op" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">:</span>sprint x</span></code></pre></div>
+<div class="cell-output cell-output-display">
+<style>/* Styles used for the Hoogle display in the pager */
+.hoogle-doc {
+display: block;
+padding-bottom: 1.3em;
+padding-left: 0.4em;
+}
+.hoogle-code {
+display: block;
+font-family: monospace;
+white-space: pre;
+}
+.hoogle-text {
+display: block;
+}
+.hoogle-name {
+color: green;
+font-weight: bold;
+}
+.hoogle-head {
+font-weight: bold;
+}
+.hoogle-sub {
+display: block;
+margin-left: 0.4em;
+}
+.hoogle-package {
+font-weight: bold;
+font-style: italic;
+}
+.hoogle-module {
+font-weight: bold;
+}
+.hoogle-class {
+font-weight: bold;
+}
+.get-type {
+color: green;
+font-weight: bold;
+font-family: monospace;
+display: block;
+white-space: pre-wrap;
+}
+.show-type {
+color: green;
+font-weight: bold;
+font-family: monospace;
+margin-left: 1em;
+}
+.mono {
+font-family: monospace;
+display: block;
+}
+.err-msg {
+color: red;
+font-style: italic;
+font-family: monospace;
+white-space: pre;
+display: block;
+}
+#unshowable {
+color: red;
+font-weight: bold;
+}
+.err-msg.in.collapse {
+padding-top: 0.7em;
+}
+.highlight-code {
+white-space: pre;
+font-family: monospace;
+}
+.suggestion-warning { 
+font-weight: bold;
+color: rgb(200, 130, 0);
+}
+.suggestion-error { 
+font-weight: bold;
+color: red;
+}
+.suggestion-name {
+font-weight: bold;
+}
+</style><span class="get-type">x = _
+</span>
+</div>
+</div>
+<p>↑アンダースコアはサンクを表しておりxがまだ評価されていないことが分かる</p>
+<div id="cell-4" class="cell" data-execution_count="2">
+<div class="sourceCode cell-code" id="cb2" style="background: #f1f3f5;"><pre class="sourceCode haskell code-with-copy"><code class="sourceCode haskell"><span id="cb2-1">x</span>
+<span id="cb2-2"></span>
+<span id="cb2-3"><span class="op" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">:</span>sprint x</span></code></pre></div>
+<div class="cell-output cell-output-display">
+<pre><code>3</code></pre>
+</div>
+<div class="cell-output cell-output-display">
+<style>/* Styles used for the Hoogle display in the pager */
+.hoogle-doc {
+display: block;
+padding-bottom: 1.3em;
+padding-left: 0.4em;
+}
+.hoogle-code {
+display: block;
+font-family: monospace;
+white-space: pre;
+}
+.hoogle-text {
+display: block;
+}
+.hoogle-name {
+color: green;
+font-weight: bold;
+}
+.hoogle-head {
+font-weight: bold;
+}
+.hoogle-sub {
+display: block;
+margin-left: 0.4em;
+}
+.hoogle-package {
+font-weight: bold;
+font-style: italic;
+}
+.hoogle-module {
+font-weight: bold;
+}
+.hoogle-class {
+font-weight: bold;
+}
+.get-type {
+color: green;
+font-weight: bold;
+font-family: monospace;
+display: block;
+white-space: pre-wrap;
+}
+.show-type {
+color: green;
+font-weight: bold;
+font-family: monospace;
+margin-left: 1em;
+}
+.mono {
+font-family: monospace;
+display: block;
+}
+.err-msg {
+color: red;
+font-style: italic;
+font-family: monospace;
+white-space: pre;
+display: block;
+}
+#unshowable {
+color: red;
+font-weight: bold;
+}
+.err-msg.in.collapse {
+padding-top: 0.7em;
+}
+.highlight-code {
+white-space: pre;
+font-family: monospace;
+}
+.suggestion-warning { 
+font-weight: bold;
+color: rgb(200, 130, 0);
+}
+.suggestion-error { 
+font-weight: bold;
+color: red;
+}
+.suggestion-name {
+font-weight: bold;
+}
+</style><span class="get-type">x = 3
+</span>
+</div>
+</div>
+<p>↑<code>x</code>が評価されたので中身も見えるようになった</p>
+<p>次は変数が変数を参照している例</p>
+<div id="cell-6" class="cell" data-execution_count="3">
+<div class="sourceCode cell-code" id="cb4" style="background: #f1f3f5;"><pre class="sourceCode haskell code-with-copy"><code class="sourceCode haskell"><span id="cb4-1">x <span class="ot" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">=</span> <span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">1</span> <span class="op" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">+</span> <span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">2</span><span class="ot" style="color: #003B4F;
+background-color: null;
+font-style: inherit;"> ::</span> <span class="dt" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">Int</span></span>
+<span id="cb4-2">y <span class="ot" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">=</span> x <span class="op" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">+</span> <span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">1</span></span>
+<span id="cb4-3"></span>
+<span id="cb4-4"><span class="op" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">:</span>sprint x</span>
+<span id="cb4-5"><span class="op" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">:</span>sprint y</span></code></pre></div>
+<div class="cell-output cell-output-display">
+<style>/* Styles used for the Hoogle display in the pager */
+.hoogle-doc {
+display: block;
+padding-bottom: 1.3em;
+padding-left: 0.4em;
+}
+.hoogle-code {
+display: block;
+font-family: monospace;
+white-space: pre;
+}
+.hoogle-text {
+display: block;
+}
+.hoogle-name {
+color: green;
+font-weight: bold;
+}
+.hoogle-head {
+font-weight: bold;
+}
+.hoogle-sub {
+display: block;
+margin-left: 0.4em;
+}
+.hoogle-package {
+font-weight: bold;
+font-style: italic;
+}
+.hoogle-module {
+font-weight: bold;
+}
+.hoogle-class {
+font-weight: bold;
+}
+.get-type {
+color: green;
+font-weight: bold;
+font-family: monospace;
+display: block;
+white-space: pre-wrap;
+}
+.show-type {
+color: green;
+font-weight: bold;
+font-family: monospace;
+margin-left: 1em;
+}
+.mono {
+font-family: monospace;
+display: block;
+}
+.err-msg {
+color: red;
+font-style: italic;
+font-family: monospace;
+white-space: pre;
+display: block;
+}
+#unshowable {
+color: red;
+font-weight: bold;
+}
+.err-msg.in.collapse {
+padding-top: 0.7em;
+}
+.highlight-code {
+white-space: pre;
+font-family: monospace;
+}
+.suggestion-warning { 
+font-weight: bold;
+color: rgb(200, 130, 0);
+}
+.suggestion-error { 
+font-weight: bold;
+color: red;
+}
+.suggestion-name {
+font-weight: bold;
+}
+</style><span class="get-type">x = _
+</span>
+</div>
+<div class="cell-output cell-output-display">
+<style>/* Styles used for the Hoogle display in the pager */
+.hoogle-doc {
+display: block;
+padding-bottom: 1.3em;
+padding-left: 0.4em;
+}
+.hoogle-code {
+display: block;
+font-family: monospace;
+white-space: pre;
+}
+.hoogle-text {
+display: block;
+}
+.hoogle-name {
+color: green;
+font-weight: bold;
+}
+.hoogle-head {
+font-weight: bold;
+}
+.hoogle-sub {
+display: block;
+margin-left: 0.4em;
+}
+.hoogle-package {
+font-weight: bold;
+font-style: italic;
+}
+.hoogle-module {
+font-weight: bold;
+}
+.hoogle-class {
+font-weight: bold;
+}
+.get-type {
+color: green;
+font-weight: bold;
+font-family: monospace;
+display: block;
+white-space: pre-wrap;
+}
+.show-type {
+color: green;
+font-weight: bold;
+font-family: monospace;
+margin-left: 1em;
+}
+.mono {
+font-family: monospace;
+display: block;
+}
+.err-msg {
+color: red;
+font-style: italic;
+font-family: monospace;
+white-space: pre;
+display: block;
+}
+#unshowable {
+color: red;
+font-weight: bold;
+}
+.err-msg.in.collapse {
+padding-top: 0.7em;
+}
+.highlight-code {
+white-space: pre;
+font-family: monospace;
+}
+.suggestion-warning { 
+font-weight: bold;
+color: rgb(200, 130, 0);
+}
+.suggestion-error { 
+font-weight: bold;
+color: red;
+}
+.suggestion-name {
+font-weight: bold;
+}
+</style><span class="get-type">y = _
+</span>
+</div>
+</div>
+<div id="cell-7" class="cell" data-execution_count="4">
+<div class="sourceCode cell-code" id="cb5" style="background: #f1f3f5;"><pre class="sourceCode haskell code-with-copy"><code class="sourceCode haskell"><span id="cb5-1"><span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">seq</span> y ()</span>
+<span id="cb5-2"></span>
+<span id="cb5-3"><span class="op" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">:</span>sprint x</span>
+<span id="cb5-4"><span class="op" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">:</span>sprint y</span></code></pre></div>
+<div class="cell-output cell-output-display">
+<pre><code>()</code></pre>
+</div>
+<div class="cell-output cell-output-display">
+<style>/* Styles used for the Hoogle display in the pager */
+.hoogle-doc {
+display: block;
+padding-bottom: 1.3em;
+padding-left: 0.4em;
+}
+.hoogle-code {
+display: block;
+font-family: monospace;
+white-space: pre;
+}
+.hoogle-text {
+display: block;
+}
+.hoogle-name {
+color: green;
+font-weight: bold;
+}
+.hoogle-head {
+font-weight: bold;
+}
+.hoogle-sub {
+display: block;
+margin-left: 0.4em;
+}
+.hoogle-package {
+font-weight: bold;
+font-style: italic;
+}
+.hoogle-module {
+font-weight: bold;
+}
+.hoogle-class {
+font-weight: bold;
+}
+.get-type {
+color: green;
+font-weight: bold;
+font-family: monospace;
+display: block;
+white-space: pre-wrap;
+}
+.show-type {
+color: green;
+font-weight: bold;
+font-family: monospace;
+margin-left: 1em;
+}
+.mono {
+font-family: monospace;
+display: block;
+}
+.err-msg {
+color: red;
+font-style: italic;
+font-family: monospace;
+white-space: pre;
+display: block;
+}
+#unshowable {
+color: red;
+font-weight: bold;
+}
+.err-msg.in.collapse {
+padding-top: 0.7em;
+}
+.highlight-code {
+white-space: pre;
+font-family: monospace;
+}
+.suggestion-warning { 
+font-weight: bold;
+color: rgb(200, 130, 0);
+}
+.suggestion-error { 
+font-weight: bold;
+color: red;
+}
+.suggestion-name {
+font-weight: bold;
+}
+</style><span class="get-type">x = 3
+</span>
+</div>
+<div class="cell-output cell-output-display">
+<style>/* Styles used for the Hoogle display in the pager */
+.hoogle-doc {
+display: block;
+padding-bottom: 1.3em;
+padding-left: 0.4em;
+}
+.hoogle-code {
+display: block;
+font-family: monospace;
+white-space: pre;
+}
+.hoogle-text {
+display: block;
+}
+.hoogle-name {
+color: green;
+font-weight: bold;
+}
+.hoogle-head {
+font-weight: bold;
+}
+.hoogle-sub {
+display: block;
+margin-left: 0.4em;
+}
+.hoogle-package {
+font-weight: bold;
+font-style: italic;
+}
+.hoogle-module {
+font-weight: bold;
+}
+.hoogle-class {
+font-weight: bold;
+}
+.get-type {
+color: green;
+font-weight: bold;
+font-family: monospace;
+display: block;
+white-space: pre-wrap;
+}
+.show-type {
+color: green;
+font-weight: bold;
+font-family: monospace;
+margin-left: 1em;
+}
+.mono {
+font-family: monospace;
+display: block;
+}
+.err-msg {
+color: red;
+font-style: italic;
+font-family: monospace;
+white-space: pre;
+display: block;
+}
+#unshowable {
+color: red;
+font-weight: bold;
+}
+.err-msg.in.collapse {
+padding-top: 0.7em;
+}
+.highlight-code {
+white-space: pre;
+font-family: monospace;
+}
+.suggestion-warning { 
+font-weight: bold;
+color: rgb(200, 130, 0);
+}
+.suggestion-error { 
+font-weight: bold;
+color: red;
+}
+.suggestion-name {
+font-weight: bold;
+}
+</style><span class="get-type">y = 4
+</span>
+</div>
+</div>
+<p>↑<code>seq</code>を使うと第一引数が弱頭部正規形（最初の構成子が見えるところ）まで強制的に評価される</p>
+<div id="cell-9" class="cell" data-execution_count="5">
+<div class="sourceCode cell-code" id="cb7" style="background: #f1f3f5;"><pre class="sourceCode haskell code-with-copy"><code class="sourceCode haskell"><span id="cb7-1">x <span class="ot" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">=</span> <span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">1</span> <span class="op" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">+</span> <span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">2</span><span class="ot" style="color: #003B4F;
+background-color: null;
+font-style: inherit;"> ::</span> <span class="dt" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">Int</span></span>
+<span id="cb7-2">z <span class="ot" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">=</span> (x, x)</span>
+<span id="cb7-3"></span>
+<span id="cb7-4"><span class="op" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">:</span>sprint z</span></code></pre></div>
+<div class="cell-output cell-output-display">
+<style>/* Styles used for the Hoogle display in the pager */
+.hoogle-doc {
+display: block;
+padding-bottom: 1.3em;
+padding-left: 0.4em;
+}
+.hoogle-code {
+display: block;
+font-family: monospace;
+white-space: pre;
+}
+.hoogle-text {
+display: block;
+}
+.hoogle-name {
+color: green;
+font-weight: bold;
+}
+.hoogle-head {
+font-weight: bold;
+}
+.hoogle-sub {
+display: block;
+margin-left: 0.4em;
+}
+.hoogle-package {
+font-weight: bold;
+font-style: italic;
+}
+.hoogle-module {
+font-weight: bold;
+}
+.hoogle-class {
+font-weight: bold;
+}
+.get-type {
+color: green;
+font-weight: bold;
+font-family: monospace;
+display: block;
+white-space: pre-wrap;
+}
+.show-type {
+color: green;
+font-weight: bold;
+font-family: monospace;
+margin-left: 1em;
+}
+.mono {
+font-family: monospace;
+display: block;
+}
+.err-msg {
+color: red;
+font-style: italic;
+font-family: monospace;
+white-space: pre;
+display: block;
+}
+#unshowable {
+color: red;
+font-weight: bold;
+}
+.err-msg.in.collapse {
+padding-top: 0.7em;
+}
+.highlight-code {
+white-space: pre;
+font-family: monospace;
+}
+.suggestion-warning { 
+font-weight: bold;
+color: rgb(200, 130, 0);
+}
+.suggestion-error { 
+font-weight: bold;
+color: red;
+}
+.suggestion-name {
+font-weight: bold;
+}
+</style><span class="get-type">z = _
+</span>
+</div>
+</div>
+<p>あれ？これはへいへいHaskellでは <code>z = (_, _)</code> と見えるはずなんだけど違う結果になってしまった。</p>
+<div id="cell-11" class="cell" data-execution_count="6">
+<div class="sourceCode cell-code" id="cb8" style="background: #f1f3f5;"><pre class="sourceCode haskell code-with-copy"><code class="sourceCode haskell"><span id="cb8-1"><span class="kw" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">import</span> <span class="dt" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">Data.Tuple</span></span>
+<span id="cb8-2"></span>
+<span id="cb8-3">z <span class="ot" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">=</span> swap (x, x <span class="op" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">+</span> <span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">1</span>)</span>
+<span id="cb8-4"></span>
+<span id="cb8-5"><span class="op" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">:</span>sprint z</span></code></pre></div>
+<div class="cell-output cell-output-display">
+<style>/* Styles used for the Hoogle display in the pager */
+.hoogle-doc {
+display: block;
+padding-bottom: 1.3em;
+padding-left: 0.4em;
+}
+.hoogle-code {
+display: block;
+font-family: monospace;
+white-space: pre;
+}
+.hoogle-text {
+display: block;
+}
+.hoogle-name {
+color: green;
+font-weight: bold;
+}
+.hoogle-head {
+font-weight: bold;
+}
+.hoogle-sub {
+display: block;
+margin-left: 0.4em;
+}
+.hoogle-package {
+font-weight: bold;
+font-style: italic;
+}
+.hoogle-module {
+font-weight: bold;
+}
+.hoogle-class {
+font-weight: bold;
+}
+.get-type {
+color: green;
+font-weight: bold;
+font-family: monospace;
+display: block;
+white-space: pre-wrap;
+}
+.show-type {
+color: green;
+font-weight: bold;
+font-family: monospace;
+margin-left: 1em;
+}
+.mono {
+font-family: monospace;
+display: block;
+}
+.err-msg {
+color: red;
+font-style: italic;
+font-family: monospace;
+white-space: pre;
+display: block;
+}
+#unshowable {
+color: red;
+font-weight: bold;
+}
+.err-msg.in.collapse {
+padding-top: 0.7em;
+}
+.highlight-code {
+white-space: pre;
+font-family: monospace;
+}
+.suggestion-warning { 
+font-weight: bold;
+color: rgb(200, 130, 0);
+}
+.suggestion-error { 
+font-weight: bold;
+color: red;
+}
+.suggestion-name {
+font-weight: bold;
+}
+</style><span class="get-type">z = _
+</span>
+</div>
+</div>
+<div id="cell-12" class="cell" data-scrolled="true" data-execution_count="7">
+<div class="sourceCode cell-code" id="cb9" style="background: #f1f3f5;"><pre class="sourceCode haskell code-with-copy"><code class="sourceCode haskell"><span id="cb9-1"><span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">seq</span> z ()</span>
+<span id="cb9-2"></span>
+<span id="cb9-3"><span class="op" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">:</span>sprint z</span></code></pre></div>
+<div class="cell-output cell-output-display">
+<pre><code>()</code></pre>
+</div>
+<div class="cell-output cell-output-display">
+<style>/* Styles used for the Hoogle display in the pager */
+.hoogle-doc {
+display: block;
+padding-bottom: 1.3em;
+padding-left: 0.4em;
+}
+.hoogle-code {
+display: block;
+font-family: monospace;
+white-space: pre;
+}
+.hoogle-text {
+display: block;
+}
+.hoogle-name {
+color: green;
+font-weight: bold;
+}
+.hoogle-head {
+font-weight: bold;
+}
+.hoogle-sub {
+display: block;
+margin-left: 0.4em;
+}
+.hoogle-package {
+font-weight: bold;
+font-style: italic;
+}
+.hoogle-module {
+font-weight: bold;
+}
+.hoogle-class {
+font-weight: bold;
+}
+.get-type {
+color: green;
+font-weight: bold;
+font-family: monospace;
+display: block;
+white-space: pre-wrap;
+}
+.show-type {
+color: green;
+font-weight: bold;
+font-family: monospace;
+margin-left: 1em;
+}
+.mono {
+font-family: monospace;
+display: block;
+}
+.err-msg {
+color: red;
+font-style: italic;
+font-family: monospace;
+white-space: pre;
+display: block;
+}
+#unshowable {
+color: red;
+font-weight: bold;
+}
+.err-msg.in.collapse {
+padding-top: 0.7em;
+}
+.highlight-code {
+white-space: pre;
+font-family: monospace;
+}
+.suggestion-warning { 
+font-weight: bold;
+color: rgb(200, 130, 0);
+}
+.suggestion-error { 
+font-weight: bold;
+color: red;
+}
+.suggestion-name {
+font-weight: bold;
+}
+</style><span class="get-type">z = (_,_)
+</span>
+</div>
+</div>
+<p>↑今度はうまくタプルの構成子が見えるところまで評価された</p>
+<div id="cell-14" class="cell" data-execution_count="8">
+<div class="sourceCode cell-code" id="cb11" style="background: #f1f3f5;"><pre class="sourceCode haskell code-with-copy"><code class="sourceCode haskell"><span id="cb11-1"><span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">seq</span> x ()</span>
+<span id="cb11-2"></span>
+<span id="cb11-3"><span class="op" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">:</span>sprint z</span></code></pre></div>
+<div class="cell-output cell-output-display">
+<pre><code>()</code></pre>
+</div>
+<div class="cell-output cell-output-display">
+<style>/* Styles used for the Hoogle display in the pager */
+.hoogle-doc {
+display: block;
+padding-bottom: 1.3em;
+padding-left: 0.4em;
+}
+.hoogle-code {
+display: block;
+font-family: monospace;
+white-space: pre;
+}
+.hoogle-text {
+display: block;
+}
+.hoogle-name {
+color: green;
+font-weight: bold;
+}
+.hoogle-head {
+font-weight: bold;
+}
+.hoogle-sub {
+display: block;
+margin-left: 0.4em;
+}
+.hoogle-package {
+font-weight: bold;
+font-style: italic;
+}
+.hoogle-module {
+font-weight: bold;
+}
+.hoogle-class {
+font-weight: bold;
+}
+.get-type {
+color: green;
+font-weight: bold;
+font-family: monospace;
+display: block;
+white-space: pre-wrap;
+}
+.show-type {
+color: green;
+font-weight: bold;
+font-family: monospace;
+margin-left: 1em;
+}
+.mono {
+font-family: monospace;
+display: block;
+}
+.err-msg {
+color: red;
+font-style: italic;
+font-family: monospace;
+white-space: pre;
+display: block;
+}
+#unshowable {
+color: red;
+font-weight: bold;
+}
+.err-msg.in.collapse {
+padding-top: 0.7em;
+}
+.highlight-code {
+white-space: pre;
+font-family: monospace;
+}
+.suggestion-warning { 
+font-weight: bold;
+color: rgb(200, 130, 0);
+}
+.suggestion-error { 
+font-weight: bold;
+color: red;
+}
+.suggestion-name {
+font-weight: bold;
+}
+</style><span class="get-type">z = (_,3)
+</span>
+</div>
+</div>
+<p>↑<code>x</code>だけ評価すると<code>3</code>が見えるようになった。<code>z</code>が評価されていないので<code>x + 1</code>の部分はサンク<code>_</code>のままである</p>
+<p>今度はリストと <code>map</code> を使ったときの挙動を見てみる</p>
+<div id="cell-16" class="cell" data-execution_count="9">
+<div class="sourceCode cell-code" id="cb13" style="background: #f1f3f5;"><pre class="sourceCode haskell code-with-copy"><code class="sourceCode haskell"><span id="cb13-1">xs <span class="ot" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">=</span> <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">map</span> (<span class="op" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">+</span><span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">1</span>) [<span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">1</span><span class="op" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">..</span><span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">10</span>]<span class="ot" style="color: #003B4F;
+background-color: null;
+font-style: inherit;"> ::</span> [<span class="dt" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">Int</span>]</span>
+<span id="cb13-2"></span>
+<span id="cb13-3"><span class="op" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">:</span>sprint xs</span></code></pre></div>
+<div class="cell-output cell-output-display">
+<style>/* Styles used for the Hoogle display in the pager */
+.hoogle-doc {
+display: block;
+padding-bottom: 1.3em;
+padding-left: 0.4em;
+}
+.hoogle-code {
+display: block;
+font-family: monospace;
+white-space: pre;
+}
+.hoogle-text {
+display: block;
+}
+.hoogle-name {
+color: green;
+font-weight: bold;
+}
+.hoogle-head {
+font-weight: bold;
+}
+.hoogle-sub {
+display: block;
+margin-left: 0.4em;
+}
+.hoogle-package {
+font-weight: bold;
+font-style: italic;
+}
+.hoogle-module {
+font-weight: bold;
+}
+.hoogle-class {
+font-weight: bold;
+}
+.get-type {
+color: green;
+font-weight: bold;
+font-family: monospace;
+display: block;
+white-space: pre-wrap;
+}
+.show-type {
+color: green;
+font-weight: bold;
+font-family: monospace;
+margin-left: 1em;
+}
+.mono {
+font-family: monospace;
+display: block;
+}
+.err-msg {
+color: red;
+font-style: italic;
+font-family: monospace;
+white-space: pre;
+display: block;
+}
+#unshowable {
+color: red;
+font-weight: bold;
+}
+.err-msg.in.collapse {
+padding-top: 0.7em;
+}
+.highlight-code {
+white-space: pre;
+font-family: monospace;
+}
+.suggestion-warning { 
+font-weight: bold;
+color: rgb(200, 130, 0);
+}
+.suggestion-error { 
+font-weight: bold;
+color: red;
+}
+.suggestion-name {
+font-weight: bold;
+}
+</style><span class="get-type">xs = _
+</span>
+</div>
+</div>
+<div id="cell-17" class="cell" data-execution_count="10">
+<div class="sourceCode cell-code" id="cb14" style="background: #f1f3f5;"><pre class="sourceCode haskell code-with-copy"><code class="sourceCode haskell"><span id="cb14-1"><span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">seq</span> xs ()</span>
+<span id="cb14-2"></span>
+<span id="cb14-3"><span class="op" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">:</span>sprint xs</span></code></pre></div>
+<div class="cell-output cell-output-display">
+<pre><code>()</code></pre>
+</div>
+<div class="cell-output cell-output-display">
+<style>/* Styles used for the Hoogle display in the pager */
+.hoogle-doc {
+display: block;
+padding-bottom: 1.3em;
+padding-left: 0.4em;
+}
+.hoogle-code {
+display: block;
+font-family: monospace;
+white-space: pre;
+}
+.hoogle-text {
+display: block;
+}
+.hoogle-name {
+color: green;
+font-weight: bold;
+}
+.hoogle-head {
+font-weight: bold;
+}
+.hoogle-sub {
+display: block;
+margin-left: 0.4em;
+}
+.hoogle-package {
+font-weight: bold;
+font-style: italic;
+}
+.hoogle-module {
+font-weight: bold;
+}
+.hoogle-class {
+font-weight: bold;
+}
+.get-type {
+color: green;
+font-weight: bold;
+font-family: monospace;
+display: block;
+white-space: pre-wrap;
+}
+.show-type {
+color: green;
+font-weight: bold;
+font-family: monospace;
+margin-left: 1em;
+}
+.mono {
+font-family: monospace;
+display: block;
+}
+.err-msg {
+color: red;
+font-style: italic;
+font-family: monospace;
+white-space: pre;
+display: block;
+}
+#unshowable {
+color: red;
+font-weight: bold;
+}
+.err-msg.in.collapse {
+padding-top: 0.7em;
+}
+.highlight-code {
+white-space: pre;
+font-family: monospace;
+}
+.suggestion-warning { 
+font-weight: bold;
+color: rgb(200, 130, 0);
+}
+.suggestion-error { 
+font-weight: bold;
+color: red;
+}
+.suggestion-name {
+font-weight: bold;
+}
+</style><span class="get-type">xs = _ : _
+</span>
+</div>
+</div>
+<p>↑<code>:</code>はリストの構成子なのでここが弱頭部正規形</p>
+<div id="cell-19" class="cell" data-execution_count="11">
+<div class="sourceCode cell-code" id="cb16" style="background: #f1f3f5;"><pre class="sourceCode haskell code-with-copy"><code class="sourceCode haskell"><span id="cb16-1"><span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">length</span> xs</span>
+<span id="cb16-2"></span>
+<span id="cb16-3"><span class="op" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">:</span>sprint xs</span></code></pre></div>
+<div class="cell-output cell-output-display">
+<pre><code>10</code></pre>
+</div>
+<div class="cell-output cell-output-display">
+<style>/* Styles used for the Hoogle display in the pager */
+.hoogle-doc {
+display: block;
+padding-bottom: 1.3em;
+padding-left: 0.4em;
+}
+.hoogle-code {
+display: block;
+font-family: monospace;
+white-space: pre;
+}
+.hoogle-text {
+display: block;
+}
+.hoogle-name {
+color: green;
+font-weight: bold;
+}
+.hoogle-head {
+font-weight: bold;
+}
+.hoogle-sub {
+display: block;
+margin-left: 0.4em;
+}
+.hoogle-package {
+font-weight: bold;
+font-style: italic;
+}
+.hoogle-module {
+font-weight: bold;
+}
+.hoogle-class {
+font-weight: bold;
+}
+.get-type {
+color: green;
+font-weight: bold;
+font-family: monospace;
+display: block;
+white-space: pre-wrap;
+}
+.show-type {
+color: green;
+font-weight: bold;
+font-family: monospace;
+margin-left: 1em;
+}
+.mono {
+font-family: monospace;
+display: block;
+}
+.err-msg {
+color: red;
+font-style: italic;
+font-family: monospace;
+white-space: pre;
+display: block;
+}
+#unshowable {
+color: red;
+font-weight: bold;
+}
+.err-msg.in.collapse {
+padding-top: 0.7em;
+}
+.highlight-code {
+white-space: pre;
+font-family: monospace;
+}
+.suggestion-warning { 
+font-weight: bold;
+color: rgb(200, 130, 0);
+}
+.suggestion-error { 
+font-weight: bold;
+color: red;
+}
+.suggestion-name {
+font-weight: bold;
+}
+</style><span class="get-type">xs = [_,_,_,_,_,_,_,_,_,_]
+</span>
+</div>
+</div>
+<p>↑<code>length</code>は中身を評価しないので構造だけが評価されて中はサンクのまま</p>
+<div id="cell-21" class="cell" data-execution_count="12">
+<div class="sourceCode cell-code" id="cb18" style="background: #f1f3f5;"><pre class="sourceCode haskell code-with-copy"><code class="sourceCode haskell"><span id="cb18-1"><span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">sum</span> xs</span>
+<span id="cb18-2"></span>
+<span id="cb18-3"><span class="op" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">:</span>sprint xs</span></code></pre></div>
+<div class="cell-output cell-output-display">
+<pre><code>65</code></pre>
+</div>
+<div class="cell-output cell-output-display">
+<style>/* Styles used for the Hoogle display in the pager */
+.hoogle-doc {
+display: block;
+padding-bottom: 1.3em;
+padding-left: 0.4em;
+}
+.hoogle-code {
+display: block;
+font-family: monospace;
+white-space: pre;
+}
+.hoogle-text {
+display: block;
+}
+.hoogle-name {
+color: green;
+font-weight: bold;
+}
+.hoogle-head {
+font-weight: bold;
+}
+.hoogle-sub {
+display: block;
+margin-left: 0.4em;
+}
+.hoogle-package {
+font-weight: bold;
+font-style: italic;
+}
+.hoogle-module {
+font-weight: bold;
+}
+.hoogle-class {
+font-weight: bold;
+}
+.get-type {
+color: green;
+font-weight: bold;
+font-family: monospace;
+display: block;
+white-space: pre-wrap;
+}
+.show-type {
+color: green;
+font-weight: bold;
+font-family: monospace;
+margin-left: 1em;
+}
+.mono {
+font-family: monospace;
+display: block;
+}
+.err-msg {
+color: red;
+font-style: italic;
+font-family: monospace;
+white-space: pre;
+display: block;
+}
+#unshowable {
+color: red;
+font-weight: bold;
+}
+.err-msg.in.collapse {
+padding-top: 0.7em;
+}
+.highlight-code {
+white-space: pre;
+font-family: monospace;
+}
+.suggestion-warning { 
+font-weight: bold;
+color: rgb(200, 130, 0);
+}
+.suggestion-error { 
+font-weight: bold;
+color: red;
+}
+.suggestion-name {
+font-weight: bold;
+}
+</style><span class="get-type">xs = [2,3,4,5,6,7,8,9,10,11]
+</span>
+</div>
+</div>
+<p>↑これで全部評価された</p>
+<p><code>:sprint</code> を使うとHaskellの遅延評価で何がどこまで評価されるのかインタラクティブに分かるので面白い。</p>
+
+
+
+ ]]></description>
+  <guid>https://lotz84.github.io/haskell-notebooks/posts/2020-04-12/</guid>
+  <pubDate>Sat, 11 Apr 2020 15:00:00 GMT</pubDate>
+</item>
+<item>
+  <title>高速フーリエ変換を実装してみた</title>
+  <dc:creator>lotz </dc:creator>
+  <link>https://lotz84.github.io/haskell-notebooks/posts/2020-03-29/</link>
+  <description><![CDATA[ 
+
+
+
+
+
+<p><a href="https://caddi.tech/archives/836">高速フーリエ変換の実装を難しそうかなと思っている方が、なんだ簡単じゃないですか！！ となるための実装講座です</a> という記事が分かりやすかったのでHaskellでも実装してみました</p>
+<section id="離散フーリエ変換" class="level2">
+<h2 class="anchored" data-anchor-id="離散フーリエ変換">離散フーリエ変換</h2>
+<p>まずは普通のフーリエ変換を実装します</p>
+<div id="cell-3" class="cell" data-execution_count="1">
+<div class="sourceCode cell-code" id="cb1" style="background: #f1f3f5;"><pre class="sourceCode haskell code-with-copy"><code class="sourceCode haskell"><span id="cb1-1"><span class="kw" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">import</span> <span class="dt" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">Data.Complex</span></span>
+<span id="cb1-2"></span>
+<span id="cb1-3"><span class="ot" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">fourierTransform ::</span> <span class="dt" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">RealFloat</span> a <span class="ot" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">=&gt;</span> [<span class="dt" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">Complex</span> a] <span class="ot" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">-&gt;</span> [<span class="dt" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">Complex</span> a]</span>
+<span id="cb1-4">fourierTransform xs <span class="ot" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">=</span></span>
+<span id="cb1-5">  <span class="kw" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">let</span> n <span class="ot" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">=</span> <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">length</span> xs</span>
+<span id="cb1-6">      f aj i j <span class="ot" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">=</span> aj <span class="op" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">*</span> cis (<span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">2</span> <span class="op" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">*</span> <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">pi</span> <span class="op" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">*</span> <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">fromIntegral</span> (i <span class="op" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">*</span> j) <span class="op" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">/</span> <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">fromIntegral</span> n)</span>
+<span id="cb1-7">   <span class="kw" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">in</span> <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">flip</span> <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">map</span> [<span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">0</span><span class="op" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">..</span>n<span class="op" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">-</span><span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">1</span>] <span class="op" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">$</span> \i <span class="ot" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">-&gt;</span> <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">foldr</span> (\(j, aj) <span class="ot" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">-&gt;</span> (<span class="op" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">+</span>) (f aj i j)) <span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">0</span> (<span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">zip</span> [<span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">0</span><span class="op" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">..</span>] xs)</span>
+<span id="cb1-8"></span>
+<span id="cb1-9"><span class="ot" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">inverseFourierTransform ::</span> <span class="dt" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">RealFloat</span> a <span class="ot" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">=&gt;</span> [<span class="dt" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">Complex</span> a] <span class="ot" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">-&gt;</span> [<span class="dt" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">Complex</span> a]</span>
+<span id="cb1-10">inverseFourierTransform xs <span class="ot" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">=</span></span>
+<span id="cb1-11">  <span class="kw" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">let</span> n <span class="ot" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">=</span> <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">length</span> xs</span>
+<span id="cb1-12">      f aj i j <span class="ot" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">=</span> aj <span class="op" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">*</span> cis (<span class="op" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">-</span><span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">2</span> <span class="op" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">*</span> <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">pi</span> <span class="op" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">*</span> <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">fromIntegral</span> (i <span class="op" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">*</span> j) <span class="op" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">/</span> <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">fromIntegral</span> n)</span>
+<span id="cb1-13">   <span class="kw" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">in</span> <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">flip</span> <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">map</span> [<span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">0</span><span class="op" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">..</span>n<span class="op" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">-</span><span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">1</span>] <span class="op" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">$</span> \i <span class="ot" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">-&gt;</span> <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">foldr</span> (\(j, aj) <span class="ot" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">-&gt;</span> (<span class="op" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">+</span>) (f aj i j)) <span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">0</span> (<span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">zip</span> [<span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">0</span><span class="op" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">..</span>] xs) <span class="op" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">/</span> <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">fromIntegral</span> n</span></code></pre></div>
+</div>
+<p>元に戻ることを確認。これは気が向いたらQuickCheckで書き直したい</p>
+<div id="cell-5" class="cell" data-scrolled="true" data-execution_count="2">
+<div class="sourceCode cell-code" id="cb2" style="background: #f1f3f5;"><pre class="sourceCode haskell code-with-copy"><code class="sourceCode haskell"><span id="cb2-1">inverseFourierTransform <span class="op" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">$</span> fourierTransform [<span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">1</span>, <span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">2</span>, <span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">3</span>, <span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">4</span>]</span></code></pre></div>
+<div class="cell-output cell-output-display">
+<pre><code>[1.0000000000000002 :+ 5.551115123125783e-16,2.0 :+ 3.885780586188048e-16,3.0 :+ 5.551115123125783e-17,4.0 :+ (-3.3306690738754696e-16)]</code></pre>
+</div>
+</div>
+</section>
+<section id="高速フーリエ変換" class="level2">
+<h2 class="anchored" data-anchor-id="高速フーリエ変換">高速フーリエ変換</h2>
+<p>高速フーリエ変換はフーリエ変換の計算を分割して再帰的に計算するので関数型プログラミングと相性が良さそうかなと思ったけど実装は泥臭い感じになりました。うまいやり方とかあったらTwitterでこっそり教えて下さい</p>
+<p>あと単純な実装なので2の累乗の長さのリストでしかうまく行かないやつです。</p>
+<div id="cell-7" class="cell" data-execution_count="3">
+<div class="sourceCode cell-code" id="cb4" style="background: #f1f3f5;"><pre class="sourceCode haskell code-with-copy"><code class="sourceCode haskell"><span id="cb4-1"><span class="kw" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">import</span> <span class="dt" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">Control.Arrow</span></span>
+<span id="cb4-2"></span>
+<span id="cb4-3"><span class="ot" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">splitEvenOdd ::</span> [a] <span class="ot" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">-&gt;</span> ([a], [a])</span>
+<span id="cb4-4">splitEvenOdd <span class="ot" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">=</span> (<span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">reverse</span> <span class="op" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">***</span> <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">reverse</span>) <span class="op" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">.</span> go ([], [])</span>
+<span id="cb4-5">  <span class="kw" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">where</span> go x [] <span class="ot" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">=</span> x</span>
+<span id="cb4-6">        go (xs, ys) [x] <span class="ot" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">=</span> (x<span class="op" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">:</span>xs, ys)</span>
+<span id="cb4-7">        go (xs, ys) (x<span class="op" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">:</span>y<span class="op" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">:</span>zs) <span class="ot" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">=</span> go (x<span class="op" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">:</span>xs, y<span class="op" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">:</span>ys) zs</span>
+<span id="cb4-8"></span>
+<span id="cb4-9"><span class="ot" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">mapTuple2 ::</span> (a <span class="ot" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">-&gt;</span> b) <span class="ot" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">-&gt;</span> (a, a) <span class="ot" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">-&gt;</span> (b, b)</span>
+<span id="cb4-10">mapTuple2 f (a1, a2) <span class="ot" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">=</span> (f a1, f a2)</span>
+<span id="cb4-11"></span>
+<span id="cb4-12"><span class="ot" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">fastFourierTransform ::</span> <span class="dt" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">RealFloat</span> a <span class="ot" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">=&gt;</span> [<span class="dt" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">Complex</span> a] <span class="ot" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">-&gt;</span> [<span class="dt" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">Complex</span> a]</span>
+<span id="cb4-13">fastFourierTransform []  <span class="ot" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">=</span> <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">error</span> <span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"The length of list must be the power of 2."</span></span>
+<span id="cb4-14">fastFourierTransform [x] <span class="ot" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">=</span> [x]</span>
+<span id="cb4-15">fastFourierTransform xs  <span class="ot" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">=</span></span>
+<span id="cb4-16">  <span class="kw" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">let</span> n <span class="ot" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">=</span> <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">length</span> xs</span>
+<span id="cb4-17">      (bs, cs) <span class="ot" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">=</span> mapTuple2 fastFourierTransform <span class="op" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">$</span> splitEvenOdd xs</span>
+<span id="cb4-18">      atN2 xs i <span class="ot" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">=</span> xs <span class="op" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">!!</span> (i <span class="ot" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">`mod`</span> (n <span class="ot" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">`div`</span> <span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">2</span>))</span>
+<span id="cb4-19">      f i <span class="ot" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">=</span> bs <span class="ot" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">`atN2`</span> i <span class="op" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">+</span> cs <span class="ot" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">`atN2`</span> i <span class="op" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">*</span> cis (<span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">2</span> <span class="op" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">*</span> <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">pi</span> <span class="op" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">*</span> <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">fromIntegral</span> i <span class="op" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">/</span> <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">fromIntegral</span> n)</span>
+<span id="cb4-20">   <span class="kw" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">in</span> <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">map</span> f [<span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">0</span><span class="op" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">..</span>n<span class="op" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">-</span><span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">1</span>]</span>
+<span id="cb4-21"></span>
+<span id="cb4-22"><span class="ot" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">inverseFastFourierTransform ::</span> <span class="dt" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">RealFloat</span> a <span class="ot" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">=&gt;</span> [<span class="dt" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">Complex</span> a] <span class="ot" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">-&gt;</span> [<span class="dt" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">Complex</span> a]</span>
+<span id="cb4-23">inverseFastFourierTransform xs <span class="ot" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">=</span> <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">map</span> (<span class="op" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">/</span> <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">fromIntegral</span> (<span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">length</span> xs)) <span class="op" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">$</span> ifft xs</span>
+<span id="cb4-24">  <span class="kw" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">where</span></span>
+<span id="cb4-25">    ifft []  <span class="ot" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">=</span> <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">error</span> <span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"The length of list must be the power of 2."</span></span>
+<span id="cb4-26">    ifft [x] <span class="ot" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">=</span> [x]</span>
+<span id="cb4-27">    ifft xs  <span class="ot" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">=</span></span>
+<span id="cb4-28">      <span class="kw" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">let</span> n <span class="ot" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">=</span> <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">length</span> xs</span>
+<span id="cb4-29">          (bs, cs) <span class="ot" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">=</span> mapTuple2 ifft <span class="op" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">$</span> splitEvenOdd xs</span>
+<span id="cb4-30">          atN2 xs i <span class="ot" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">=</span> xs <span class="op" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">!!</span> (i <span class="ot" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">`mod`</span> (n <span class="ot" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">`div`</span> <span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">2</span>))</span>
+<span id="cb4-31">          f i <span class="ot" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">=</span> bs <span class="ot" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">`atN2`</span> i <span class="op" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">+</span> cs <span class="ot" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">`atN2`</span> i <span class="op" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">*</span> cis (<span class="op" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">-</span><span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">2</span> <span class="op" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">*</span> <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">pi</span> <span class="op" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">*</span> <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">fromIntegral</span> i <span class="op" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">/</span> <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">fromIntegral</span> n)</span>
+<span id="cb4-32">       <span class="kw" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">in</span> <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">map</span> f [<span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">0</span><span class="op" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">..</span>n<span class="op" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">-</span><span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">1</span>]</span></code></pre></div>
+</div>
+<p>これも元に戻ることを確認</p>
+<div id="cell-9" class="cell" data-execution_count="4">
+<div class="sourceCode cell-code" id="cb5" style="background: #f1f3f5;"><pre class="sourceCode haskell code-with-copy"><code class="sourceCode haskell"><span id="cb5-1">inverseFastFourierTransform <span class="op" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">$</span> fastFourierTransform [<span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">1</span>,<span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">2</span>,<span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">3</span>,<span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">4</span>]</span></code></pre></div>
+<div class="cell-output cell-output-display">
+<pre><code>[1.0 :+ 4.057416247971343e-16,2.0 :+ 9.385873628418619e-17,3.0 :+ 8.411709486180696e-17,4.0 :+ (-2.1632341619892149e-16)]</code></pre>
+</div>
+</div>
+</section>
+<section id="実験ローパスフィルタ" class="level2">
+<h2 class="anchored" data-anchor-id="実験ローパスフィルタ">実験：ローパスフィルタ</h2>
+<p>実装したFFTでうまく周波数の空間に変換できてるのか確認します。低周波と高周波を合成した信号を作成し、低周波成分だけ取り出してみます。</p>
+<div id="cell-11" class="cell" data-scrolled="false" data-execution_count="5">
+<div class="sourceCode cell-code" id="cb7" style="background: #f1f3f5;"><pre class="sourceCode haskell code-with-copy"><code class="sourceCode haskell"><span id="cb7-1"><span class="kw" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">import</span> <span class="dt" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">Graphics.Rendering.Chart.Easy</span></span>
+<span id="cb7-2"></span>
+<span id="cb7-3"><span class="ot" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">signal ::</span> [<span class="dt" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">Double</span>]</span>
+<span id="cb7-4">signal <span class="ot" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">=</span> <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">map</span> (\i <span class="ot" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">-&gt;</span> <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">sin</span> (<span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">2</span> <span class="op" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">*</span> <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">pi</span> <span class="op" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">*</span> <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">fromIntegral</span> i <span class="op" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">/</span> <span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">32</span>) <span class="op" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">+</span> <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">sin</span> (<span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">2</span> <span class="op" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">*</span> <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">pi</span> <span class="op" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">*</span> <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">fromIntegral</span> i <span class="op" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">/</span> <span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">512</span>)) [<span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">1</span><span class="op" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">..</span><span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">2048</span>]</span>
+<span id="cb7-5"></span>
+<span id="cb7-6">toRenderable <span class="op" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">$</span> plot (line <span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"sigmal"</span> [<span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">zip</span> [<span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">0</span><span class="op" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">..</span>] signal])</span></code></pre></div>
+<div class="cell-output cell-output-display">
+<div>
+<figure class="figure">
+<p><img src="https://lotz84.github.io/haskell-notebooks/posts/2020-03-29/index_files/figure-html/cell-6-output-1.svg" class="img-fluid figure-img"></p>
+</figure>
+</div>
+</div>
+</div>
+<p>実行した高速フーリエ変換で変換して周波数空間での様子を確認</p>
+<div id="cell-13" class="cell" data-scrolled="false" data-execution_count="6">
+<div class="sourceCode cell-code" id="cb8" style="background: #f1f3f5;"><pre class="sourceCode haskell code-with-copy"><code class="sourceCode haskell"><span id="cb8-1"><span class="ot" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">fSignal ::</span> [<span class="dt" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">Complex</span> <span class="dt" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">Double</span>]</span>
+<span id="cb8-2">fSignal <span class="ot" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">=</span> fastFourierTransform <span class="op" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">$</span> <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">map</span> (<span class="op" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">:+</span> <span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">0</span>) signal</span>
+<span id="cb8-3"></span>
+<span id="cb8-4">fSignalR,<span class="ot" style="color: #003B4F;
+background-color: null;
+font-style: inherit;"> fSignalI ::</span> [<span class="dt" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">Double</span>]</span>
+<span id="cb8-5">fSignalR <span class="ot" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">=</span> <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">map</span> realPart fSignal</span>
+<span id="cb8-6">fSignalI <span class="ot" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">=</span> <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">map</span> imagPart fSignal</span>
+<span id="cb8-7"></span>
+<span id="cb8-8">toRenderable <span class="op" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">$</span> <span class="kw" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">do</span></span>
+<span id="cb8-9">    plot (line <span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"fSignalR"</span> [<span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">zip</span> [<span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">0</span><span class="op" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">..</span>] fSignalR])</span>
+<span id="cb8-10">    plot (line <span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"fSignalI"</span> [<span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">zip</span> [<span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">0</span><span class="op" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">..</span>] fSignalI])</span></code></pre></div>
+<div class="cell-output cell-output-display">
+<div>
+<figure class="figure">
+<p><img src="https://lotz84.github.io/haskell-notebooks/posts/2020-03-29/index_files/figure-html/cell-7-output-1.svg" class="img-fluid figure-img"></p>
+</figure>
+</div>
+</div>
+</div>
+<p>ローパスフィルタは、フーリエ変換して先頭からN個の成分以外を0にして逆フーリエ変換するように実装する</p>
+<p>想定通りに低周波成分だけ取り出すことができた。なんだ簡単じゃないですか！！</p>
+<div id="cell-15" class="cell" data-execution_count="7">
+<div class="sourceCode cell-code" id="cb9" style="background: #f1f3f5;"><pre class="sourceCode haskell code-with-copy"><code class="sourceCode haskell"><span id="cb9-1"><span class="ot" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">consider ::</span> <span class="dt" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">Num</span> a <span class="ot" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">=&gt;</span> <span class="dt" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">Int</span> <span class="ot" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">-&gt;</span> [a] <span class="ot" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">-&gt;</span> [a]</span>
+<span id="cb9-2">consider _ []     <span class="ot" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">=</span> []</span>
+<span id="cb9-3">consider <span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">0</span> xs     <span class="ot" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">=</span> <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">replicate</span> (<span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">length</span> xs) <span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">0</span></span>
+<span id="cb9-4">consider n (x<span class="op" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">:</span>xs) <span class="ot" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">=</span> x <span class="op" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">:</span> consider (n<span class="op" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">-</span><span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">1</span>) xs</span>
+<span id="cb9-5"></span>
+<span id="cb9-6"><span class="ot" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">lowPassFilter ::</span> <span class="dt" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">Int</span> <span class="ot" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">-&gt;</span> [<span class="dt" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">Double</span>] <span class="ot" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">-&gt;</span> [<span class="dt" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">Double</span>]</span>
+<span id="cb9-7">lowPassFilter n <span class="ot" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">=</span> <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">map</span> realPart <span class="op" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">.</span> inverseFastFourierTransform <span class="op" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">.</span> consider n <span class="op" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">.</span> fastFourierTransform <span class="op" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">.</span> <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">map</span> (<span class="op" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">:+</span> <span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">0</span>)</span>
+<span id="cb9-8"></span>
+<span id="cb9-9"><span class="ot" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">signal' ::</span> [<span class="dt" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">Double</span>]</span>
+<span id="cb9-10">signal' <span class="ot" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">=</span> lowPassFilter <span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">10</span> signal</span>
+<span id="cb9-11"></span>
+<span id="cb9-12">toRenderable <span class="op" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">$</span> plot (line <span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"signal'"</span> [<span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">zip</span> [<span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">0</span><span class="op" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">..</span>] signal'])</span></code></pre></div>
+<div class="cell-output cell-output-display">
+<div>
+<figure class="figure">
+<p><img src="https://lotz84.github.io/haskell-notebooks/posts/2020-03-29/index_files/figure-html/cell-8-output-1.svg" class="img-fluid figure-img"></p>
+</figure>
+</div>
+</div>
+</div>
+<p>高速フーリエ変換、完全に理解した。</p>
+
+
+</section>
+
+ ]]></description>
+  <guid>https://lotz84.github.io/haskell-notebooks/posts/2020-03-29/</guid>
+  <pubDate>Sat, 28 Mar 2020 15:00:00 GMT</pubDate>
+</item>
+</channel>
+</rss>

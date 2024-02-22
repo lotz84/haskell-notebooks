@@ -1,0 +1,1 @@
+Sitemap: https://lotz84.github.io/haskell-notebooks/sitemap.xml
