@@ -432,23 +432,21 @@ Q^TQ =
 <p>問題なさそうですね。</p>
 <p>次に非正方行列の場合を見てみましょう。</p>
 <div id="52287087-9679-47b8-81c5-265c7249e4db" class="cell" data-execution_count="6">
-<div class="sourceCode cell-code" id="cb8"><pre class="sourceCode haskell code-with-copy"><code class="sourceCode haskell"><span id="cb8-1"><a href="#cb8-1" aria-hidden="true" tabindex="-1"></a><span class="ot">{-# LANGUAGE DataKinds #-}</span></span>
-<span id="cb8-2"><a href="#cb8-2" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb8-3"><a href="#cb8-3" aria-hidden="true" tabindex="-1"></a><span class="kw">do</span></span>
-<span id="cb8-4"><a href="#cb8-4" aria-hidden="true" tabindex="-1"></a>  <span class="kw">let</span> x <span class="ot">=</span> fromJust <span class="op">$</span> fromList</span>
-<span id="cb8-5"><a href="#cb8-5" aria-hidden="true" tabindex="-1"></a>            [ [<span class="dv">12</span>, <span class="op">-</span><span class="dv">51</span>]</span>
-<span id="cb8-6"><a href="#cb8-6" aria-hidden="true" tabindex="-1"></a>            , [ <span class="dv">6</span>, <span class="dv">167</span>]</span>
-<span id="cb8-7"><a href="#cb8-7" aria-hidden="true" tabindex="-1"></a>            , [<span class="op">-</span><span class="dv">4</span>,  <span class="dv">24</span>]]</span>
-<span id="cb8-8"><a href="#cb8-8" aria-hidden="true" tabindex="-1"></a><span class="ot">            ::</span> <span class="dt">Matrix</span> <span class="dv">3</span> <span class="dv">2</span> <span class="dt">Double</span></span>
-<span id="cb8-9"><a href="#cb8-9" aria-hidden="true" tabindex="-1"></a>      (q, r) <span class="ot">=</span> qr x</span>
-<span id="cb8-10"><a href="#cb8-10" aria-hidden="true" tabindex="-1"></a>  <span class="fu">putStrLn</span> <span class="st">"Q = "</span></span>
-<span id="cb8-11"><a href="#cb8-11" aria-hidden="true" tabindex="-1"></a>  displayM <span class="dv">8</span> <span class="dv">3</span> q</span>
-<span id="cb8-12"><a href="#cb8-12" aria-hidden="true" tabindex="-1"></a>  <span class="fu">putStrLn</span> <span class="st">"R = "</span></span>
-<span id="cb8-13"><a href="#cb8-13" aria-hidden="true" tabindex="-1"></a>  displayM <span class="dv">8</span> <span class="dv">3</span> r</span>
-<span id="cb8-14"><a href="#cb8-14" aria-hidden="true" tabindex="-1"></a>  <span class="fu">putStrLn</span> <span class="st">"QR = "</span></span>
-<span id="cb8-15"><a href="#cb8-15" aria-hidden="true" tabindex="-1"></a>  displayM <span class="dv">8</span> <span class="dv">3</span> <span class="op">$</span> q <span class="op">!*!</span> r</span>
-<span id="cb8-16"><a href="#cb8-16" aria-hidden="true" tabindex="-1"></a>  <span class="fu">putStrLn</span> <span class="st">"Q^TQ ="</span></span>
-<span id="cb8-17"><a href="#cb8-17" aria-hidden="true" tabindex="-1"></a>  displayM <span class="dv">8</span> <span class="dv">3</span> <span class="op">$</span> transpose q <span class="op">!*!</span> q</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb8"><pre class="sourceCode haskell code-with-copy"><code class="sourceCode haskell"><span id="cb8-1"><a href="#cb8-1" aria-hidden="true" tabindex="-1"></a><span class="kw">do</span></span>
+<span id="cb8-2"><a href="#cb8-2" aria-hidden="true" tabindex="-1"></a>  <span class="kw">let</span> x <span class="ot">=</span> fromJust <span class="op">$</span> fromList</span>
+<span id="cb8-3"><a href="#cb8-3" aria-hidden="true" tabindex="-1"></a>            [ [<span class="dv">12</span>, <span class="op">-</span><span class="dv">51</span>]</span>
+<span id="cb8-4"><a href="#cb8-4" aria-hidden="true" tabindex="-1"></a>            , [ <span class="dv">6</span>, <span class="dv">167</span>]</span>
+<span id="cb8-5"><a href="#cb8-5" aria-hidden="true" tabindex="-1"></a>            , [<span class="op">-</span><span class="dv">4</span>,  <span class="dv">24</span>]]</span>
+<span id="cb8-6"><a href="#cb8-6" aria-hidden="true" tabindex="-1"></a><span class="ot">            ::</span> <span class="dt">Matrix</span> <span class="dv">3</span> <span class="dv">2</span> <span class="dt">Double</span></span>
+<span id="cb8-7"><a href="#cb8-7" aria-hidden="true" tabindex="-1"></a>      (q, r) <span class="ot">=</span> qr x</span>
+<span id="cb8-8"><a href="#cb8-8" aria-hidden="true" tabindex="-1"></a>  <span class="fu">putStrLn</span> <span class="st">"Q = "</span></span>
+<span id="cb8-9"><a href="#cb8-9" aria-hidden="true" tabindex="-1"></a>  displayM <span class="dv">8</span> <span class="dv">3</span> q</span>
+<span id="cb8-10"><a href="#cb8-10" aria-hidden="true" tabindex="-1"></a>  <span class="fu">putStrLn</span> <span class="st">"R = "</span></span>
+<span id="cb8-11"><a href="#cb8-11" aria-hidden="true" tabindex="-1"></a>  displayM <span class="dv">8</span> <span class="dv">3</span> r</span>
+<span id="cb8-12"><a href="#cb8-12" aria-hidden="true" tabindex="-1"></a>  <span class="fu">putStrLn</span> <span class="st">"QR = "</span></span>
+<span id="cb8-13"><a href="#cb8-13" aria-hidden="true" tabindex="-1"></a>  displayM <span class="dv">8</span> <span class="dv">3</span> <span class="op">$</span> q <span class="op">!*!</span> r</span>
+<span id="cb8-14"><a href="#cb8-14" aria-hidden="true" tabindex="-1"></a>  <span class="fu">putStrLn</span> <span class="st">"Q^TQ ="</span></span>
+<span id="cb8-15"><a href="#cb8-15" aria-hidden="true" tabindex="-1"></a>  displayM <span class="dv">8</span> <span class="dv">3</span> <span class="op">$</span> transpose q <span class="op">!*!</span> q</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output cell-output-display">
 <pre><code>Q = 
    0.857  -0.394   0.331
@@ -469,22 +467,20 @@ Q^TQ =
 </div>
 </div>
 <div id="e172aa6b-1128-4154-a787-c244348a533b" class="cell" data-execution_count="7">
-<div class="sourceCode cell-code" id="cb10"><pre class="sourceCode haskell code-with-copy"><code class="sourceCode haskell"><span id="cb10-1"><a href="#cb10-1" aria-hidden="true" tabindex="-1"></a><span class="ot">{-# LANGUAGE DataKinds #-}</span></span>
-<span id="cb10-2"><a href="#cb10-2" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb10-3"><a href="#cb10-3" aria-hidden="true" tabindex="-1"></a><span class="kw">do</span></span>
-<span id="cb10-4"><a href="#cb10-4" aria-hidden="true" tabindex="-1"></a>  <span class="kw">let</span> x <span class="ot">=</span> fromJust <span class="op">$</span> fromList</span>
-<span id="cb10-5"><a href="#cb10-5" aria-hidden="true" tabindex="-1"></a>            [ [<span class="dv">12</span>, <span class="op">-</span><span class="dv">51</span>,   <span class="dv">4</span>]</span>
-<span id="cb10-6"><a href="#cb10-6" aria-hidden="true" tabindex="-1"></a>            , [ <span class="dv">6</span>, <span class="dv">167</span>, <span class="op">-</span><span class="dv">68</span>]]</span>
-<span id="cb10-7"><a href="#cb10-7" aria-hidden="true" tabindex="-1"></a><span class="ot">            ::</span> <span class="dt">Matrix</span> <span class="dv">2</span> <span class="dv">3</span> <span class="dt">Double</span></span>
-<span id="cb10-8"><a href="#cb10-8" aria-hidden="true" tabindex="-1"></a>      (q, r) <span class="ot">=</span> qr x</span>
-<span id="cb10-9"><a href="#cb10-9" aria-hidden="true" tabindex="-1"></a>  <span class="fu">putStrLn</span> <span class="st">"Q = "</span></span>
-<span id="cb10-10"><a href="#cb10-10" aria-hidden="true" tabindex="-1"></a>  displayM <span class="dv">8</span> <span class="dv">3</span> q</span>
-<span id="cb10-11"><a href="#cb10-11" aria-hidden="true" tabindex="-1"></a>  <span class="fu">putStrLn</span> <span class="st">"R = "</span></span>
-<span id="cb10-12"><a href="#cb10-12" aria-hidden="true" tabindex="-1"></a>  displayM <span class="dv">8</span> <span class="dv">3</span> r</span>
-<span id="cb10-13"><a href="#cb10-13" aria-hidden="true" tabindex="-1"></a>  <span class="fu">putStrLn</span> <span class="st">"QR = "</span></span>
-<span id="cb10-14"><a href="#cb10-14" aria-hidden="true" tabindex="-1"></a>  displayM <span class="dv">8</span> <span class="dv">3</span> <span class="op">$</span> q <span class="op">!*!</span> r</span>
-<span id="cb10-15"><a href="#cb10-15" aria-hidden="true" tabindex="-1"></a>  <span class="fu">putStrLn</span> <span class="st">"Q^TQ ="</span></span>
-<span id="cb10-16"><a href="#cb10-16" aria-hidden="true" tabindex="-1"></a>  displayM <span class="dv">8</span> <span class="dv">3</span> <span class="op">$</span> transpose q <span class="op">!*!</span> q</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb10"><pre class="sourceCode haskell code-with-copy"><code class="sourceCode haskell"><span id="cb10-1"><a href="#cb10-1" aria-hidden="true" tabindex="-1"></a><span class="kw">do</span></span>
+<span id="cb10-2"><a href="#cb10-2" aria-hidden="true" tabindex="-1"></a>  <span class="kw">let</span> x <span class="ot">=</span> fromJust <span class="op">$</span> fromList</span>
+<span id="cb10-3"><a href="#cb10-3" aria-hidden="true" tabindex="-1"></a>            [ [<span class="dv">12</span>, <span class="op">-</span><span class="dv">51</span>,   <span class="dv">4</span>]</span>
+<span id="cb10-4"><a href="#cb10-4" aria-hidden="true" tabindex="-1"></a>            , [ <span class="dv">6</span>, <span class="dv">167</span>, <span class="op">-</span><span class="dv">68</span>]]</span>
+<span id="cb10-5"><a href="#cb10-5" aria-hidden="true" tabindex="-1"></a><span class="ot">            ::</span> <span class="dt">Matrix</span> <span class="dv">2</span> <span class="dv">3</span> <span class="dt">Double</span></span>
+<span id="cb10-6"><a href="#cb10-6" aria-hidden="true" tabindex="-1"></a>      (q, r) <span class="ot">=</span> qr x</span>
+<span id="cb10-7"><a href="#cb10-7" aria-hidden="true" tabindex="-1"></a>  <span class="fu">putStrLn</span> <span class="st">"Q = "</span></span>
+<span id="cb10-8"><a href="#cb10-8" aria-hidden="true" tabindex="-1"></a>  displayM <span class="dv">8</span> <span class="dv">3</span> q</span>
+<span id="cb10-9"><a href="#cb10-9" aria-hidden="true" tabindex="-1"></a>  <span class="fu">putStrLn</span> <span class="st">"R = "</span></span>
+<span id="cb10-10"><a href="#cb10-10" aria-hidden="true" tabindex="-1"></a>  displayM <span class="dv">8</span> <span class="dv">3</span> r</span>
+<span id="cb10-11"><a href="#cb10-11" aria-hidden="true" tabindex="-1"></a>  <span class="fu">putStrLn</span> <span class="st">"QR = "</span></span>
+<span id="cb10-12"><a href="#cb10-12" aria-hidden="true" tabindex="-1"></a>  displayM <span class="dv">8</span> <span class="dv">3</span> <span class="op">$</span> q <span class="op">!*!</span> r</span>
+<span id="cb10-13"><a href="#cb10-13" aria-hidden="true" tabindex="-1"></a>  <span class="fu">putStrLn</span> <span class="st">"Q^TQ ="</span></span>
+<span id="cb10-14"><a href="#cb10-14" aria-hidden="true" tabindex="-1"></a>  displayM <span class="dv">8</span> <span class="dv">3</span> <span class="op">$</span> transpose q <span class="op">!*!</span> q</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output cell-output-display">
 <pre><code>Q = 
    0.894  -0.447

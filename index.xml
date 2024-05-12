@@ -899,40 +899,36 @@ Q^TQ =
 <p>問題なさそうですね。</p>
 <p>次に非正方行列の場合を見てみましょう。</p>
 <div id="52287087-9679-47b8-81c5-265c7249e4db" class="cell" data-execution_count="6">
-<div class="sourceCode cell-code" id="cb8" style="background: #f1f3f5;"><pre class="sourceCode haskell code-with-copy"><code class="sourceCode haskell"><span id="cb8-1"><span class="ot" style="color: #003B4F;
-background-color: null;
-font-style: inherit;">{-# LANGUAGE DataKinds #-}</span></span>
-<span id="cb8-2"></span>
-<span id="cb8-3"><span class="kw" style="color: #003B4F;
+<div class="sourceCode cell-code" id="cb8" style="background: #f1f3f5;"><pre class="sourceCode haskell code-with-copy"><code class="sourceCode haskell"><span id="cb8-1"><span class="kw" style="color: #003B4F;
 background-color: null;
 font-style: inherit;">do</span></span>
-<span id="cb8-4">  <span class="kw" style="color: #003B4F;
+<span id="cb8-2">  <span class="kw" style="color: #003B4F;
 background-color: null;
 font-style: inherit;">let</span> x <span class="ot" style="color: #003B4F;
 background-color: null;
 font-style: inherit;">=</span> fromJust <span class="op" style="color: #5E5E5E;
 background-color: null;
 font-style: inherit;">$</span> fromList</span>
-<span id="cb8-5">            [ [<span class="dv" style="color: #AD0000;
+<span id="cb8-3">            [ [<span class="dv" style="color: #AD0000;
 background-color: null;
 font-style: inherit;">12</span>, <span class="op" style="color: #5E5E5E;
 background-color: null;
 font-style: inherit;">-</span><span class="dv" style="color: #AD0000;
 background-color: null;
 font-style: inherit;">51</span>]</span>
-<span id="cb8-6">            , [ <span class="dv" style="color: #AD0000;
+<span id="cb8-4">            , [ <span class="dv" style="color: #AD0000;
 background-color: null;
 font-style: inherit;">6</span>, <span class="dv" style="color: #AD0000;
 background-color: null;
 font-style: inherit;">167</span>]</span>
-<span id="cb8-7">            , [<span class="op" style="color: #5E5E5E;
+<span id="cb8-5">            , [<span class="op" style="color: #5E5E5E;
 background-color: null;
 font-style: inherit;">-</span><span class="dv" style="color: #AD0000;
 background-color: null;
 font-style: inherit;">4</span>,  <span class="dv" style="color: #AD0000;
 background-color: null;
 font-style: inherit;">24</span>]]</span>
-<span id="cb8-8"><span class="ot" style="color: #003B4F;
+<span id="cb8-6"><span class="ot" style="color: #003B4F;
 background-color: null;
 font-style: inherit;">            ::</span> <span class="dt" style="color: #AD0000;
 background-color: null;
@@ -943,35 +939,35 @@ background-color: null;
 font-style: inherit;">2</span> <span class="dt" style="color: #AD0000;
 background-color: null;
 font-style: inherit;">Double</span></span>
-<span id="cb8-9">      (q, r) <span class="ot" style="color: #003B4F;
+<span id="cb8-7">      (q, r) <span class="ot" style="color: #003B4F;
 background-color: null;
 font-style: inherit;">=</span> qr x</span>
-<span id="cb8-10">  <span class="fu" style="color: #4758AB;
+<span id="cb8-8">  <span class="fu" style="color: #4758AB;
 background-color: null;
 font-style: inherit;">putStrLn</span> <span class="st" style="color: #20794D;
 background-color: null;
 font-style: inherit;">"Q = "</span></span>
-<span id="cb8-11">  displayM <span class="dv" style="color: #AD0000;
+<span id="cb8-9">  displayM <span class="dv" style="color: #AD0000;
 background-color: null;
 font-style: inherit;">8</span> <span class="dv" style="color: #AD0000;
 background-color: null;
 font-style: inherit;">3</span> q</span>
-<span id="cb8-12">  <span class="fu" style="color: #4758AB;
+<span id="cb8-10">  <span class="fu" style="color: #4758AB;
 background-color: null;
 font-style: inherit;">putStrLn</span> <span class="st" style="color: #20794D;
 background-color: null;
 font-style: inherit;">"R = "</span></span>
-<span id="cb8-13">  displayM <span class="dv" style="color: #AD0000;
+<span id="cb8-11">  displayM <span class="dv" style="color: #AD0000;
 background-color: null;
 font-style: inherit;">8</span> <span class="dv" style="color: #AD0000;
 background-color: null;
 font-style: inherit;">3</span> r</span>
-<span id="cb8-14">  <span class="fu" style="color: #4758AB;
+<span id="cb8-12">  <span class="fu" style="color: #4758AB;
 background-color: null;
 font-style: inherit;">putStrLn</span> <span class="st" style="color: #20794D;
 background-color: null;
 font-style: inherit;">"QR = "</span></span>
-<span id="cb8-15">  displayM <span class="dv" style="color: #AD0000;
+<span id="cb8-13">  displayM <span class="dv" style="color: #AD0000;
 background-color: null;
 font-style: inherit;">8</span> <span class="dv" style="color: #AD0000;
 background-color: null;
@@ -980,12 +976,12 @@ background-color: null;
 font-style: inherit;">$</span> q <span class="op" style="color: #5E5E5E;
 background-color: null;
 font-style: inherit;">!*!</span> r</span>
-<span id="cb8-16">  <span class="fu" style="color: #4758AB;
+<span id="cb8-14">  <span class="fu" style="color: #4758AB;
 background-color: null;
 font-style: inherit;">putStrLn</span> <span class="st" style="color: #20794D;
 background-color: null;
 font-style: inherit;">"Q^TQ ="</span></span>
-<span id="cb8-17">  displayM <span class="dv" style="color: #AD0000;
+<span id="cb8-15">  displayM <span class="dv" style="color: #AD0000;
 background-color: null;
 font-style: inherit;">8</span> <span class="dv" style="color: #AD0000;
 background-color: null;
@@ -1014,21 +1010,17 @@ Q^TQ =
 </div>
 </div>
 <div id="e172aa6b-1128-4154-a787-c244348a533b" class="cell" data-execution_count="7">
-<div class="sourceCode cell-code" id="cb10" style="background: #f1f3f5;"><pre class="sourceCode haskell code-with-copy"><code class="sourceCode haskell"><span id="cb10-1"><span class="ot" style="color: #003B4F;
-background-color: null;
-font-style: inherit;">{-# LANGUAGE DataKinds #-}</span></span>
-<span id="cb10-2"></span>
-<span id="cb10-3"><span class="kw" style="color: #003B4F;
+<div class="sourceCode cell-code" id="cb10" style="background: #f1f3f5;"><pre class="sourceCode haskell code-with-copy"><code class="sourceCode haskell"><span id="cb10-1"><span class="kw" style="color: #003B4F;
 background-color: null;
 font-style: inherit;">do</span></span>
-<span id="cb10-4">  <span class="kw" style="color: #003B4F;
+<span id="cb10-2">  <span class="kw" style="color: #003B4F;
 background-color: null;
 font-style: inherit;">let</span> x <span class="ot" style="color: #003B4F;
 background-color: null;
 font-style: inherit;">=</span> fromJust <span class="op" style="color: #5E5E5E;
 background-color: null;
 font-style: inherit;">$</span> fromList</span>
-<span id="cb10-5">            [ [<span class="dv" style="color: #AD0000;
+<span id="cb10-3">            [ [<span class="dv" style="color: #AD0000;
 background-color: null;
 font-style: inherit;">12</span>, <span class="op" style="color: #5E5E5E;
 background-color: null;
@@ -1037,7 +1029,7 @@ background-color: null;
 font-style: inherit;">51</span>,   <span class="dv" style="color: #AD0000;
 background-color: null;
 font-style: inherit;">4</span>]</span>
-<span id="cb10-6">            , [ <span class="dv" style="color: #AD0000;
+<span id="cb10-4">            , [ <span class="dv" style="color: #AD0000;
 background-color: null;
 font-style: inherit;">6</span>, <span class="dv" style="color: #AD0000;
 background-color: null;
@@ -1046,7 +1038,7 @@ background-color: null;
 font-style: inherit;">-</span><span class="dv" style="color: #AD0000;
 background-color: null;
 font-style: inherit;">68</span>]]</span>
-<span id="cb10-7"><span class="ot" style="color: #003B4F;
+<span id="cb10-5"><span class="ot" style="color: #003B4F;
 background-color: null;
 font-style: inherit;">            ::</span> <span class="dt" style="color: #AD0000;
 background-color: null;
@@ -1057,35 +1049,35 @@ background-color: null;
 font-style: inherit;">3</span> <span class="dt" style="color: #AD0000;
 background-color: null;
 font-style: inherit;">Double</span></span>
-<span id="cb10-8">      (q, r) <span class="ot" style="color: #003B4F;
+<span id="cb10-6">      (q, r) <span class="ot" style="color: #003B4F;
 background-color: null;
 font-style: inherit;">=</span> qr x</span>
-<span id="cb10-9">  <span class="fu" style="color: #4758AB;
+<span id="cb10-7">  <span class="fu" style="color: #4758AB;
 background-color: null;
 font-style: inherit;">putStrLn</span> <span class="st" style="color: #20794D;
 background-color: null;
 font-style: inherit;">"Q = "</span></span>
-<span id="cb10-10">  displayM <span class="dv" style="color: #AD0000;
+<span id="cb10-8">  displayM <span class="dv" style="color: #AD0000;
 background-color: null;
 font-style: inherit;">8</span> <span class="dv" style="color: #AD0000;
 background-color: null;
 font-style: inherit;">3</span> q</span>
-<span id="cb10-11">  <span class="fu" style="color: #4758AB;
+<span id="cb10-9">  <span class="fu" style="color: #4758AB;
 background-color: null;
 font-style: inherit;">putStrLn</span> <span class="st" style="color: #20794D;
 background-color: null;
 font-style: inherit;">"R = "</span></span>
-<span id="cb10-12">  displayM <span class="dv" style="color: #AD0000;
+<span id="cb10-10">  displayM <span class="dv" style="color: #AD0000;
 background-color: null;
 font-style: inherit;">8</span> <span class="dv" style="color: #AD0000;
 background-color: null;
 font-style: inherit;">3</span> r</span>
-<span id="cb10-13">  <span class="fu" style="color: #4758AB;
+<span id="cb10-11">  <span class="fu" style="color: #4758AB;
 background-color: null;
 font-style: inherit;">putStrLn</span> <span class="st" style="color: #20794D;
 background-color: null;
 font-style: inherit;">"QR = "</span></span>
-<span id="cb10-14">  displayM <span class="dv" style="color: #AD0000;
+<span id="cb10-12">  displayM <span class="dv" style="color: #AD0000;
 background-color: null;
 font-style: inherit;">8</span> <span class="dv" style="color: #AD0000;
 background-color: null;
@@ -1094,12 +1086,12 @@ background-color: null;
 font-style: inherit;">$</span> q <span class="op" style="color: #5E5E5E;
 background-color: null;
 font-style: inherit;">!*!</span> r</span>
-<span id="cb10-15">  <span class="fu" style="color: #4758AB;
+<span id="cb10-13">  <span class="fu" style="color: #4758AB;
 background-color: null;
 font-style: inherit;">putStrLn</span> <span class="st" style="color: #20794D;
 background-color: null;
 font-style: inherit;">"Q^TQ ="</span></span>
-<span id="cb10-16">  displayM <span class="dv" style="color: #AD0000;
+<span id="cb10-14">  displayM <span class="dv" style="color: #AD0000;
 background-color: null;
 font-style: inherit;">8</span> <span class="dv" style="color: #AD0000;
 background-color: null;
