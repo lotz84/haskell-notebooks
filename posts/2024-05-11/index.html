@@ -1,0 +1,901 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en"><head>
+
+<meta charset="utf-8">
+<meta name="generator" content="quarto-1.4.550">
+
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+
+<meta name="author" content="lotz">
+<meta name="dcterms.date" content="2024-05-12">
+
+<title>lotz’s Haskell notebooks - HaskellでQR分解を実装する</title>
+<style>
+code{white-space: pre-wrap;}
+span.smallcaps{font-variant: small-caps;}
+div.columns{display: flex; gap: min(4vw, 1.5em);}
+div.column{flex: auto; overflow-x: auto;}
+div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+ul.task-list{list-style: none;}
+ul.task-list li input[type="checkbox"] {
+  width: 0.8em;
+  margin: 0 0.8em 0.2em -1em; /* quarto-specific, see https://github.com/quarto-dev/quarto-cli/issues/4556 */ 
+  vertical-align: middle;
+}
+/* CSS for syntax highlighting */
+pre > code.sourceCode { white-space: pre; position: relative; }
+pre > code.sourceCode > span { line-height: 1.25; }
+pre > code.sourceCode > span:empty { height: 1.2em; }
+.sourceCode { overflow: visible; }
+code.sourceCode > span { color: inherit; text-decoration: inherit; }
+div.sourceCode { margin: 1em 0; }
+pre.sourceCode { margin: 0; }
+@media screen {
+div.sourceCode { overflow: auto; }
+}
+@media print {
+pre > code.sourceCode { white-space: pre-wrap; }
+pre > code.sourceCode > span { text-indent: -5em; padding-left: 5em; }
+}
+pre.numberSource code
+  { counter-reset: source-line 0; }
+pre.numberSource code > span
+  { position: relative; left: -4em; counter-increment: source-line; }
+pre.numberSource code > span > a:first-child::before
+  { content: counter(source-line);
+    position: relative; left: -1em; text-align: right; vertical-align: baseline;
+    border: none; display: inline-block;
+    -webkit-touch-callout: none; -webkit-user-select: none;
+    -khtml-user-select: none; -moz-user-select: none;
+    -ms-user-select: none; user-select: none;
+    padding: 0 4px; width: 4em;
+  }
+pre.numberSource { margin-left: 3em;  padding-left: 4px; }
+div.sourceCode
+  {   }
+@media screen {
+pre > code.sourceCode > span > a:first-child::before { text-decoration: underline; }
+}
+</style>
+
+
+<script src="../../site_libs/quarto-nav/quarto-nav.js"></script>
+<script src="../../site_libs/quarto-nav/headroom.min.js"></script>
+<script src="../../site_libs/clipboard/clipboard.min.js"></script>
+<script src="../../site_libs/quarto-search/autocomplete.umd.js"></script>
+<script src="../../site_libs/quarto-search/fuse.min.js"></script>
+<script src="../../site_libs/quarto-search/quarto-search.js"></script>
+<meta name="quarto:offset" content="../../">
+<link href="../../favicon.ico" rel="icon">
+<script src="../../site_libs/quarto-html/quarto.js"></script>
+<script src="../../site_libs/quarto-html/popper.min.js"></script>
+<script src="../../site_libs/quarto-html/tippy.umd.min.js"></script>
+<script src="../../site_libs/quarto-html/anchor.min.js"></script>
+<link href="../../site_libs/quarto-html/tippy.css" rel="stylesheet">
+<link href="../../site_libs/quarto-html/quarto-syntax-highlighting.css" rel="stylesheet" id="quarto-text-highlighting-styles">
+<script src="../../site_libs/bootstrap/bootstrap.min.js"></script>
+<link href="../../site_libs/bootstrap/bootstrap-icons.css" rel="stylesheet">
+<link href="../../site_libs/bootstrap/bootstrap.min.css" rel="stylesheet" id="quarto-bootstrap" data-mode="light">
+<script id="quarto-search-options" type="application/json">{
+  "location": "navbar",
+  "copy-button": false,
+  "collapse-after": 3,
+  "panel-placement": "end",
+  "type": "overlay",
+  "limit": 50,
+  "keyboard-shortcut": [
+    "f",
+    "/",
+    "s"
+  ],
+  "show-item-context": false,
+  "language": {
+    "search-no-results-text": "No results",
+    "search-matching-documents-text": "matching documents",
+    "search-copy-link-title": "Copy link to search",
+    "search-hide-matches-text": "Hide additional matches",
+    "search-more-match-text": "more match in this document",
+    "search-more-matches-text": "more matches in this document",
+    "search-clear-button-title": "Clear",
+    "search-text-placeholder": "",
+    "search-detached-cancel-button-title": "Cancel",
+    "search-submit-button-title": "Submit",
+    "search-label": "Search"
+  }
+}</script>
+
+  <script src="https://polyfill.io/v3/polyfill.min.js?features=es6"></script>
+  <script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-chtml-full.js" type="text/javascript"></script>
+
+<script type="text/javascript">
+const typesetMath = (el) => {
+  if (window.MathJax) {
+    // MathJax Typeset
+    window.MathJax.typeset([el]);
+  } else if (window.katex) {
+    // KaTeX Render
+    var mathElements = el.getElementsByClassName("math");
+    var macros = [];
+    for (var i = 0; i < mathElements.length; i++) {
+      var texText = mathElements[i].firstChild;
+      if (mathElements[i].tagName == "SPAN") {
+        window.katex.render(texText.data, mathElements[i], {
+          displayMode: mathElements[i].classList.contains('display'),
+          throwOnError: false,
+          macros: macros,
+          fleqn: false
+        });
+      }
+    }
+  }
+}
+window.Quarto = {
+  typesetMath
+};
+</script>
+
+<meta property="og:title" content="lotz’s Haskell notebooks - HaskellでQR分解を実装する">
+<meta property="og:description" content="IHaskellで書いたnotebookを公開する場所">
+<meta property="og:site_name" content="lotz's Haskell notebooks">
+<meta name="twitter:title" content="lotz’s Haskell notebooks - HaskellでQR分解を実装する">
+<meta name="twitter:description" content="IHaskellで書いたnotebookを公開する場所">
+<meta name="twitter:card" content="summary">
+</head>
+
+<body class="nav-fixed">
+
+<div id="quarto-search-results"></div>
+  <header id="quarto-header" class="headroom fixed-top quarto-banner">
+    <nav class="navbar navbar-expand-lg " data-bs-theme="dark">
+      <div class="navbar-container container-fluid">
+      <div class="navbar-brand-container mx-auto">
+    <a class="navbar-brand" href="../../index.html">
+    <span class="navbar-title">lotz’s Haskell notebooks</span>
+    </a>
+  </div>
+            <div id="quarto-search" class="" title="Search"></div>
+          <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarCollapse" aria-controls="navbarCollapse" aria-expanded="false" aria-label="Toggle navigation" onclick="if (window.quartoToggleHeadroom) { window.quartoToggleHeadroom(); }">
+  <span class="navbar-toggler-icon"></span>
+</button>
+          <div class="collapse navbar-collapse" id="navbarCollapse">
+            <ul class="navbar-nav navbar-nav-scroll ms-auto">
+  <li class="nav-item">
+    <a class="nav-link" href="../../about.html"> 
+<span class="menu-text">About</span></a>
+  </li>  
+  <li class="nav-item compact">
+    <a class="nav-link" href="https://github.com/lotz84"> <i class="bi bi-github" role="img">
+</i> 
+<span class="menu-text"></span></a>
+  </li>  
+  <li class="nav-item compact">
+    <a class="nav-link" href="https://twitter.com/lotz84_"> <i class="bi bi-twitter" role="img">
+</i> 
+<span class="menu-text"></span></a>
+  </li>  
+  <li class="nav-item compact">
+    <a class="nav-link" href="../../index.xml"> <i class="bi bi-rss" role="img">
+</i> 
+<span class="menu-text"></span></a>
+  </li>  
+</ul>
+          </div> <!-- /navcollapse -->
+          <div class="quarto-navbar-tools">
+</div>
+      </div> <!-- /container-fluid -->
+    </nav>
+</header>
+<!-- content -->
+<header id="title-block-header" class="quarto-title-block default page-columns page-full">
+  <div class="quarto-title-banner page-columns page-full">
+    <div class="quarto-title column-body">
+      <h1 class="title">HaskellでQR分解を実装する</h1>
+                      </div>
+  </div>
+    
+  
+  <div class="quarto-title-meta">
+
+      <div>
+      <div class="quarto-title-meta-heading">Author</div>
+      <div class="quarto-title-meta-contents">
+               <p>lotz </p>
+            </div>
+    </div>
+      
+      <div>
+      <div class="quarto-title-meta-heading">Published</div>
+      <div class="quarto-title-meta-contents">
+        <p class="date">May 12, 2024</p>
+      </div>
+    </div>
+    
+      
+    </div>
+    
+  
+  </header><div id="quarto-content" class="quarto-container page-columns page-rows-contents page-layout-article page-navbar">
+<!-- sidebar -->
+<!-- margin-sidebar -->
+    <div id="quarto-margin-sidebar" class="sidebar margin-sidebar">
+        <nav id="TOC" role="doc-toc" class="toc-active">
+    <h2 id="toc-title">On this page</h2>
+   
+  <ul>
+  <li><a href="#即席線形代数" id="toc-即席線形代数" class="nav-link active" data-scroll-target="#即席線形代数">即席線形代数</a></li>
+  <li><a href="#ハウスホルダー変換" id="toc-ハウスホルダー変換" class="nav-link" data-scroll-target="#ハウスホルダー変換">ハウスホルダー変換</a></li>
+  <li><a href="#qr分解" id="toc-qr分解" class="nav-link" data-scroll-target="#qr分解">QR分解</a></li>
+  <li><a href="#数値実験" id="toc-数値実験" class="nav-link" data-scroll-target="#数値実験">数値実験</a></li>
+  </ul>
+</nav>
+    </div>
+<!-- main -->
+<main class="content quarto-banner-title-block" id="quarto-document-content">
+
+
+
+
+
+<p><strong>QR分解</strong>は与えられた<span class="math inline">\(m\times n\)</span>行列<span class="math inline">\(A\)</span>を<span class="math inline">\(m\times m\)</span>のユニタリ行列（実数の場合、直交行列）<span class="math inline">\(Q\)</span>と<span class="math inline">\(m\times n\)</span>の上三角行列<span class="math inline">\(R\)</span>の積、すなわち<span class="math inline">\(A=QR\)</span>と分解する手法です。 数値的に安定な計算アルゴリズムが知られており、固有値の計算（<a href="https://en.wikipedia.org/wiki/QR_algorithm">QR法</a>）や<a href="https://twitter.com/lotz84_/status/1778800294207623190">カルマンフィルターの安定的な計算</a>にも応用されています。またこういった分解はより抽象的な対象で考えられることも多く、QR分解は<a href="https://ja.wikipedia.org/wiki/%E3%83%AA%E3%83%BC%E7%BE%A4%E3%81%AE%E5%88%86%E8%A7%A3">半単純リー群の岩澤分解に一般化される</a>ことが知られています。</p>
+<p>QR分解を実現するアルゴリズムは<a href="https://ja.wikipedia.org/wiki/QR%E5%88%86%E8%A7%A3">Wikipedia</a>にも詳しく載っており</p>
+<ul>
+<li>グラム・シュミットの正規直交化法</li>
+<li>ハウスホルダー変換</li>
+<li>ギブンス回転</li>
+</ul>
+<p>を利用した手法などがあります。</p>
+<p>Haskellでも例えば <a href="https://hackage.haskell.org/package/hmatrix">hmatrix</a> が <a href="https://hackage.haskell.org/package/hmatrix-0.20.2/docs/Numeric-LinearAlgebra.html#v:qr"><code>qr</code></a> というQR分解を行う関数を提供していたり、hmatrixを使ったギブンス回転やハウスホルダー変換によるQR分解の実装を解説した記事もあります（<a href="http://www.nct9.ne.jp/m_hiroi/func/haskell48.html">お気楽 Haskell プログラミング入門 線形代数編</a>）。しかし本稿ではあえて vector-sized を使って自分で実装してみようと思い、数値的にも安定しているハウスホルダー変換を利用した<strong>実行列のQR分解</strong>の実装したいと思います。</p>
+<section id="即席線形代数" class="level1">
+<h1>即席線形代数</h1>
+<p>まずは <a href="https://zenn.dev/lotz/articles/6b0d8081ad2f8a">Haskellで実装する即席線形代数</a> を参考に実装に必要なベクトルと行列の型と関数の定義を行います。</p>
+<div id="8e633304-5173-40e0-9b2f-ccab2def1c5b" class="cell" data-execution_count="1">
+<div class="sourceCode cell-code" id="cb1"><pre class="sourceCode haskell code-with-copy"><code class="sourceCode haskell"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="kw">import</span> <span class="dt">GHC.TypeLits</span></span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a><span class="kw">import</span> <span class="dt">Text.Printf</span></span>
+<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a><span class="kw">import</span> <span class="dt">Data.Vector.Sized</span> (<span class="dt">Vector</span>)</span>
+<span id="cb1-5"><a href="#cb1-5" aria-hidden="true" tabindex="-1"></a><span class="kw">import</span> <span class="kw">qualified</span> <span class="dt">Data.Vector.Sized</span> <span class="kw">as</span> <span class="dt">V</span></span>
+<span id="cb1-6"><a href="#cb1-6" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-7"><a href="#cb1-7" aria-hidden="true" tabindex="-1"></a><span class="kw">type</span> <span class="dt">Matrix</span> m n a <span class="ot">=</span> <span class="dt">Vector</span> m (<span class="dt">Vector</span> n a)</span>
+<span id="cb1-8"><a href="#cb1-8" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-9"><a href="#cb1-9" aria-hidden="true" tabindex="-1"></a><span class="co">-- | ベクトルのスカラー倍</span></span>
+<span id="cb1-10"><a href="#cb1-10" aria-hidden="true" tabindex="-1"></a><span class="ot">(*^) ::</span> <span class="dt">Num</span> a <span class="ot">=&gt;</span> a <span class="ot">-&gt;</span> <span class="dt">Vector</span> n a <span class="ot">-&gt;</span> <span class="dt">Vector</span> n a</span>
+<span id="cb1-11"><a href="#cb1-11" aria-hidden="true" tabindex="-1"></a>(<span class="op">*^</span>) a <span class="ot">=</span> V.map (<span class="op">*</span>a)</span>
+<span id="cb1-12"><a href="#cb1-12" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-13"><a href="#cb1-13" aria-hidden="true" tabindex="-1"></a><span class="co">-- | ベクトルをスカラー値で割る</span></span>
+<span id="cb1-14"><a href="#cb1-14" aria-hidden="true" tabindex="-1"></a><span class="ot">(^/) ::</span> <span class="dt">Fractional</span> a <span class="ot">=&gt;</span> <span class="dt">Vector</span> n a <span class="ot">-&gt;</span> a <span class="ot">-&gt;</span> <span class="dt">Vector</span> n a</span>
+<span id="cb1-15"><a href="#cb1-15" aria-hidden="true" tabindex="-1"></a>(<span class="op">^/</span>) v a <span class="ot">=</span> <span class="fu">recip</span> a <span class="op">*^</span> v</span>
+<span id="cb1-16"><a href="#cb1-16" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-17"><a href="#cb1-17" aria-hidden="true" tabindex="-1"></a><span class="co">-- | 内積</span></span>
+<span id="cb1-18"><a href="#cb1-18" aria-hidden="true" tabindex="-1"></a><span class="ot">dot ::</span> <span class="dt">Num</span> a <span class="ot">=&gt;</span> <span class="dt">Vector</span> n a <span class="ot">-&gt;</span> <span class="dt">Vector</span> n a <span class="ot">-&gt;</span> a</span>
+<span id="cb1-19"><a href="#cb1-19" aria-hidden="true" tabindex="-1"></a>dot <span class="ot">=</span> (V.sum <span class="op">.</span>) <span class="op">.</span> V.zipWith (<span class="op">*</span>)</span>
+<span id="cb1-20"><a href="#cb1-20" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-21"><a href="#cb1-21" aria-hidden="true" tabindex="-1"></a><span class="co">-- | 外積</span></span>
+<span id="cb1-22"><a href="#cb1-22" aria-hidden="true" tabindex="-1"></a><span class="ot">outer ::</span> <span class="dt">Num</span> a <span class="ot">=&gt;</span> <span class="dt">Vector</span> m a <span class="ot">-&gt;</span> <span class="dt">Vector</span> n a <span class="ot">-&gt;</span> <span class="dt">Matrix</span> m n a</span>
+<span id="cb1-23"><a href="#cb1-23" aria-hidden="true" tabindex="-1"></a>outer xs ys <span class="ot">=</span> V.map (\x <span class="ot">-&gt;</span> V.map (<span class="op">*</span>x) ys) xs</span>
+<span id="cb1-24"><a href="#cb1-24" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-25"><a href="#cb1-25" aria-hidden="true" tabindex="-1"></a><span class="co">-- | ユークリッドノルム</span></span>
+<span id="cb1-26"><a href="#cb1-26" aria-hidden="true" tabindex="-1"></a><span class="ot">norm2V ::</span> <span class="dt">Floating</span> a <span class="ot">=&gt;</span> <span class="dt">Vector</span> n a <span class="ot">-&gt;</span> a</span>
+<span id="cb1-27"><a href="#cb1-27" aria-hidden="true" tabindex="-1"></a>norm2V <span class="ot">=</span> <span class="fu">sqrt</span> <span class="op">.</span> V.sum <span class="op">.</span> V.map (<span class="op">^</span><span class="dv">2</span>)</span>
+<span id="cb1-28"><a href="#cb1-28" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-29"><a href="#cb1-29" aria-hidden="true" tabindex="-1"></a><span class="co">-- | リストから行列を作成する</span></span>
+<span id="cb1-30"><a href="#cb1-30" aria-hidden="true" tabindex="-1"></a><span class="ot">fromList ::</span> (<span class="dt">KnownNat</span> m, <span class="dt">KnownNat</span> n) <span class="ot">=&gt;</span> [[a]] <span class="ot">-&gt;</span> <span class="dt">Maybe</span> (<span class="dt">Matrix</span> m n a)</span>
+<span id="cb1-31"><a href="#cb1-31" aria-hidden="true" tabindex="-1"></a>fromList <span class="ot">=</span> (<span class="op">=&lt;&lt;</span>) V.fromList <span class="op">.</span> <span class="fu">mapM</span> V.fromList</span>
+<span id="cb1-32"><a href="#cb1-32" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-33"><a href="#cb1-33" aria-hidden="true" tabindex="-1"></a><span class="co">-- | 行列を整形して表示する</span></span>
+<span id="cb1-34"><a href="#cb1-34" aria-hidden="true" tabindex="-1"></a><span class="ot">displayM ::</span> <span class="dt">PrintfArg</span> a</span>
+<span id="cb1-35"><a href="#cb1-35" aria-hidden="true" tabindex="-1"></a>         <span class="ot">=&gt;</span> <span class="dt">Int</span>  <span class="co">-- 数値の表示幅</span></span>
+<span id="cb1-36"><a href="#cb1-36" aria-hidden="true" tabindex="-1"></a>         <span class="ot">-&gt;</span> <span class="dt">Int</span>  <span class="co">-- 有効数字</span></span>
+<span id="cb1-37"><a href="#cb1-37" aria-hidden="true" tabindex="-1"></a>         <span class="ot">-&gt;</span> <span class="dt">Matrix</span> n m a</span>
+<span id="cb1-38"><a href="#cb1-38" aria-hidden="true" tabindex="-1"></a>         <span class="ot">-&gt;</span> <span class="dt">IO</span> ()</span>
+<span id="cb1-39"><a href="#cb1-39" aria-hidden="true" tabindex="-1"></a>displayM w p <span class="ot">=</span> <span class="fu">putStrLn</span> <span class="op">.</span> <span class="fu">drop</span> <span class="dv">1</span> <span class="op">.</span> V.foldl (\x v <span class="ot">-&gt;</span> x <span class="op">++</span> <span class="ch">'\n'</span> <span class="op">:</span> V.foldl (<span class="op">++</span>) <span class="st">""</span> (V.map (printf <span class="st">"%*.*f"</span> w p) v)) <span class="st">""</span></span>
+<span id="cb1-40"><a href="#cb1-40" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-41"><a href="#cb1-41" aria-hidden="true" tabindex="-1"></a><span class="co">-- | 単位行列</span></span>
+<span id="cb1-42"><a href="#cb1-42" aria-hidden="true" tabindex="-1"></a><span class="ot">identity ::</span> (<span class="dt">KnownNat</span> n, <span class="dt">Num</span> a) <span class="ot">=&gt;</span> <span class="dt">Matrix</span> n n a</span>
+<span id="cb1-43"><a href="#cb1-43" aria-hidden="true" tabindex="-1"></a>identity <span class="ot">=</span> V.generate (\x <span class="ot">-&gt;</span> V.generate (\y <span class="ot">-&gt;</span> <span class="kw">if</span> x <span class="op">==</span> y <span class="kw">then</span> <span class="dv">1</span> <span class="kw">else</span> <span class="dv">0</span>))</span>
+<span id="cb1-44"><a href="#cb1-44" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-45"><a href="#cb1-45" aria-hidden="true" tabindex="-1"></a><span class="co">-- | 行列のスカラー倍</span></span>
+<span id="cb1-46"><a href="#cb1-46" aria-hidden="true" tabindex="-1"></a><span class="ot">(*!!) ::</span> <span class="dt">Num</span> a <span class="ot">=&gt;</span> a <span class="ot">-&gt;</span> <span class="dt">Matrix</span> m n a <span class="ot">-&gt;</span> <span class="dt">Matrix</span> m n a</span>
+<span id="cb1-47"><a href="#cb1-47" aria-hidden="true" tabindex="-1"></a>(<span class="op">*!!</span>) a <span class="ot">=</span> V.map (V.map (<span class="op">*</span>a))</span>
+<span id="cb1-48"><a href="#cb1-48" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-49"><a href="#cb1-49" aria-hidden="true" tabindex="-1"></a><span class="co">-- | 行列の転置</span></span>
+<span id="cb1-50"><a href="#cb1-50" aria-hidden="true" tabindex="-1"></a><span class="ot">transpose ::</span> <span class="dt">KnownNat</span> n <span class="ot">=&gt;</span> <span class="dt">Matrix</span> m n a <span class="ot">-&gt;</span> <span class="dt">Matrix</span> n m a</span>
+<span id="cb1-51"><a href="#cb1-51" aria-hidden="true" tabindex="-1"></a>transpose <span class="ot">=</span> <span class="fu">sequenceA</span></span>
+<span id="cb1-52"><a href="#cb1-52" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-53"><a href="#cb1-53" aria-hidden="true" tabindex="-1"></a><span class="co">-- | 行列積</span></span>
+<span id="cb1-54"><a href="#cb1-54" aria-hidden="true" tabindex="-1"></a><span class="ot">(!*!) ::</span> (<span class="dt">KnownNat</span> r, <span class="dt">Num</span> a) <span class="ot">=&gt;</span> <span class="dt">Matrix</span> m n a <span class="ot">-&gt;</span> <span class="dt">Matrix</span> n r a <span class="ot">-&gt;</span> <span class="dt">Matrix</span> m r a</span>
+<span id="cb1-55"><a href="#cb1-55" aria-hidden="true" tabindex="-1"></a>a <span class="op">!*!</span> b <span class="ot">=</span> <span class="fu">fmap</span> (<span class="fu">flip</span> <span class="fu">fmap</span> (transpose b) <span class="op">.</span> dot) a</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+</section>
+<section id="ハウスホルダー変換" class="level1">
+<h1>ハウスホルダー変換</h1>
+<p><a href="https://ja.wikipedia.org/wiki/%E3%83%8F%E3%82%A6%E3%82%B9%E3%83%9B%E3%83%AB%E3%83%80%E3%83%BC%E5%A4%89%E6%8F%9B">ハウスホルダー変換</a>は与えられたベクトル<span class="math inline">\(x\)</span>を単位法線ベクトル<span class="math inline">\(v\)</span>で表された原典を通る超平面で<strong>鏡映変換</strong>する変換です。変換後のベクトルは <span class="math inline">\(x - 2 v \langle v, x \rangle\)</span> と表すことができ、これは行列 <span class="math inline">\(I - 2vv^{\rm T}\)</span>を<span class="math inline">\(x\)</span>に左から掛けて変換していると考えることもできます。このハウスホルダー変換を使えば、与えられた行列の列ベクトルを左から順番に第n成分までの部分空間に射影していくことでQR分解を得ることができます。</p>
+<p>アルゴリズムの詳しい解説は他の記事に譲るとして（例えば<a href="https://ja.wikipedia.org/wiki/QR%E5%88%86%E8%A7%A3#%E3%83%8F%E3%82%A6%E3%82%B9%E3%83%9B%E3%83%AB%E3%83%80%E3%83%BC%E5%A4%89%E6%8F%9B%E3%81%AE%E4%BD%BF%E7%94%A8">Wikipedia</a>）、さっそく実装を見ていきたいと思います。以下 <code>householder</code> として実装するのは添字<span class="math inline">\(i\)</span>とベクトル<span class="math inline">\(x\)</span>が与えられた時に、<span class="math inline">\(x\)</span>の第<span class="math inline">\(i\)</span>成分以降を第<span class="math inline">\(i\)</span>成分までの部分空間に射影する（すなわち残りの成分を0にする）ハウスホルダー変換を表す行列を計算する関数です。</p>
+<div id="fb9662a3-76d4-410d-93bf-061e0b2f44f4" class="cell" data-execution_count="2">
+<div class="sourceCode cell-code" id="cb2"><pre class="sourceCode haskell code-with-copy"><code class="sourceCode haskell"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="kw">import</span> <span class="dt">Data.Maybe</span> (fromJust)</span>
+<span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a><span class="kw">import</span> <span class="dt">Data.Finite</span> (<span class="dt">Finite</span>)</span>
+<span id="cb2-4"><a href="#cb2-4" aria-hidden="true" tabindex="-1"></a><span class="kw">import</span> <span class="kw">qualified</span> <span class="dt">Data.Vector</span> <span class="kw">as</span> <span class="dt">V'</span></span>
+<span id="cb2-5"><a href="#cb2-5" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-6"><a href="#cb2-6" aria-hidden="true" tabindex="-1"></a><span class="co">-- | ハウスホルダー変換</span></span>
+<span id="cb2-7"><a href="#cb2-7" aria-hidden="true" tabindex="-1"></a><span class="ot">householder ::</span> (<span class="dt">KnownNat</span> n, <span class="dt">Ord</span> a, <span class="dt">Floating</span> a) <span class="ot">=&gt;</span> <span class="dt">Finite</span> n <span class="ot">-&gt;</span> <span class="dt">Vector</span> n a <span class="ot">-&gt;</span> <span class="dt">Matrix</span> n n a</span>
+<span id="cb2-8"><a href="#cb2-8" aria-hidden="true" tabindex="-1"></a>householder i' x <span class="ot">=</span></span>
+<span id="cb2-9"><a href="#cb2-9" aria-hidden="true" tabindex="-1"></a>  <span class="kw">let</span> i <span class="ot">=</span> <span class="fu">fromIntegral</span> i'</span>
+<span id="cb2-10"><a href="#cb2-10" aria-hidden="true" tabindex="-1"></a>      y <span class="ot">=</span> V'.drop i <span class="op">$</span> V.fromSized x</span>
+<span id="cb2-11"><a href="#cb2-11" aria-hidden="true" tabindex="-1"></a>      u <span class="ot">=</span> y <span class="op">V'.//</span> [(<span class="dv">0</span>, V'.head y <span class="op">-</span> y <span class="ot">`V.withSized`</span> norm2V)]</span>
+<span id="cb2-12"><a href="#cb2-12" aria-hidden="true" tabindex="-1"></a>      padding <span class="ot">=</span> (<span class="op">V'.++</span>) (V'.replicate i <span class="dv">0</span>)</span>
+<span id="cb2-13"><a href="#cb2-13" aria-hidden="true" tabindex="-1"></a>      u_norm <span class="ot">=</span> u <span class="ot">`V.withSized`</span> norm2V</span>
+<span id="cb2-14"><a href="#cb2-14" aria-hidden="true" tabindex="-1"></a>      v <span class="ot">=</span> fromJust <span class="op">.</span> V.toSized <span class="op">.</span> padding <span class="op">$</span> V'.map (<span class="op">/</span>u_norm) u</span>
+<span id="cb2-15"><a href="#cb2-15" aria-hidden="true" tabindex="-1"></a>   <span class="kw">in</span> <span class="kw">if</span> <span class="fu">abs</span> u_norm <span class="op">&lt;</span> <span class="fl">1e-12</span> <span class="kw">then</span> identity <span class="kw">else</span> identity <span class="op">-</span> <span class="dv">2</span> <span class="op">*!!</span> outer v v</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+<p>ベクトルと行列の型にはサイズに関する情報を持たせていますが <code>householder</code> では最初からその情報を捨てて素の <code>Data.Vector</code> で変換を行っています。理由としてはハウスホルダー変換を計算するベクトルの長さ（すなわち<strong>型</strong>）は第一引数である <code>i'</code> の<strong>値</strong>に依存しており、今のHaskellの依存型だと今回の様な状況では簡潔に実装できる方法がないため型からサイズの情報を削ることにしました。</p>
+<p>実装中に単位法線ベクトル<span class="math inline">\(v\)</span>を計算するために法線ベクトル<span class="math inline">\(u\)</span>をそのノルムで割る処理がありますが、<span class="math inline">\(u\)</span>のノルムが非常に小さい場合この処理は不安定になります。しかし<span class="math inline">\(u\)</span>のノルムが非常に小さいということは<span class="math inline">\(x\)</span>と変換後のベクトルがほぼ等しいという状況を表しており、このような場合には結果となる変換行列をただの単位行列にするようにしています。</p>
+</section>
+<section id="qr分解" class="level1">
+<h1>QR分解</h1>
+<p>QR分解は与えられた行列の列ベクトルを左から順番にハウスホルダー変換して上三角行列を作ることにより得ることができます。</p>
+<div id="5e0baf6e-6635-47ae-8b18-b08d4e1aafc3" class="cell" data-execution_count="3">
+<div class="sourceCode cell-code" id="cb3"><pre class="sourceCode haskell code-with-copy"><code class="sourceCode haskell"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="ot">{-# LANGUAGE ScopedTypeVariables #-}</span></span>
+<span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-3"><a href="#cb3-3" aria-hidden="true" tabindex="-1"></a><span class="kw">import</span> <span class="dt">Data.Proxy</span></span>
+<span id="cb3-4"><a href="#cb3-4" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-5"><a href="#cb3-5" aria-hidden="true" tabindex="-1"></a><span class="kw">import</span> <span class="dt">Data.Finite</span> (finite)</span>
+<span id="cb3-6"><a href="#cb3-6" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-7"><a href="#cb3-7" aria-hidden="true" tabindex="-1"></a><span class="ot">qr ::</span> <span class="kw">forall</span> m n a<span class="op">.</span> (<span class="dt">KnownNat</span> m, <span class="dt">KnownNat</span> n, <span class="dt">Ord</span> a, <span class="dt">Floating</span> a) <span class="ot">=&gt;</span> <span class="dt">Matrix</span> m n a <span class="ot">-&gt;</span> (<span class="dt">Matrix</span> m m a, <span class="dt">Matrix</span> m n a)</span>
+<span id="cb3-8"><a href="#cb3-8" aria-hidden="true" tabindex="-1"></a>qr a <span class="ot">=</span></span>
+<span id="cb3-9"><a href="#cb3-9" aria-hidden="true" tabindex="-1"></a>  transpose <span class="op">&lt;$&gt;</span></span>
+<span id="cb3-10"><a href="#cb3-10" aria-hidden="true" tabindex="-1"></a>    <span class="fu">foldl</span> (\(q, r) i <span class="ot">-&gt;</span></span>
+<span id="cb3-11"><a href="#cb3-11" aria-hidden="true" tabindex="-1"></a>      <span class="kw">let</span> p <span class="ot">=</span> householder (finite i) (V.index r (finite i))</span>
+<span id="cb3-12"><a href="#cb3-12" aria-hidden="true" tabindex="-1"></a>       <span class="kw">in</span> (q <span class="op">!*!</span> p, r <span class="op">!*!</span> p)</span>
+<span id="cb3-13"><a href="#cb3-13" aria-hidden="true" tabindex="-1"></a>    ) (identity, transpose a) [<span class="dv">0</span><span class="op">..</span>k<span class="op">-</span><span class="dv">1</span>]</span>
+<span id="cb3-14"><a href="#cb3-14" aria-hidden="true" tabindex="-1"></a>  <span class="kw">where</span> k <span class="ot">=</span> <span class="fu">fromInteger</span> <span class="op">$</span> <span class="fu">min</span> (natVal (<span class="dt">Proxy</span> <span class="op">@</span>n)) (natVal (<span class="dt">Proxy</span> <span class="op">@</span>m))</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+<p>実装上の都合で行列は行ベクトルのベクトルとなっているので、列ベクトルを扱うために最初に転置を行い<span class="math inline">\(A^{\rm T}\)</span>、得られた<span class="math inline">\(R^{\rm T}\)</span>を最後にもう一度転置することにより計算しています。<span class="math inline">\(Q\)</span>については本来転置したものが計算結果になるのであえて転置をしていません。</p>
+</section>
+<section id="数値実験" class="level1">
+<h1>数値実験</h1>
+<p>それでは実装した <code>qr</code> によって実際に行列のQR分解ができるか実験してみましょう。</p>
+<p>まずは<a href="https://ja.wikipedia.org/wiki/QR%E5%88%86%E8%A7%A3#%E4%BE%8B_2">Wikipediaに載っている例</a>を元に実験してみます。</p>
+<div id="29fce92e-f12b-4c34-bc87-0f3163d813c5" class="cell" data-execution_count="4">
+<div class="sourceCode cell-code" id="cb4"><pre class="sourceCode haskell code-with-copy"><code class="sourceCode haskell"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a><span class="ot">{-# LANGUAGE DataKinds #-}</span></span>
+<span id="cb4-2"><a href="#cb4-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb4-3"><a href="#cb4-3" aria-hidden="true" tabindex="-1"></a><span class="kw">do</span></span>
+<span id="cb4-4"><a href="#cb4-4" aria-hidden="true" tabindex="-1"></a>  <span class="kw">let</span> x <span class="ot">=</span> fromJust <span class="op">$</span> fromList</span>
+<span id="cb4-5"><a href="#cb4-5" aria-hidden="true" tabindex="-1"></a>            [ [<span class="dv">12</span>, <span class="op">-</span><span class="dv">51</span>,   <span class="dv">4</span>]</span>
+<span id="cb4-6"><a href="#cb4-6" aria-hidden="true" tabindex="-1"></a>            , [ <span class="dv">6</span>, <span class="dv">167</span>, <span class="op">-</span><span class="dv">68</span>]</span>
+<span id="cb4-7"><a href="#cb4-7" aria-hidden="true" tabindex="-1"></a>            , [<span class="op">-</span><span class="dv">4</span>,  <span class="dv">24</span>, <span class="op">-</span><span class="dv">41</span>]]</span>
+<span id="cb4-8"><a href="#cb4-8" aria-hidden="true" tabindex="-1"></a><span class="ot">            ::</span> <span class="dt">Matrix</span> <span class="dv">3</span> <span class="dv">3</span> <span class="dt">Double</span></span>
+<span id="cb4-9"><a href="#cb4-9" aria-hidden="true" tabindex="-1"></a>      (q, r) <span class="ot">=</span> qr x</span>
+<span id="cb4-10"><a href="#cb4-10" aria-hidden="true" tabindex="-1"></a>  <span class="fu">putStrLn</span> <span class="st">"Q = "</span></span>
+<span id="cb4-11"><a href="#cb4-11" aria-hidden="true" tabindex="-1"></a>  displayM <span class="dv">8</span> <span class="dv">3</span> q</span>
+<span id="cb4-12"><a href="#cb4-12" aria-hidden="true" tabindex="-1"></a>  <span class="fu">putStrLn</span> <span class="st">"R = "</span></span>
+<span id="cb4-13"><a href="#cb4-13" aria-hidden="true" tabindex="-1"></a>  displayM <span class="dv">8</span> <span class="dv">3</span> r</span>
+<span id="cb4-14"><a href="#cb4-14" aria-hidden="true" tabindex="-1"></a>  <span class="fu">putStrLn</span> <span class="st">"QR = "</span></span>
+<span id="cb4-15"><a href="#cb4-15" aria-hidden="true" tabindex="-1"></a>  displayM <span class="dv">8</span> <span class="dv">3</span> <span class="op">$</span> q <span class="op">!*!</span> r</span>
+<span id="cb4-16"><a href="#cb4-16" aria-hidden="true" tabindex="-1"></a>  <span class="fu">putStrLn</span> <span class="st">"Q^TQ ="</span></span>
+<span id="cb4-17"><a href="#cb4-17" aria-hidden="true" tabindex="-1"></a>  displayM <span class="dv">8</span> <span class="dv">3</span> <span class="op">$</span> transpose q <span class="op">!*!</span> q</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-display">
+<pre><code>Q = 
+   0.857  -0.394  -0.331
+   0.429   0.903   0.034
+  -0.286   0.171  -0.943
+R = 
+  14.000  21.000 -14.000
+   0.000 175.000 -70.000
+   0.000   0.000  35.000
+QR = 
+  12.000 -51.000   4.000
+   6.000 167.000 -68.000
+  -4.000  24.000 -41.000
+Q^TQ =
+   1.000   0.000   0.000
+   0.000   1.000   0.000
+   0.000   0.000   1.000</code></pre>
+</div>
+</div>
+<p><a href="https://www.wolframalpha.com/input?i=QR+decomposition+%7B%7B12%2C+-51%2C+4%7D%2C+%7B6%2C+167%2C+-68%7D%2C+%7B-4%2C+24%2C+-41%7D%7D">WolframAlphaでも同様の計算を行った結果</a>と比べてみても値が一致していることが分かります。</p>
+<p>次に固有値に0を含むような場合を見てみましょう。先程の例の行ベクトルと列ベクトルを一つずつ0に変えたような行列を使って実験してみます。</p>
+<div id="b37410ca-839d-431e-9268-2074d1a49bd5" class="cell" data-execution_count="5">
+<div class="sourceCode cell-code" id="cb6"><pre class="sourceCode haskell code-with-copy"><code class="sourceCode haskell"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a><span class="kw">do</span></span>
+<span id="cb6-2"><a href="#cb6-2" aria-hidden="true" tabindex="-1"></a>  <span class="kw">let</span> x <span class="ot">=</span> fromJust <span class="op">$</span> fromList</span>
+<span id="cb6-3"><a href="#cb6-3" aria-hidden="true" tabindex="-1"></a>            [ [ <span class="dv">0</span>,   <span class="dv">0</span>,   <span class="dv">0</span>]</span>
+<span id="cb6-4"><a href="#cb6-4" aria-hidden="true" tabindex="-1"></a>            , [ <span class="dv">6</span>, <span class="dv">167</span>,   <span class="dv">0</span>]</span>
+<span id="cb6-5"><a href="#cb6-5" aria-hidden="true" tabindex="-1"></a>            , [<span class="op">-</span><span class="dv">4</span>,  <span class="dv">24</span>,   <span class="dv">0</span>]]</span>
+<span id="cb6-6"><a href="#cb6-6" aria-hidden="true" tabindex="-1"></a><span class="ot">            ::</span> <span class="dt">Matrix</span> <span class="dv">3</span> <span class="dv">3</span> <span class="dt">Double</span></span>
+<span id="cb6-7"><a href="#cb6-7" aria-hidden="true" tabindex="-1"></a>      (q, r) <span class="ot">=</span> qr x</span>
+<span id="cb6-8"><a href="#cb6-8" aria-hidden="true" tabindex="-1"></a>  <span class="fu">putStrLn</span> <span class="st">"Q = "</span></span>
+<span id="cb6-9"><a href="#cb6-9" aria-hidden="true" tabindex="-1"></a>  displayM <span class="dv">8</span> <span class="dv">3</span> q</span>
+<span id="cb6-10"><a href="#cb6-10" aria-hidden="true" tabindex="-1"></a>  <span class="fu">putStrLn</span> <span class="st">"R = "</span></span>
+<span id="cb6-11"><a href="#cb6-11" aria-hidden="true" tabindex="-1"></a>  displayM <span class="dv">8</span> <span class="dv">3</span> r</span>
+<span id="cb6-12"><a href="#cb6-12" aria-hidden="true" tabindex="-1"></a>  <span class="fu">putStrLn</span> <span class="st">"QR = "</span></span>
+<span id="cb6-13"><a href="#cb6-13" aria-hidden="true" tabindex="-1"></a>  displayM <span class="dv">8</span> <span class="dv">3</span> <span class="op">$</span> q <span class="op">!*!</span> r</span>
+<span id="cb6-14"><a href="#cb6-14" aria-hidden="true" tabindex="-1"></a>  <span class="fu">putStrLn</span> <span class="st">"Q^TQ ="</span></span>
+<span id="cb6-15"><a href="#cb6-15" aria-hidden="true" tabindex="-1"></a>  displayM <span class="dv">8</span> <span class="dv">3</span> <span class="op">$</span> transpose q <span class="op">!*!</span> q</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-display">
+<pre><code>Q = 
+  -0.000  -0.000   1.000
+   0.832   0.555   0.000
+  -0.555   0.832   0.000
+R = 
+   7.211 125.640   0.000
+  -0.000 112.604   0.000
+  -0.000   0.000   0.000
+QR = 
+  -0.000  -0.000   0.000
+   6.000 167.000   0.000
+  -4.000  24.000   0.000
+Q^TQ =
+   1.000   0.000  -0.000
+   0.000   1.000   0.000
+  -0.000   0.000   1.000</code></pre>
+</div>
+</div>
+<p>問題なさそうですね。</p>
+<p>次に非正方行列の場合を見てみましょう。</p>
+<div id="52287087-9679-47b8-81c5-265c7249e4db" class="cell" data-execution_count="6">
+<div class="sourceCode cell-code" id="cb8"><pre class="sourceCode haskell code-with-copy"><code class="sourceCode haskell"><span id="cb8-1"><a href="#cb8-1" aria-hidden="true" tabindex="-1"></a><span class="ot">{-# LANGUAGE DataKinds #-}</span></span>
+<span id="cb8-2"><a href="#cb8-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb8-3"><a href="#cb8-3" aria-hidden="true" tabindex="-1"></a><span class="kw">do</span></span>
+<span id="cb8-4"><a href="#cb8-4" aria-hidden="true" tabindex="-1"></a>  <span class="kw">let</span> x <span class="ot">=</span> fromJust <span class="op">$</span> fromList</span>
+<span id="cb8-5"><a href="#cb8-5" aria-hidden="true" tabindex="-1"></a>            [ [<span class="dv">12</span>, <span class="op">-</span><span class="dv">51</span>]</span>
+<span id="cb8-6"><a href="#cb8-6" aria-hidden="true" tabindex="-1"></a>            , [ <span class="dv">6</span>, <span class="dv">167</span>]</span>
+<span id="cb8-7"><a href="#cb8-7" aria-hidden="true" tabindex="-1"></a>            , [<span class="op">-</span><span class="dv">4</span>,  <span class="dv">24</span>]]</span>
+<span id="cb8-8"><a href="#cb8-8" aria-hidden="true" tabindex="-1"></a><span class="ot">            ::</span> <span class="dt">Matrix</span> <span class="dv">3</span> <span class="dv">2</span> <span class="dt">Double</span></span>
+<span id="cb8-9"><a href="#cb8-9" aria-hidden="true" tabindex="-1"></a>      (q, r) <span class="ot">=</span> qr x</span>
+<span id="cb8-10"><a href="#cb8-10" aria-hidden="true" tabindex="-1"></a>  <span class="fu">putStrLn</span> <span class="st">"Q = "</span></span>
+<span id="cb8-11"><a href="#cb8-11" aria-hidden="true" tabindex="-1"></a>  displayM <span class="dv">8</span> <span class="dv">3</span> q</span>
+<span id="cb8-12"><a href="#cb8-12" aria-hidden="true" tabindex="-1"></a>  <span class="fu">putStrLn</span> <span class="st">"R = "</span></span>
+<span id="cb8-13"><a href="#cb8-13" aria-hidden="true" tabindex="-1"></a>  displayM <span class="dv">8</span> <span class="dv">3</span> r</span>
+<span id="cb8-14"><a href="#cb8-14" aria-hidden="true" tabindex="-1"></a>  <span class="fu">putStrLn</span> <span class="st">"QR = "</span></span>
+<span id="cb8-15"><a href="#cb8-15" aria-hidden="true" tabindex="-1"></a>  displayM <span class="dv">8</span> <span class="dv">3</span> <span class="op">$</span> q <span class="op">!*!</span> r</span>
+<span id="cb8-16"><a href="#cb8-16" aria-hidden="true" tabindex="-1"></a>  <span class="fu">putStrLn</span> <span class="st">"Q^TQ ="</span></span>
+<span id="cb8-17"><a href="#cb8-17" aria-hidden="true" tabindex="-1"></a>  displayM <span class="dv">8</span> <span class="dv">3</span> <span class="op">$</span> transpose q <span class="op">!*!</span> q</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-display">
+<pre><code>Q = 
+   0.857  -0.394   0.331
+   0.429   0.903  -0.034
+  -0.286   0.171   0.943
+R = 
+  14.000  21.000
+   0.000 175.000
+  -0.000   0.000
+QR = 
+  12.000 -51.000
+   6.000 167.000
+  -4.000  24.000
+Q^TQ =
+   1.000   0.000  -0.000
+   0.000   1.000  -0.000
+  -0.000  -0.000   1.000</code></pre>
+</div>
+</div>
+<div id="e172aa6b-1128-4154-a787-c244348a533b" class="cell" data-execution_count="7">
+<div class="sourceCode cell-code" id="cb10"><pre class="sourceCode haskell code-with-copy"><code class="sourceCode haskell"><span id="cb10-1"><a href="#cb10-1" aria-hidden="true" tabindex="-1"></a><span class="ot">{-# LANGUAGE DataKinds #-}</span></span>
+<span id="cb10-2"><a href="#cb10-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb10-3"><a href="#cb10-3" aria-hidden="true" tabindex="-1"></a><span class="kw">do</span></span>
+<span id="cb10-4"><a href="#cb10-4" aria-hidden="true" tabindex="-1"></a>  <span class="kw">let</span> x <span class="ot">=</span> fromJust <span class="op">$</span> fromList</span>
+<span id="cb10-5"><a href="#cb10-5" aria-hidden="true" tabindex="-1"></a>            [ [<span class="dv">12</span>, <span class="op">-</span><span class="dv">51</span>,   <span class="dv">4</span>]</span>
+<span id="cb10-6"><a href="#cb10-6" aria-hidden="true" tabindex="-1"></a>            , [ <span class="dv">6</span>, <span class="dv">167</span>, <span class="op">-</span><span class="dv">68</span>]]</span>
+<span id="cb10-7"><a href="#cb10-7" aria-hidden="true" tabindex="-1"></a><span class="ot">            ::</span> <span class="dt">Matrix</span> <span class="dv">2</span> <span class="dv">3</span> <span class="dt">Double</span></span>
+<span id="cb10-8"><a href="#cb10-8" aria-hidden="true" tabindex="-1"></a>      (q, r) <span class="ot">=</span> qr x</span>
+<span id="cb10-9"><a href="#cb10-9" aria-hidden="true" tabindex="-1"></a>  <span class="fu">putStrLn</span> <span class="st">"Q = "</span></span>
+<span id="cb10-10"><a href="#cb10-10" aria-hidden="true" tabindex="-1"></a>  displayM <span class="dv">8</span> <span class="dv">3</span> q</span>
+<span id="cb10-11"><a href="#cb10-11" aria-hidden="true" tabindex="-1"></a>  <span class="fu">putStrLn</span> <span class="st">"R = "</span></span>
+<span id="cb10-12"><a href="#cb10-12" aria-hidden="true" tabindex="-1"></a>  displayM <span class="dv">8</span> <span class="dv">3</span> r</span>
+<span id="cb10-13"><a href="#cb10-13" aria-hidden="true" tabindex="-1"></a>  <span class="fu">putStrLn</span> <span class="st">"QR = "</span></span>
+<span id="cb10-14"><a href="#cb10-14" aria-hidden="true" tabindex="-1"></a>  displayM <span class="dv">8</span> <span class="dv">3</span> <span class="op">$</span> q <span class="op">!*!</span> r</span>
+<span id="cb10-15"><a href="#cb10-15" aria-hidden="true" tabindex="-1"></a>  <span class="fu">putStrLn</span> <span class="st">"Q^TQ ="</span></span>
+<span id="cb10-16"><a href="#cb10-16" aria-hidden="true" tabindex="-1"></a>  displayM <span class="dv">8</span> <span class="dv">3</span> <span class="op">$</span> transpose q <span class="op">!*!</span> q</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-display">
+<pre><code>Q = 
+   0.894  -0.447
+   0.447   0.894
+R = 
+  13.416  29.069 -26.833
+  -0.000 172.177 -62.610
+QR = 
+  12.000 -51.000   4.000
+   6.000 167.000 -68.000
+Q^TQ =
+   1.000   0.000
+   0.000   1.000</code></pre>
+</div>
+</div>
+<p>行より列が多い場合でも列より行が多い場合でも問題なく計算できています。</p>
+
+
+</section>
+
+</main> <!-- /main -->
+<script id="quarto-html-after-body" type="application/javascript">
+window.document.addEventListener("DOMContentLoaded", function (event) {
+  const toggleBodyColorMode = (bsSheetEl) => {
+    const mode = bsSheetEl.getAttribute("data-mode");
+    const bodyEl = window.document.querySelector("body");
+    if (mode === "dark") {
+      bodyEl.classList.add("quarto-dark");
+      bodyEl.classList.remove("quarto-light");
+    } else {
+      bodyEl.classList.add("quarto-light");
+      bodyEl.classList.remove("quarto-dark");
+    }
+  }
+  const toggleBodyColorPrimary = () => {
+    const bsSheetEl = window.document.querySelector("link#quarto-bootstrap");
+    if (bsSheetEl) {
+      toggleBodyColorMode(bsSheetEl);
+    }
+  }
+  toggleBodyColorPrimary();  
+  const icon = "";
+  const anchorJS = new window.AnchorJS();
+  anchorJS.options = {
+    placement: 'right',
+    icon: icon
+  };
+  anchorJS.add('.anchored');
+  const isCodeAnnotation = (el) => {
+    for (const clz of el.classList) {
+      if (clz.startsWith('code-annotation-')) {                     
+        return true;
+      }
+    }
+    return false;
+  }
+  const clipboard = new window.ClipboardJS('.code-copy-button', {
+    text: function(trigger) {
+      const codeEl = trigger.previousElementSibling.cloneNode(true);
+      for (const childEl of codeEl.children) {
+        if (isCodeAnnotation(childEl)) {
+          childEl.remove();
+        }
+      }
+      return codeEl.innerText;
+    }
+  });
+  clipboard.on('success', function(e) {
+    // button target
+    const button = e.trigger;
+    // don't keep focus
+    button.blur();
+    // flash "checked"
+    button.classList.add('code-copy-button-checked');
+    var currentTitle = button.getAttribute("title");
+    button.setAttribute("title", "Copied!");
+    let tooltip;
+    if (window.bootstrap) {
+      button.setAttribute("data-bs-toggle", "tooltip");
+      button.setAttribute("data-bs-placement", "left");
+      button.setAttribute("data-bs-title", "Copied!");
+      tooltip = new bootstrap.Tooltip(button, 
+        { trigger: "manual", 
+          customClass: "code-copy-button-tooltip",
+          offset: [0, -8]});
+      tooltip.show();    
+    }
+    setTimeout(function() {
+      if (tooltip) {
+        tooltip.hide();
+        button.removeAttribute("data-bs-title");
+        button.removeAttribute("data-bs-toggle");
+        button.removeAttribute("data-bs-placement");
+      }
+      button.setAttribute("title", currentTitle);
+      button.classList.remove('code-copy-button-checked');
+    }, 1000);
+    // clear code selection
+    e.clearSelection();
+  });
+  function tippyHover(el, contentFn, onTriggerFn, onUntriggerFn) {
+    const config = {
+      allowHTML: true,
+      maxWidth: 500,
+      delay: 100,
+      arrow: false,
+      appendTo: function(el) {
+          return el.parentElement;
+      },
+      interactive: true,
+      interactiveBorder: 10,
+      theme: 'quarto',
+      placement: 'bottom-start',
+    };
+    if (contentFn) {
+      config.content = contentFn;
+    }
+    if (onTriggerFn) {
+      config.onTrigger = onTriggerFn;
+    }
+    if (onUntriggerFn) {
+      config.onUntrigger = onUntriggerFn;
+    }
+    window.tippy(el, config); 
+  }
+  const noterefs = window.document.querySelectorAll('a[role="doc-noteref"]');
+  for (var i=0; i<noterefs.length; i++) {
+    const ref = noterefs[i];
+    tippyHover(ref, function() {
+      // use id or data attribute instead here
+      let href = ref.getAttribute('data-footnote-href') || ref.getAttribute('href');
+      try { href = new URL(href).hash; } catch {}
+      const id = href.replace(/^#\/?/, "");
+      const note = window.document.getElementById(id);
+      return note.innerHTML;
+    });
+  }
+  const xrefs = window.document.querySelectorAll('a.quarto-xref');
+  const processXRef = (id, note) => {
+    // Strip column container classes
+    const stripColumnClz = (el) => {
+      el.classList.remove("page-full", "page-columns");
+      if (el.children) {
+        for (const child of el.children) {
+          stripColumnClz(child);
+        }
+      }
+    }
+    stripColumnClz(note)
+    if (id === null || id.startsWith('sec-')) {
+      // Special case sections, only their first couple elements
+      const container = document.createElement("div");
+      if (note.children && note.children.length > 2) {
+        container.appendChild(note.children[0].cloneNode(true));
+        for (let i = 1; i < note.children.length; i++) {
+          const child = note.children[i];
+          if (child.tagName === "P" && child.innerText === "") {
+            continue;
+          } else {
+            container.appendChild(child.cloneNode(true));
+            break;
+          }
+        }
+        if (window.Quarto?.typesetMath) {
+          window.Quarto.typesetMath(container);
+        }
+        return container.innerHTML
+      } else {
+        if (window.Quarto?.typesetMath) {
+          window.Quarto.typesetMath(note);
+        }
+        return note.innerHTML;
+      }
+    } else {
+      // Remove any anchor links if they are present
+      const anchorLink = note.querySelector('a.anchorjs-link');
+      if (anchorLink) {
+        anchorLink.remove();
+      }
+      if (window.Quarto?.typesetMath) {
+        window.Quarto.typesetMath(note);
+      }
+      // TODO in 1.5, we should make sure this works without a callout special case
+      if (note.classList.contains("callout")) {
+        return note.outerHTML;
+      } else {
+        return note.innerHTML;
+      }
+    }
+  }
+  for (var i=0; i<xrefs.length; i++) {
+    const xref = xrefs[i];
+    tippyHover(xref, undefined, function(instance) {
+      instance.disable();
+      let url = xref.getAttribute('href');
+      let hash = undefined; 
+      if (url.startsWith('#')) {
+        hash = url;
+      } else {
+        try { hash = new URL(url).hash; } catch {}
+      }
+      if (hash) {
+        const id = hash.replace(/^#\/?/, "");
+        const note = window.document.getElementById(id);
+        if (note !== null) {
+          try {
+            const html = processXRef(id, note.cloneNode(true));
+            instance.setContent(html);
+          } finally {
+            instance.enable();
+            instance.show();
+          }
+        } else {
+          // See if we can fetch this
+          fetch(url.split('#')[0])
+          .then(res => res.text())
+          .then(html => {
+            const parser = new DOMParser();
+            const htmlDoc = parser.parseFromString(html, "text/html");
+            const note = htmlDoc.getElementById(id);
+            if (note !== null) {
+              const html = processXRef(id, note);
+              instance.setContent(html);
+            } 
+          }).finally(() => {
+            instance.enable();
+            instance.show();
+          });
+        }
+      } else {
+        // See if we can fetch a full url (with no hash to target)
+        // This is a special case and we should probably do some content thinning / targeting
+        fetch(url)
+        .then(res => res.text())
+        .then(html => {
+          const parser = new DOMParser();
+          const htmlDoc = parser.parseFromString(html, "text/html");
+          const note = htmlDoc.querySelector('main.content');
+          if (note !== null) {
+            // This should only happen for chapter cross references
+            // (since there is no id in the URL)
+            // remove the first header
+            if (note.children.length > 0 && note.children[0].tagName === "HEADER") {
+              note.children[0].remove();
+            }
+            const html = processXRef(null, note);
+            instance.setContent(html);
+          } 
+        }).finally(() => {
+          instance.enable();
+          instance.show();
+        });
+      }
+    }, function(instance) {
+    });
+  }
+      let selectedAnnoteEl;
+      const selectorForAnnotation = ( cell, annotation) => {
+        let cellAttr = 'data-code-cell="' + cell + '"';
+        let lineAttr = 'data-code-annotation="' +  annotation + '"';
+        const selector = 'span[' + cellAttr + '][' + lineAttr + ']';
+        return selector;
+      }
+      const selectCodeLines = (annoteEl) => {
+        const doc = window.document;
+        const targetCell = annoteEl.getAttribute("data-target-cell");
+        const targetAnnotation = annoteEl.getAttribute("data-target-annotation");
+        const annoteSpan = window.document.querySelector(selectorForAnnotation(targetCell, targetAnnotation));
+        const lines = annoteSpan.getAttribute("data-code-lines").split(",");
+        const lineIds = lines.map((line) => {
+          return targetCell + "-" + line;
+        })
+        let top = null;
+        let height = null;
+        let parent = null;
+        if (lineIds.length > 0) {
+            //compute the position of the single el (top and bottom and make a div)
+            const el = window.document.getElementById(lineIds[0]);
+            top = el.offsetTop;
+            height = el.offsetHeight;
+            parent = el.parentElement.parentElement;
+          if (lineIds.length > 1) {
+            const lastEl = window.document.getElementById(lineIds[lineIds.length - 1]);
+            const bottom = lastEl.offsetTop + lastEl.offsetHeight;
+            height = bottom - top;
+          }
+          if (top !== null && height !== null && parent !== null) {
+            // cook up a div (if necessary) and position it 
+            let div = window.document.getElementById("code-annotation-line-highlight");
+            if (div === null) {
+              div = window.document.createElement("div");
+              div.setAttribute("id", "code-annotation-line-highlight");
+              div.style.position = 'absolute';
+              parent.appendChild(div);
+            }
+            div.style.top = top - 2 + "px";
+            div.style.height = height + 4 + "px";
+            div.style.left = 0;
+            let gutterDiv = window.document.getElementById("code-annotation-line-highlight-gutter");
+            if (gutterDiv === null) {
+              gutterDiv = window.document.createElement("div");
+              gutterDiv.setAttribute("id", "code-annotation-line-highlight-gutter");
+              gutterDiv.style.position = 'absolute';
+              const codeCell = window.document.getElementById(targetCell);
+              const gutter = codeCell.querySelector('.code-annotation-gutter');
+              gutter.appendChild(gutterDiv);
+            }
+            gutterDiv.style.top = top - 2 + "px";
+            gutterDiv.style.height = height + 4 + "px";
+          }
+          selectedAnnoteEl = annoteEl;
+        }
+      };
+      const unselectCodeLines = () => {
+        const elementsIds = ["code-annotation-line-highlight", "code-annotation-line-highlight-gutter"];
+        elementsIds.forEach((elId) => {
+          const div = window.document.getElementById(elId);
+          if (div) {
+            div.remove();
+          }
+        });
+        selectedAnnoteEl = undefined;
+      };
+        // Handle positioning of the toggle
+    window.addEventListener(
+      "resize",
+      throttle(() => {
+        elRect = undefined;
+        if (selectedAnnoteEl) {
+          selectCodeLines(selectedAnnoteEl);
+        }
+      }, 10)
+    );
+    function throttle(fn, ms) {
+    let throttle = false;
+    let timer;
+      return (...args) => {
+        if(!throttle) { // first call gets through
+            fn.apply(this, args);
+            throttle = true;
+        } else { // all the others get throttled
+            if(timer) clearTimeout(timer); // cancel #2
+            timer = setTimeout(() => {
+              fn.apply(this, args);
+              timer = throttle = false;
+            }, ms);
+        }
+      };
+    }
+      // Attach click handler to the DT
+      const annoteDls = window.document.querySelectorAll('dt[data-target-cell]');
+      for (const annoteDlNode of annoteDls) {
+        annoteDlNode.addEventListener('click', (event) => {
+          const clickedEl = event.target;
+          if (clickedEl !== selectedAnnoteEl) {
+            unselectCodeLines();
+            const activeEl = window.document.querySelector('dt[data-target-cell].code-annotation-active');
+            if (activeEl) {
+              activeEl.classList.remove('code-annotation-active');
+            }
+            selectCodeLines(clickedEl);
+            clickedEl.classList.add('code-annotation-active');
+          } else {
+            // Unselect the line
+            unselectCodeLines();
+            clickedEl.classList.remove('code-annotation-active');
+          }
+        });
+      }
+  const findCites = (el) => {
+    const parentEl = el.parentElement;
+    if (parentEl) {
+      const cites = parentEl.dataset.cites;
+      if (cites) {
+        return {
+          el,
+          cites: cites.split(' ')
+        };
+      } else {
+        return findCites(el.parentElement)
+      }
+    } else {
+      return undefined;
+    }
+  };
+  var bibliorefs = window.document.querySelectorAll('a[role="doc-biblioref"]');
+  for (var i=0; i<bibliorefs.length; i++) {
+    const ref = bibliorefs[i];
+    const citeInfo = findCites(ref);
+    if (citeInfo) {
+      tippyHover(citeInfo.el, function() {
+        var popup = window.document.createElement('div');
+        citeInfo.cites.forEach(function(cite) {
+          var citeDiv = window.document.createElement('div');
+          citeDiv.classList.add('hanging-indent');
+          citeDiv.classList.add('csl-entry');
+          var biblioDiv = window.document.getElementById('ref-' + cite);
+          if (biblioDiv) {
+            citeDiv.innerHTML = biblioDiv.innerHTML;
+          }
+          popup.appendChild(citeDiv);
+        });
+        return popup.innerHTML;
+      });
+    }
+  }
+});
+</script>
+</div> <!-- /content -->
+
+
+
+
+</body></html>
