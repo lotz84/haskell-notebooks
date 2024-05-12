@@ -162,7 +162,8 @@ RUN    stack build $STACK_ARGS ihaskell-aeson \
     && fix-permissions /opt/hvega
 
 # Install Dependecies
-RUN    stack build $STACK_ARGS random-fu \
+RUN    stack build $STACK_ARGS linear-base \
+    && stack build $STACK_ARGS random-fu \
     && stack build $STACK_ARGS vector-sized \
     && fix-permissions $STACK_ROOT
 
