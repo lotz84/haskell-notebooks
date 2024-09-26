@@ -163,6 +163,8 @@ RUN    stack build $STACK_ARGS ihaskell-aeson \
 
 # Install Dependecies
 RUN    stack build $STACK_ARGS linear-base \
+    && stack build $STACK_ARGS list-t \
+    && stack build $STACK_ARGS random \
     && stack build $STACK_ARGS random-fu \
     && stack build $STACK_ARGS vector-sized \
     && fix-permissions $STACK_ROOT
@@ -207,15 +209,15 @@ RUN \
 # # Clean jupyterlab-ihaskell/node_nodemodules, 86MB
 #     && rm -rf /opt/IHaskell/jupyterlab-ihaskell/node_modules
 
-RUN conda install --quiet --yes \
-# ihaskell-widgets needs ipywidgets
-# https://github.com/IHaskell/IHaskell/issues/1380
-    'ipywidgets=7.7.1' && \
-# ihaskell-hvega doesn't need an extension. https://github.com/jupyterlab/jupyter-renderers
-#    'jupyterlab-vega3' && \
-    conda clean --all -f -y && \
-    fix-permissions "${CONDA_DIR}" && \
-    fix-permissions "/home/${NB_USER}"
+# RUN conda install --quiet --yes \
+# # ihaskell-widgets needs ipywidgets
+# # https://github.com/IHaskell/IHaskell/issues/1380
+#     'ipywidgets=7.7.1' && \
+# # ihaskell-hvega doesn't need an extension. https://github.com/jupyterlab/jupyter-renderers
+# #    'jupyterlab-vega3' && \
+#     conda clean --all -f -y && \
+#     fix-permissions "${CONDA_DIR}" && \
+#     fix-permissions "/home/${NB_USER}"
 
 # Enable this for debugging the kernel messages
 # RUN conda install --quiet --yes \
