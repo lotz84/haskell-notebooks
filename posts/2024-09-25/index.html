@@ -7,9 +7,9 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
 
 <meta name="author" content="lotz">
-<meta name="dcterms.date" content="2020-07-11">
+<meta name="dcterms.date" content="2024-09-26">
 
-<title>高次元空間ではL1距離を使うのが良さそう – lotz’s Haskell notebooks</title>
+<title>ランダムフィボナッチ数列をHaskellで実装する – lotz’s Haskell notebooks</title>
 <style>
 code{white-space: pre-wrap;}
 span.smallcaps{font-variant: small-caps;}
@@ -134,10 +134,10 @@ window.Quarto = {
 };
 </script>
 
-<meta property="og:title" content="高次元空間ではL1距離を使うのが良さそう – lotz’s Haskell notebooks">
+<meta property="og:title" content="ランダムフィボナッチ数列をHaskellで実装する – lotz’s Haskell notebooks">
 <meta property="og:description" content="IHaskellで書いたnotebookを公開する場所">
 <meta property="og:site_name" content="lotz's Haskell notebooks">
-<meta name="twitter:title" content="高次元空間ではL1距離を使うのが良さそう – lotz’s Haskell notebooks">
+<meta name="twitter:title" content="ランダムフィボナッチ数列をHaskellで実装する – lotz’s Haskell notebooks">
 <meta name="twitter:description" content="IHaskellで書いたnotebookを公開する場所">
 <meta name="twitter:card" content="summary">
 </head>
@@ -189,7 +189,7 @@ window.Quarto = {
 <header id="title-block-header" class="quarto-title-block default page-columns page-full">
   <div class="quarto-title-banner page-columns page-full">
     <div class="quarto-title column-body">
-      <h1 class="title">高次元空間ではL1距離を使うのが良さそう</h1>
+      <h1 class="title">ランダムフィボナッチ数列をHaskellで実装する</h1>
                       </div>
   </div>
     
@@ -206,7 +206,7 @@ window.Quarto = {
       <div>
       <div class="quarto-title-meta-heading">Published</div>
       <div class="quarto-title-meta-contents">
-        <p class="date">July 11, 2020</p>
+        <p class="date">September 26, 2024</p>
       </div>
     </div>
     
@@ -217,8 +217,18 @@ window.Quarto = {
   </header><div id="quarto-content" class="quarto-container page-columns page-rows-contents page-layout-article page-navbar">
 <!-- sidebar -->
 <!-- margin-sidebar -->
-    <div id="quarto-margin-sidebar" class="sidebar margin-sidebar zindex-bottom">
-        
+    <div id="quarto-margin-sidebar" class="sidebar margin-sidebar">
+        <nav id="TOC" role="doc-toc" class="toc-active">
+    <h2 id="toc-title">On this page</h2>
+   
+  <ul>
+  <li><a href="#ランダムフィボナッチ数列の実装" id="toc-ランダムフィボナッチ数列の実装" class="nav-link active" data-scroll-target="#ランダムフィボナッチ数列の実装">ランダムフィボナッチ数列の実装</a>
+  <ul class="collapse">
+  <li><a href="#listt" id="toc-listt" class="nav-link" data-scroll-target="#listt"><code>ListT</code></a></li>
+  </ul></li>
+  <li><a href="#viswanath定数の計算" id="toc-viswanath定数の計算" class="nav-link" data-scroll-target="#viswanath定数の計算">Viswanath定数の計算</a></li>
+  </ul>
+</nav>
     </div>
 <!-- main -->
 <main class="content quarto-banner-title-block" id="quarto-document-content">
@@ -227,95 +237,170 @@ window.Quarto = {
 
 
 
-<p><a href="https://www.semanticscholar.org/paper/On-the-Surprising-Behavior-of-Distance-Metrics-in-Aggarwal-Hinneburg/88fc7fc6ed73db6251967cfe40507a92008e5949">“On the Surprising Behavior of Distance Metrics in High Dimensional Spaces”</a>という論文を読んで面白かったのでまとめておきます。</p>
-<p><span class="math inline">\(d\)</span>次元空間の立方体<span class="math inline">\((0,1)^d\)</span>中に分布する確率変数<span class="math inline">\(X_d\)</span>を考えます。例えばモノクロ画像なんかは正規化すれば今考えてる確率変数になるでしょう。今<span class="math inline">\((0, 1)\)</span>上の任意の分布<span class="math inline">\(F\)</span>を考え<span class="math inline">\(F^d\)</span>を確率分布とする<span class="math inline">\(X_d\)</span>から<span class="math inline">\(n\)</span>個のサンプルが得られたとします。サンプルにおける<span class="math inline">\(L_k\)</span>ノルムの最大値を<span class="math inline">\(Dmax^k_d\)</span>、最小値を<span class="math inline">\(Dmin^k_d\)</span>とすると、<span class="math inline">\(F\)</span>と<span class="math inline">\(k\)</span>のみに依存する定数<span class="math inline">\(C_k\)</span>が存在して</p>
+<p><a href="https://en.wikipedia.org/wiki/Random_Fibonacci_sequence">ランダムフィボナッチ数列</a>というフィボナッチ数列の計算にランダム要素を取り入れた数列があります。通常のフィボナッチ数列は <span class="math inline">\(x_0 = 1, x_1 = 1\)</span> から始まり</p>
 <p><span class="math display">\[
-C_k \leq \underset{d \rightarrow \infty}{\lim}{\rm E}\left[\frac{Dmax^k_d - Dmin^k_d}{d^{\frac{1}{k}-\frac{1}{2}}}\right] \leq (n-1)C_k
+x_n = x_{n-1} + x_{n-2}
 \]</span></p>
-<p>が成り立ちます。ここで<span class="math inline">\({\rm E}[X]\)</span>は<span class="math inline">\(X\)</span>の期待値を表します。</p>
-<p>つまりデータの存在する次元が上がるにつれて原点に近いものと遠いものの差が変化するスピードは<span class="math inline">\(d^{\frac{1}{k}-\frac{1}{2}}\)</span>ぐらいになるということです。証明を読めば分かりますが、差の漸近的な振る舞いを決める<span class="math inline">\(d^{\frac{1}{k}-\frac{1}{2}}\)</span>の<span class="math inline">\(\frac{1}{2}\)</span>は中心極限定理から出てきます。もし<span class="math inline">\(k \geq 3\)</span>であればこれは減衰するので、どんどん近いデータと遠いデータの間に差がなくなってくるということを意味しています。これは原点を任意の注目する点に置き換えて考えれば、例えばサンプルの近傍を考えるときに次元が高くなると遠いものと近いものの区別がどんどんつかなくなっていくことを表しています。一方もし<span class="math inline">\(k=2\)</span>であればこの差は一定に落ち着き、<span class="math inline">\(k=1\)</span>であれば（期待通り？）大きくなってくれます。</p>
-<p>次元が高くなれば立方体の対角線の長さも大きくなるので直感的には最大値と最小値の差はどんどん大きくなっていきそうですが、同時に、すべての次元で0付近の値が出る確率や1付近の値が出る確率は次元が高くなるとどんどん小さくなるので、差の期待値がどう振る舞うかはこれらの綱引きになりそうなことは直感的には分かります。この綱引きの勝敗が距離の測り方で決まるのは面白いですね。</p>
-<p>この挙動を実際に確かめてみましょう。</p>
-<div id="cell-2" class="cell" data-execution_count="1">
-<div class="sourceCode cell-code" id="cb1"><pre class="sourceCode haskell code-with-copy"><code class="sourceCode haskell"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="kw">import</span> <span class="dt">Control.Monad</span> (replicateM)</span>
-<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a><span class="kw">import</span> <span class="dt">System.Random.MWC</span></span>
+<p>という漸化式で値が定まりますが、ランダムフィボナッチ数列は初項は同じで漸化式が</p>
+<p><span class="math display">\[
+x_n = \begin{cases} x_{n-1} + x_{n-2} \\ x_{n-1} - x_{n-2} \end{cases}
+\]</span></p>
+<p>となり±どちらになるかは各項において確率 <span class="math inline">\(\frac{1}{2}\)</span> でランダムに決まります。</p>
+<p>このランダムフィボナッチ数列には面白い性質が知られていて、数列の増大速度の割合が</p>
+<p><span class="math display">\[
+\lim_{n\rightarrow\infty}\sqrt[n]{|x_n|} = 1.1319882487943\dots
+\]</span></p>
+<p>と一定の値に収束するのです。この値はViswanath定数と呼ばれフラクタル測度を使った積分による解析的な表示が知られているようです。ちなみに通常のフィボナッチ数列の場合、この値は黄金比になります。</p>
+<p>今回はこのランダムフィボナッチ数列を実装しViswanath定数をシミュレーションにより求めてみたいと思います。</p>
+<section id="ランダムフィボナッチ数列の実装" class="level2">
+<h2 class="anchored" data-anchor-id="ランダムフィボナッチ数列の実装">ランダムフィボナッチ数列の実装</h2>
+<p>まずは通常のフィボナッチ数列の実装を思い出しましょう。Haskellによるフィボナッチ数列の実装は<a href="https://wiki.haskell.org/The_Fibonacci_sequence">様々あります</a>が、例えば以下のような方法が有名でしょう。</p>
+<div id="2752db89-e282-4083-9025-770df1457d6b" class="cell" data-execution_count="1">
+<div class="sourceCode cell-code" id="cb1"><pre class="sourceCode haskell code-with-copy"><code class="sourceCode haskell"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="ot">fibs ::</span> [<span class="dt">Integer</span>]</span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a>fibs <span class="ot">=</span> <span class="fu">map</span> fib [<span class="dv">0</span><span class="op">..</span>]</span>
 <span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb1-5"><a href="#cb1-5" aria-hidden="true" tabindex="-1"></a><span class="co">-- | 確率変数</span></span>
-<span id="cb1-6"><a href="#cb1-6" aria-hidden="true" tabindex="-1"></a><span class="kw">type</span> <span class="dt">RVar</span> a <span class="ot">=</span> <span class="dt">GenIO</span> <span class="ot">-&gt;</span> <span class="dt">IO</span> a</span>
-<span id="cb1-7"><a href="#cb1-7" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb1-8"><a href="#cb1-8" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb1-9"><a href="#cb1-9" aria-hidden="true" tabindex="-1"></a><span class="co">-- | n個のリストの確率変数</span></span>
-<span id="cb1-10"><a href="#cb1-10" aria-hidden="true" tabindex="-1"></a><span class="ot">randomNs ::</span> <span class="dt">Int</span> <span class="ot">-&gt;</span> <span class="dt">RVar</span> a <span class="ot">-&gt;</span> <span class="dt">RVar</span> [a]</span>
-<span id="cb1-11"><a href="#cb1-11" aria-hidden="true" tabindex="-1"></a>randomNs n x <span class="ot">=</span> sample n</span>
-<span id="cb1-12"><a href="#cb1-12" aria-hidden="true" tabindex="-1"></a>  <span class="kw">where</span></span>
-<span id="cb1-13"><a href="#cb1-13" aria-hidden="true" tabindex="-1"></a>    sample <span class="dv">0</span> _ <span class="ot">=</span> <span class="fu">pure</span> []</span>
-<span id="cb1-14"><a href="#cb1-14" aria-hidden="true" tabindex="-1"></a>    sample n g <span class="ot">=</span> <span class="kw">do</span></span>
-<span id="cb1-15"><a href="#cb1-15" aria-hidden="true" tabindex="-1"></a>      a <span class="ot">&lt;-</span> x g</span>
-<span id="cb1-16"><a href="#cb1-16" aria-hidden="true" tabindex="-1"></a>      as <span class="ot">&lt;-</span> sample (n<span class="op">-</span><span class="dv">1</span>) g</span>
-<span id="cb1-17"><a href="#cb1-17" aria-hidden="true" tabindex="-1"></a>      <span class="fu">pure</span> (a<span class="op">:</span>as)</span>
-<span id="cb1-18"><a href="#cb1-18" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb1-19"><a href="#cb1-19" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb1-20"><a href="#cb1-20" aria-hidden="true" tabindex="-1"></a><span class="co">-- L_kノルム</span></span>
-<span id="cb1-21"><a href="#cb1-21" aria-hidden="true" tabindex="-1"></a><span class="ot">lk ::</span> <span class="dt">Int</span> <span class="ot">-&gt;</span> [<span class="dt">Double</span>] <span class="ot">-&gt;</span> <span class="dt">Double</span></span>
-<span id="cb1-22"><a href="#cb1-22" aria-hidden="true" tabindex="-1"></a>lk k xs <span class="ot">=</span> <span class="fu">sum</span> (<span class="fu">map</span> (<span class="op">^</span>k) xs) <span class="op">**</span> (<span class="fl">1.0</span> <span class="op">/</span> <span class="fu">fromIntegral</span> k)</span>
-<span id="cb1-23"><a href="#cb1-23" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb1-24"><a href="#cb1-24" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb1-25"><a href="#cb1-25" aria-hidden="true" tabindex="-1"></a><span class="co">-- | Dmax^k_d - Dmin^k_d</span></span>
-<span id="cb1-26"><a href="#cb1-26" aria-hidden="true" tabindex="-1"></a><span class="ot">diameter ::</span> <span class="dt">Int</span> <span class="co">-- 直径計算のためのサンプルを生成する数</span></span>
-<span id="cb1-27"><a href="#cb1-27" aria-hidden="true" tabindex="-1"></a>         <span class="ot">-&gt;</span> <span class="dt">Int</span> <span class="co">-- L_kノルムのk</span></span>
-<span id="cb1-28"><a href="#cb1-28" aria-hidden="true" tabindex="-1"></a>         <span class="ot">-&gt;</span> <span class="dt">Int</span> <span class="co">-- 次元d</span></span>
-<span id="cb1-29"><a href="#cb1-29" aria-hidden="true" tabindex="-1"></a>         <span class="ot">-&gt;</span> <span class="dt">RVar</span> <span class="dt">Double</span></span>
-<span id="cb1-30"><a href="#cb1-30" aria-hidden="true" tabindex="-1"></a>diameter n k d g <span class="ot">=</span></span>
-<span id="cb1-31"><a href="#cb1-31" aria-hidden="true" tabindex="-1"></a>  <span class="kw">let</span> xs g <span class="ot">=</span> replicateM d (uniformR (<span class="fl">0.0</span>, <span class="fl">1.0</span>) g)</span>
-<span id="cb1-32"><a href="#cb1-32" aria-hidden="true" tabindex="-1"></a>   <span class="kw">in</span> <span class="kw">do</span></span>
-<span id="cb1-33"><a href="#cb1-33" aria-hidden="true" tabindex="-1"></a>     xss <span class="ot">&lt;-</span> randomNs n xs g</span>
-<span id="cb1-34"><a href="#cb1-34" aria-hidden="true" tabindex="-1"></a>     <span class="kw">let</span> ds <span class="ot">=</span> <span class="fu">map</span> (lk k) xss</span>
-<span id="cb1-35"><a href="#cb1-35" aria-hidden="true" tabindex="-1"></a>     <span class="fu">pure</span> <span class="op">$</span> <span class="fu">maximum</span> ds <span class="op">-</span> <span class="fu">minimum</span> ds</span>
-<span id="cb1-36"><a href="#cb1-36" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb1-37"><a href="#cb1-37" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb1-38"><a href="#cb1-38" aria-hidden="true" tabindex="-1"></a><span class="co">-- | 確率変数の期待値</span></span>
-<span id="cb1-39"><a href="#cb1-39" aria-hidden="true" tabindex="-1"></a><span class="ot">expected ::</span> <span class="dt">Fractional</span> a</span>
-<span id="cb1-40"><a href="#cb1-40" aria-hidden="true" tabindex="-1"></a>         <span class="ot">=&gt;</span> <span class="dt">Int</span>    <span class="co">-- 期待値を計算するのに用いるサンプル数</span></span>
-<span id="cb1-41"><a href="#cb1-41" aria-hidden="true" tabindex="-1"></a>         <span class="ot">-&gt;</span> <span class="dt">RVar</span> a <span class="co">-- 期待値を求める確率変数</span></span>
-<span id="cb1-42"><a href="#cb1-42" aria-hidden="true" tabindex="-1"></a>         <span class="ot">-&gt;</span> <span class="dt">RVar</span> a <span class="co">-- 期待値の確率変数</span></span>
-<span id="cb1-43"><a href="#cb1-43" aria-hidden="true" tabindex="-1"></a>expected n x g <span class="ot">=</span> <span class="kw">do</span></span>
-<span id="cb1-44"><a href="#cb1-44" aria-hidden="true" tabindex="-1"></a>  as <span class="ot">&lt;-</span> randomNs n x g</span>
-<span id="cb1-45"><a href="#cb1-45" aria-hidden="true" tabindex="-1"></a>  <span class="fu">pure</span> <span class="op">$</span> <span class="fu">sum</span> as <span class="op">/</span> <span class="fu">fromIntegral</span> n</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a><span class="ot">fib ::</span> <span class="dt">Int</span> <span class="ot">-&gt;</span> <span class="dt">Integer</span></span>
+<span id="cb1-5"><a href="#cb1-5" aria-hidden="true" tabindex="-1"></a>fib <span class="dv">0</span> <span class="ot">=</span> <span class="dv">0</span></span>
+<span id="cb1-6"><a href="#cb1-6" aria-hidden="true" tabindex="-1"></a>fib <span class="dv">1</span> <span class="ot">=</span> <span class="dv">1</span></span>
+<span id="cb1-7"><a href="#cb1-7" aria-hidden="true" tabindex="-1"></a>fib n <span class="ot">=</span> fibs <span class="op">!!</span> (n<span class="op">-</span><span class="dv">2</span>) <span class="op">+</span> fibs <span class="op">!!</span> (n<span class="op">-</span><span class="dv">1</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </div>
-<div id="cell-3" class="cell" data-execution_count="2">
-<div class="sourceCode cell-code" id="cb2"><pre class="sourceCode haskell code-with-copy"><code class="sourceCode haskell"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="kw">import</span> <span class="dt">Data.Traversable</span> (forM)</span>
-<span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a><span class="kw">import</span> <span class="dt">Graphics.Rendering.Chart.Easy</span></span>
-<span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb2-4"><a href="#cb2-4" aria-hidden="true" tabindex="-1"></a><span class="ot">ds ::</span> [<span class="dt">Int</span>]</span>
-<span id="cb2-5"><a href="#cb2-5" aria-hidden="true" tabindex="-1"></a>ds <span class="ot">=</span> [<span class="dv">1</span><span class="op">..</span><span class="dv">50</span>]</span>
-<span id="cb2-6"><a href="#cb2-6" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb2-7"><a href="#cb2-7" aria-hidden="true" tabindex="-1"></a>withSystemRandom <span class="op">$</span> \gen <span class="ot">-&gt;</span> <span class="kw">do</span></span>
-<span id="cb2-8"><a href="#cb2-8" aria-hidden="true" tabindex="-1"></a>  diff1 <span class="ot">&lt;-</span> forM ds <span class="op">$</span> \d <span class="ot">-&gt;</span> expected <span class="dv">100</span> (diameter <span class="dv">100</span> <span class="dv">1</span> d) gen</span>
-<span id="cb2-9"><a href="#cb2-9" aria-hidden="true" tabindex="-1"></a>  diff2 <span class="ot">&lt;-</span> forM ds <span class="op">$</span> \d <span class="ot">-&gt;</span> expected <span class="dv">100</span> (diameter <span class="dv">100</span> <span class="dv">2</span> d) gen</span>
-<span id="cb2-10"><a href="#cb2-10" aria-hidden="true" tabindex="-1"></a>  diff3 <span class="ot">&lt;-</span> forM ds <span class="op">$</span> \d <span class="ot">-&gt;</span> expected <span class="dv">100</span> (diameter <span class="dv">100</span> <span class="dv">3</span> d) gen</span>
-<span id="cb2-11"><a href="#cb2-11" aria-hidden="true" tabindex="-1"></a>  diff4 <span class="ot">&lt;-</span> forM ds <span class="op">$</span> \d <span class="ot">-&gt;</span> expected <span class="dv">100</span> (diameter <span class="dv">100</span> <span class="dv">4</span> d) gen</span>
-<span id="cb2-12"><a href="#cb2-12" aria-hidden="true" tabindex="-1"></a>  <span class="fu">pure</span> <span class="op">.</span> toRenderable <span class="op">$</span> <span class="kw">do</span></span>
-<span id="cb2-13"><a href="#cb2-13" aria-hidden="true" tabindex="-1"></a>      plot (line <span class="st">"k = 1"</span> [<span class="fu">zip</span> ds diff1])</span>
-<span id="cb2-14"><a href="#cb2-14" aria-hidden="true" tabindex="-1"></a>      plot (line <span class="st">"k = 2"</span> [<span class="fu">zip</span> ds diff2])</span>
-<span id="cb2-15"><a href="#cb2-15" aria-hidden="true" tabindex="-1"></a>      plot (line <span class="st">"k = 3"</span> [<span class="fu">zip</span> ds diff3])</span>
-<span id="cb2-16"><a href="#cb2-16" aria-hidden="true" tabindex="-1"></a>      plot (line <span class="st">"k = 4"</span> [<span class="fu">zip</span> ds diff4])</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div id="69a6fb38-8070-4434-bf29-2d0344ed7ac7" class="cell" data-execution_count="2">
+<div class="sourceCode cell-code" id="cb2"><pre class="sourceCode haskell code-with-copy"><code class="sourceCode haskell"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="fu">take</span> <span class="dv">10</span> fibs</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-display">
+<pre><code>[0,1,1,2,3,5,8,13,21,34]</code></pre>
+</div>
+</div>
+<p>こちらの実装の<a href="https://twitter.com/lotz84_/status/1810297167493701976">動作の様子を表すアニメーション</a>もあります。</p>
+<p>まずはこれを参考にランダムフィボナッチ数列を計算する実装を書いてみましょう。</p>
+<div id="5087cfaa-bf14-4bca-90b2-95ca5fd6fa92" class="cell" data-execution_count="3">
+<div class="sourceCode cell-code" id="cb4"><pre class="sourceCode haskell code-with-copy"><code class="sourceCode haskell"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a><span class="kw">import</span> <span class="dt">System.Random</span> (randomIO)</span>
+<span id="cb4-2"><a href="#cb4-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb4-3"><a href="#cb4-3" aria-hidden="true" tabindex="-1"></a><span class="ot">rfibs1 ::</span> <span class="dt">IO</span> [<span class="dt">Integer</span>]</span>
+<span id="cb4-4"><a href="#cb4-4" aria-hidden="true" tabindex="-1"></a>rfibs1 <span class="ot">=</span> <span class="fu">mapM</span> rfib1 [<span class="dv">0</span><span class="op">..</span>]</span>
+<span id="cb4-5"><a href="#cb4-5" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb4-6"><a href="#cb4-6" aria-hidden="true" tabindex="-1"></a><span class="ot">rfib1 ::</span> <span class="dt">Int</span> <span class="ot">-&gt;</span> <span class="dt">IO</span> <span class="dt">Integer</span></span>
+<span id="cb4-7"><a href="#cb4-7" aria-hidden="true" tabindex="-1"></a>rfib1 <span class="dv">0</span> <span class="ot">=</span> <span class="fu">pure</span> <span class="dv">0</span></span>
+<span id="cb4-8"><a href="#cb4-8" aria-hidden="true" tabindex="-1"></a>rfib1 <span class="dv">1</span> <span class="ot">=</span> <span class="fu">pure</span> <span class="dv">1</span></span>
+<span id="cb4-9"><a href="#cb4-9" aria-hidden="true" tabindex="-1"></a>rfib1 n <span class="ot">=</span> <span class="kw">do</span></span>
+<span id="cb4-10"><a href="#cb4-10" aria-hidden="true" tabindex="-1"></a>  x <span class="ot">&lt;-</span> (<span class="op">!!</span> (n<span class="op">-</span><span class="dv">2</span>)) <span class="op">&lt;$&gt;</span> rfibs1</span>
+<span id="cb4-11"><a href="#cb4-11" aria-hidden="true" tabindex="-1"></a>  y <span class="ot">&lt;-</span> (<span class="op">!!</span> (n<span class="op">-</span><span class="dv">1</span>)) <span class="op">&lt;$&gt;</span> rfibs1</span>
+<span id="cb4-12"><a href="#cb4-12" aria-hidden="true" tabindex="-1"></a>  b <span class="ot">&lt;-</span> randomIO</span>
+<span id="cb4-13"><a href="#cb4-13" aria-hidden="true" tabindex="-1"></a>  <span class="fu">pure</span> <span class="op">$</span> <span class="kw">if</span> b</span>
+<span id="cb4-14"><a href="#cb4-14" aria-hidden="true" tabindex="-1"></a>    <span class="kw">then</span> x <span class="op">+</span> y</span>
+<span id="cb4-15"><a href="#cb4-15" aria-hidden="true" tabindex="-1"></a>    <span class="kw">else</span> x <span class="op">-</span> y</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+<div id="d07a5c39-6475-42d8-96ad-e1bd542ce3cf" class="cell" data-execution_count="4">
+<div class="sourceCode cell-code" id="cb5"><pre class="sourceCode haskell code-with-copy"><code class="sourceCode haskell"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a><span class="co">-- &gt; take 10 &lt;$&gt; rfibs1</span></span>
+<span id="cb5-2"><a href="#cb5-2" aria-hidden="true" tabindex="-1"></a><span class="co">-- 何も表示されず動作は終了しない</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+<p>こちらのナイーブな実装だと実行しても動作は終了しません。なぜでしょうか？</p>
+<p>それは <code>rfibs1</code> の型を見ると分かる通り、数列の値が <code>IO</code> に隠れてしまっているのですが、それを取り出そうとした時に全て評価しようとするため無限に計算を行うことになり止まらないのです。元のフィボナッチ数列の実装の場合はリストの遅延評価をうまく利用できていましたが、ランダムフィボナッチ数列の場合は乱数を発生させるためにどうしてもモナドにいれる必要があるためこのような問題が発生してしまいます。</p>
+<p>もちろんあらかじめ計算する数列の長さを与える実装にすればこの問題を回避することができますが、まず無限の数列という対象を定義してその後に必要な分だけ値を取ってくるという方が、構成要素を分離できるので実装を簡潔に保つことができるでしょう。ですので乱数が絡む数列であっても遅延評価をうまく使える無限列を定義できないか考えてみたいと思います。</p>
+<section id="listt" class="level3">
+<h3 class="anchored" data-anchor-id="listt"><code>ListT</code></h3>
+<p>リストの遅延評価とモナディックなアクションをうまく組み合わせる方法として <code>ListT</code> が知られています（[参考]https://stackoverflow.com/questions/74931498/constructing-an-infinite-lazy-monad-value-recursively()）。<code>ListT</code> は名前の通りリストをモナドトランスフォーマーに拡張したようなものになっていて、実はナイーブな実装だとうまくいかないことが知られていてそれはそれで面白い話があるのですが、既に分かりやすい解説記事があるので気になる人はそちらを参照してください。</p>
+<ul>
+<li><a href="https://viercc.github.io/blog/posts/2021-07-17-monads-from-adjunction-2.html">随伴から作られるMonad</a></li>
+<li><a href="https://blog.mudatobunka.org/entry/2018/01/03/233314">いろいろなパッケージから提供されている ListT モナド変換子の違いについて調べてみる</a></li>
+<li><a href="https://wiki.haskell.org/ListT_done_right">ListT done right</a></li>
+</ul>
+<p>早速 list-t の <code>ListT</code> を使った実装を考えてみましょう。</p>
+<div id="34109fd7-2ffe-4a19-9367-94b5b666f28e" class="cell" data-execution_count="9">
+<div class="sourceCode cell-code" id="cb6"><pre class="sourceCode haskell code-with-copy"><code class="sourceCode haskell"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a><span class="kw">import</span> <span class="dt">ListT</span> (<span class="dt">ListT</span>)</span>
+<span id="cb6-2"><a href="#cb6-2" aria-hidden="true" tabindex="-1"></a><span class="kw">import</span> <span class="kw">qualified</span> <span class="dt">ListT</span></span>
+<span id="cb6-3"><a href="#cb6-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb6-4"><a href="#cb6-4" aria-hidden="true" tabindex="-1"></a><span class="ot">rfibs3 ::</span> <span class="dt">ListT</span> <span class="dt">IO</span> <span class="dt">Integer</span></span>
+<span id="cb6-5"><a href="#cb6-5" aria-hidden="true" tabindex="-1"></a>rfibs3 <span class="ot">=</span> ListT.traverse rfib3 <span class="op">$</span> ListT.fromFoldable [<span class="dv">0</span><span class="op">..</span>]</span>
+<span id="cb6-6"><a href="#cb6-6" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb6-7"><a href="#cb6-7" aria-hidden="true" tabindex="-1"></a><span class="ot">rfib3 ::</span> <span class="dt">Int</span> <span class="ot">-&gt;</span> <span class="dt">IO</span> <span class="dt">Integer</span></span>
+<span id="cb6-8"><a href="#cb6-8" aria-hidden="true" tabindex="-1"></a>rfib3 <span class="dv">0</span> <span class="ot">=</span> <span class="fu">pure</span> <span class="dv">0</span></span>
+<span id="cb6-9"><a href="#cb6-9" aria-hidden="true" tabindex="-1"></a>rfib3 <span class="dv">1</span> <span class="ot">=</span> <span class="fu">pure</span> <span class="dv">1</span></span>
+<span id="cb6-10"><a href="#cb6-10" aria-hidden="true" tabindex="-1"></a>rfib3 n <span class="ot">=</span> <span class="kw">do</span></span>
+<span id="cb6-11"><a href="#cb6-11" aria-hidden="true" tabindex="-1"></a>  (fs, _) <span class="ot">&lt;-</span> ListT.splitAt n rfibs3</span>
+<span id="cb6-12"><a href="#cb6-12" aria-hidden="true" tabindex="-1"></a>  <span class="kw">let</span> x <span class="ot">=</span> fs <span class="op">!!</span> (n<span class="op">-</span><span class="dv">2</span>)</span>
+<span id="cb6-13"><a href="#cb6-13" aria-hidden="true" tabindex="-1"></a>      y <span class="ot">=</span> fs <span class="op">!!</span> (n<span class="op">-</span><span class="dv">1</span>)</span>
+<span id="cb6-14"><a href="#cb6-14" aria-hidden="true" tabindex="-1"></a>  b <span class="ot">&lt;- randomIO ::</span> <span class="dt">IO</span> <span class="dt">Bool</span></span>
+<span id="cb6-15"><a href="#cb6-15" aria-hidden="true" tabindex="-1"></a>  <span class="fu">pure</span> <span class="op">$</span> <span class="kw">if</span> b</span>
+<span id="cb6-16"><a href="#cb6-16" aria-hidden="true" tabindex="-1"></a>    <span class="kw">then</span> x <span class="op">+</span> y</span>
+<span id="cb6-17"><a href="#cb6-17" aria-hidden="true" tabindex="-1"></a>    <span class="kw">else</span> x <span class="op">-</span> y</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+<div id="5d84a544-9ffc-43e4-b8cf-71f01a18271a" class="cell" data-execution_count="10">
+<div class="sourceCode cell-code" id="cb7"><pre class="sourceCode haskell code-with-copy"><code class="sourceCode haskell"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true" tabindex="-1"></a>ListT.toList <span class="op">$</span> ListT.take <span class="dv">10</span> rfibs3</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-display">
+<pre><code>[0,1,-1,2,-1,3,4,-5,5,-14]</code></pre>
+</div>
+</div>
+<p>今度は動きました！しかし待ってください。よく見ると各項がその前2つの項の和または差で計算したものに一致しておらずランダムフィボナッチ数列になっていません。これは <code>rfib3</code> の中で <code>rfibs3</code> が呼ばれる際に各項がまた再計算されてしまうために起こっているのです。仕方がないのでメモ化は諦めてしまいましょう。</p>
+<div id="8484feef-bbc0-4e63-9eef-11cdcda5c450" class="cell" data-execution_count="11">
+<div class="sourceCode cell-code" id="cb9"><pre class="sourceCode haskell code-with-copy"><code class="sourceCode haskell"><span id="cb9-1"><a href="#cb9-1" aria-hidden="true" tabindex="-1"></a><span class="ot">rfibs ::</span> <span class="dt">ListT</span> <span class="dt">IO</span> <span class="dt">Integer</span></span>
+<span id="cb9-2"><a href="#cb9-2" aria-hidden="true" tabindex="-1"></a>rfibs <span class="ot">=</span> <span class="fu">flip</span> ListT.unfoldM (<span class="dv">0</span>, <span class="dv">1</span>) <span class="op">$</span> \(x, y) <span class="ot">-&gt;</span> <span class="kw">do</span></span>
+<span id="cb9-3"><a href="#cb9-3" aria-hidden="true" tabindex="-1"></a>  b <span class="ot">&lt;-</span> randomIO</span>
+<span id="cb9-4"><a href="#cb9-4" aria-hidden="true" tabindex="-1"></a>  <span class="fu">pure</span> (<span class="dt">Just</span> (x, (y, <span class="kw">if</span> b <span class="kw">then</span> x<span class="op">+</span>y <span class="kw">else</span> x<span class="op">-</span>y)))</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+<div id="a03e6b7f-d7a2-4cf9-9041-97022c2417b5" class="cell" data-execution_count="12">
+<div class="sourceCode cell-code" id="cb10"><pre class="sourceCode haskell code-with-copy"><code class="sourceCode haskell"><span id="cb10-1"><a href="#cb10-1" aria-hidden="true" tabindex="-1"></a>ListT.toList <span class="op">$</span> ListT.take <span class="dv">10</span> rfibs</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-display">
+<pre><code>[0,1,1,0,1,-1,2,1,1,0]</code></pre>
+</div>
+</div>
+<div id="a14b754c-451f-41eb-8908-3a26fc8c2931" class="cell" data-execution_count="13">
+<div class="sourceCode cell-code" id="cb12"><pre class="sourceCode haskell code-with-copy"><code class="sourceCode haskell"><span id="cb12-1"><a href="#cb12-1" aria-hidden="true" tabindex="-1"></a>ListT.toList <span class="op">$</span> ListT.take <span class="dv">100</span> rfibs</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-display">
+<pre><code>[0,1,1,2,-1,3,2,1,1,2,3,5,8,13,21,-8,29,-37,-8,-29,-37,8,-29,37,8,29,-21,8,-29,-21,-8,-13,-21,8,-13,21,8,29,-21,50,-71,121,50,71,-21,50,-71,-21,-92,-113,-205,-318,-523,205,-318,-113,-431,-544,-975,431,-1406,-975,-2381,-3356,-5737,2381,-8118,-5737,-13855,-19592,5737,-25329,31066,5737,25329,31066,56395,-25329,31066,-56395,87461,-143856,-56395,-87461,31066,-56395,87461,-143856,231317,-375173,-143856,-231317,-375173,143856,-519029,662885,-1181914,1844799,662885,2507684]</code></pre>
+</div>
+</div>
+<p>今度はちゃんと動いてますね！</p>
+</section>
+</section>
+<section id="viswanath定数の計算" class="level2">
+<h2 class="anchored" data-anchor-id="viswanath定数の計算">Viswanath定数の計算</h2>
+<div id="e5e87885-35c6-4ef0-88d0-1deaefe5435a" class="cell" data-execution_count="19">
+<div class="sourceCode cell-code" id="cb14"><pre class="sourceCode haskell code-with-copy"><code class="sourceCode haskell"><span id="cb14-1"><a href="#cb14-1" aria-hidden="true" tabindex="-1"></a><span class="kw">do</span></span>
+<span id="cb14-2"><a href="#cb14-2" aria-hidden="true" tabindex="-1"></a>  xs <span class="ot">&lt;-</span> ListT.toList <span class="op">$</span> ListT.take <span class="dv">20</span> rfibs</span>
+<span id="cb14-3"><a href="#cb14-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mapM_</span> <span class="fu">print</span> <span class="op">$</span> <span class="fu">zipWith</span> (\n x <span class="ot">-&gt;</span> <span class="fu">abs</span> (<span class="fu">fromIntegral</span> x) <span class="op">**</span> (<span class="dv">1</span><span class="op">/</span>n)) [<span class="dv">0</span><span class="op">..</span>] xs</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-display">
+<pre><code>0.0
+1.0
+1.0
+1.2599210498948732
+1.0
+1.0
+1.122462048309373
+1.0
+1.147202690439877
+1.1665290395761165
+1.214814044039067
+1.2435752279123709
+1.122462048309373
+1.1614687826131056
+1.1868209167472148
+1.2125086169006218
+1.1293241814724655
+1.1514852871794963
+1.080059738892306
+1.1531864743932994</code></pre>
+</div>
+</div>
+<div id="8612ef53-ab69-4be9-ac08-3795eba68ca8" class="cell" data-execution_count="40">
+<div class="sourceCode cell-code" id="cb16"><pre class="sourceCode haskell code-with-copy"><code class="sourceCode haskell"><span id="cb16-1"><a href="#cb16-1" aria-hidden="true" tabindex="-1"></a><span class="kw">import</span> <span class="dt">Graphics.Rendering.Chart.Easy</span></span>
+<span id="cb16-2"><a href="#cb16-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb16-3"><a href="#cb16-3" aria-hidden="true" tabindex="-1"></a><span class="kw">do</span></span>
+<span id="cb16-4"><a href="#cb16-4" aria-hidden="true" tabindex="-1"></a>  xs <span class="ot">&lt;-</span> ListT.toList <span class="op">$</span> ListT.take <span class="dv">3000</span> rfibs</span>
+<span id="cb16-5"><a href="#cb16-5" aria-hidden="true" tabindex="-1"></a>  <span class="kw">let</span> cs <span class="ot">=</span> <span class="fu">zipWith</span> (\n x <span class="ot">-&gt;</span> <span class="fu">abs</span> (<span class="fu">fromIntegral</span> x) <span class="op">**</span> (<span class="dv">1</span><span class="op">/</span>n)) [<span class="dv">0</span><span class="op">..</span>] xs</span>
+<span id="cb16-6"><a href="#cb16-6" aria-hidden="true" tabindex="-1"></a>  <span class="fu">pure</span> <span class="op">.</span> toRenderable <span class="op">$</span> <span class="kw">do</span>  </span>
+<span id="cb16-7"><a href="#cb16-7" aria-hidden="true" tabindex="-1"></a>    layout_title <span class="op">.=</span> (<span class="st">"last cs = "</span> <span class="op">++</span> <span class="fu">show</span> (<span class="fu">last</span> cs))</span>
+<span id="cb16-8"><a href="#cb16-8" aria-hidden="true" tabindex="-1"></a>    plot (line <span class="st">""</span> [<span class="fu">zip</span> [<span class="dv">0</span><span class="op">..</span>] cs])</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output cell-output-display">
 <div>
 <figure class="figure">
-<p><img src="index_files/figure-html/cell-3-output-1.svg" class="img-fluid figure-img"></p>
+<p><img src="index_files/figure-html/cell-12-output-1.svg" class="img-fluid figure-img"></p>
 </figure>
 </div>
 </div>
 </div>
-<p>次元を増やすにつれて<span class="math inline">\(k=1\)</span>の時は最小値と最大値の差が大きくなっていきますが、<span class="math inline">\(k=2\)</span>の場合は一定に落ち着き、<span class="math inline">\(k=3,4\)</span>の場合は差がどんどんなくなっていき、この傾向は<span class="math inline">\(k\)</span>が大きければより強いことが分かります。</p>
-<p>論文ではもう一つ面白い式が導かれています。先程の不等式は最大値と最小値の差についてでしたが、今度は比についてです。</p>
-<p><span class="math display">\[
-\underset{d \rightarrow \infty}{\lim} {\rm E}\left[\sqrt{d}\left(\frac{Dmax^k_d}{Dmin^k_d} - 1\right)\right] = C\sqrt{\frac{1}{2k+1}}
-\]</span></p>
-<p>ただしこの式は<span class="math inline">\(F\)</span>が一様分布でサンプルが2点である時という制約がついています。この式が示唆するのは最大値と最小値の比は<span class="math inline">\(\frac{1}{\sqrt{d}}\)</span>ぐらいのスピードで1に近づいていくということで、この挙動は<span class="math inline">\(k\)</span>が1,2のときでも変わりません。</p>
 
 
+</section>
 
 </main> <!-- /main -->
 <script id="quarto-html-after-body" type="application/javascript">

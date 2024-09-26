@@ -2,12 +2,14 @@
 <html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en"><head>
 
 <meta charset="utf-8">
-<meta name="generator" content="quarto-1.5.56">
+<meta name="generator" content="quarto-1.4.550">
 
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
 
+<meta name="author" content="lotz">
+<meta name="dcterms.date" content="2024-05-12">
 
-<title>About – lotz’s Haskell notebooks</title>
+<title>lotz’s Haskell notebooks - 分割統治法で対称行列の固有対を計算する</title>
 <style>
 code{white-space: pre-wrap;}
 span.smallcaps{font-variant: small-caps;}
@@ -23,22 +25,23 @@ ul.task-list li input[type="checkbox"] {
 </style>
 
 
-<script src="site_libs/quarto-nav/quarto-nav.js"></script>
-<script src="site_libs/quarto-nav/headroom.min.js"></script>
-<script src="site_libs/clipboard/clipboard.min.js"></script>
-<script src="site_libs/quarto-search/autocomplete.umd.js"></script>
-<script src="site_libs/quarto-search/fuse.min.js"></script>
-<script src="site_libs/quarto-search/quarto-search.js"></script>
-<meta name="quarto:offset" content="./">
-<link href="./favicon.ico" rel="icon">
-<script src="site_libs/quarto-html/quarto.js"></script>
-<script src="site_libs/quarto-html/popper.min.js"></script>
-<script src="site_libs/quarto-html/tippy.umd.min.js"></script>
-<link href="site_libs/quarto-html/tippy.css" rel="stylesheet">
-<link href="site_libs/quarto-html/quarto-syntax-highlighting.css" rel="stylesheet" id="quarto-text-highlighting-styles">
-<script src="site_libs/bootstrap/bootstrap.min.js"></script>
-<link href="site_libs/bootstrap/bootstrap-icons.css" rel="stylesheet">
-<link href="site_libs/bootstrap/bootstrap.min.css" rel="stylesheet" id="quarto-bootstrap" data-mode="light">
+<script src="../../site_libs/quarto-nav/quarto-nav.js"></script>
+<script src="../../site_libs/quarto-nav/headroom.min.js"></script>
+<script src="../../site_libs/clipboard/clipboard.min.js"></script>
+<script src="../../site_libs/quarto-search/autocomplete.umd.js"></script>
+<script src="../../site_libs/quarto-search/fuse.min.js"></script>
+<script src="../../site_libs/quarto-search/quarto-search.js"></script>
+<meta name="quarto:offset" content="../../">
+<link href="../../favicon.ico" rel="icon">
+<script src="../../site_libs/quarto-html/quarto.js"></script>
+<script src="../../site_libs/quarto-html/popper.min.js"></script>
+<script src="../../site_libs/quarto-html/tippy.umd.min.js"></script>
+<script src="../../site_libs/quarto-html/anchor.min.js"></script>
+<link href="../../site_libs/quarto-html/tippy.css" rel="stylesheet">
+<link href="../../site_libs/quarto-html/quarto-syntax-highlighting.css" rel="stylesheet" id="quarto-text-highlighting-styles">
+<script src="../../site_libs/bootstrap/bootstrap.min.js"></script>
+<link href="../../site_libs/bootstrap/bootstrap-icons.css" rel="stylesheet">
+<link href="../../site_libs/bootstrap/bootstrap.min.css" rel="stylesheet" id="quarto-bootstrap" data-mode="light">
 <script id="quarto-search-options" type="application/json">{
   "location": "navbar",
   "copy-button": false,
@@ -67,36 +70,63 @@ ul.task-list li input[type="checkbox"] {
   }
 }</script>
 
+  <script src="https://polyfill.io/v3/polyfill.min.js?features=es6"></script>
+  <script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-chtml-full.js" type="text/javascript"></script>
 
-<meta property="og:title" content="About – lotz’s Haskell notebooks">
+<script type="text/javascript">
+const typesetMath = (el) => {
+  if (window.MathJax) {
+    // MathJax Typeset
+    window.MathJax.typeset([el]);
+  } else if (window.katex) {
+    // KaTeX Render
+    var mathElements = el.getElementsByClassName("math");
+    var macros = [];
+    for (var i = 0; i < mathElements.length; i++) {
+      var texText = mathElements[i].firstChild;
+      if (mathElements[i].tagName == "SPAN") {
+        window.katex.render(texText.data, mathElements[i], {
+          displayMode: mathElements[i].classList.contains('display'),
+          throwOnError: false,
+          macros: macros,
+          fleqn: false
+        });
+      }
+    }
+  }
+}
+window.Quarto = {
+  typesetMath
+};
+</script>
+
+<meta property="og:title" content="lotz’s Haskell notebooks - 分割統治法で対称行列の固有対を計算する">
 <meta property="og:description" content="IHaskellで書いたnotebookを公開する場所">
-<meta property="og:image" content="https://lotz84.github.io/haskell-notebooks/profile.jpg">
 <meta property="og:site_name" content="lotz's Haskell notebooks">
-<meta name="twitter:title" content="About – lotz’s Haskell notebooks">
+<meta name="twitter:title" content="lotz’s Haskell notebooks - 分割統治法で対称行列の固有対を計算する">
 <meta name="twitter:description" content="IHaskellで書いたnotebookを公開する場所">
-<meta name="twitter:image" content="https://lotz84.github.io/haskell-notebooks/profile.jpg">
-<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:card" content="summary">
 </head>
 
-<body class="nav-fixed fullcontent">
+<body class="nav-fixed">
 
 <div id="quarto-search-results"></div>
-  <header id="quarto-header" class="headroom fixed-top">
+  <header id="quarto-header" class="headroom fixed-top quarto-banner">
     <nav class="navbar navbar-expand-lg " data-bs-theme="dark">
       <div class="navbar-container container-fluid">
       <div class="navbar-brand-container mx-auto">
-    <a class="navbar-brand" href="./index.html">
+    <a class="navbar-brand" href="../../index.html">
     <span class="navbar-title">lotz’s Haskell notebooks</span>
     </a>
   </div>
             <div id="quarto-search" class="" title="Search"></div>
-          <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarCollapse" aria-controls="navbarCollapse" role="menu" aria-expanded="false" aria-label="Toggle navigation" onclick="if (window.quartoToggleHeadroom) { window.quartoToggleHeadroom(); }">
+          <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarCollapse" aria-controls="navbarCollapse" aria-expanded="false" aria-label="Toggle navigation" onclick="if (window.quartoToggleHeadroom) { window.quartoToggleHeadroom(); }">
   <span class="navbar-toggler-icon"></span>
 </button>
           <div class="collapse navbar-collapse" id="navbarCollapse">
             <ul class="navbar-nav navbar-nav-scroll ms-auto">
   <li class="nav-item">
-    <a class="nav-link active" href="./about.html" aria-current="page"> 
+    <a class="nav-link" href="../../about.html"> 
 <span class="menu-text">About</span></a>
   </li>  
   <li class="nav-item compact">
@@ -110,52 +140,92 @@ ul.task-list li input[type="checkbox"] {
 <span class="menu-text"></span></a>
   </li>  
   <li class="nav-item compact">
-    <a class="nav-link" href="./index.xml"> <i class="bi bi-rss" role="img">
+    <a class="nav-link" href="../../index.xml"> <i class="bi bi-rss" role="img">
 </i> 
 <span class="menu-text"></span></a>
   </li>  
 </ul>
           </div> <!-- /navcollapse -->
-            <div class="quarto-navbar-tools">
+          <div class="quarto-navbar-tools">
 </div>
       </div> <!-- /container-fluid -->
     </nav>
 </header>
 <!-- content -->
-<div id="quarto-content" class="quarto-container page-columns page-rows-contents page-layout-article page-navbar">
+<header id="title-block-header" class="quarto-title-block default page-columns page-full">
+  <div class="quarto-title-banner page-columns page-full">
+    <div class="quarto-title column-body">
+      <h1 class="title">分割統治法で対称行列の固有対を計算する</h1>
+                      </div>
+  </div>
+    
+  
+  <div class="quarto-title-meta">
+
+      <div>
+      <div class="quarto-title-meta-heading">Author</div>
+      <div class="quarto-title-meta-contents">
+               <p>lotz </p>
+            </div>
+    </div>
+      
+      <div>
+      <div class="quarto-title-meta-heading">Published</div>
+      <div class="quarto-title-meta-contents">
+        <p class="date">May 12, 2024</p>
+      </div>
+    </div>
+    
+      
+    </div>
+    
+  
+  </header><div id="quarto-content" class="quarto-container page-columns page-rows-contents page-layout-article page-navbar">
 <!-- sidebar -->
 <!-- margin-sidebar -->
-    
+    <div id="quarto-margin-sidebar" class="sidebar margin-sidebar">
+        <nav id="TOC" role="doc-toc" class="toc-active">
+    <h2 id="toc-title">On this page</h2>
+   
+  <ul>
+  <li><a href="#qr法" id="toc-qr法" class="nav-link active" data-scroll-target="#qr法">QR法</a></li>
+  <li><a href="#分割統治法" id="toc-分割統治法" class="nav-link" data-scroll-target="#分割統治法">分割統治法</a></li>
+  </ul>
+</nav>
+    </div>
 <!-- main -->
-<div class="quarto-about-jolla">
-  <img src="profile.jpg" class="about-image
-  round " style="height: 15em; width: 15em;">
- <header id="title-block-header" class="quarto-title-block default">
-<div class="quarto-title">
-<h1 class="title">About</h1>
-</div>
-<div class="quarto-title-meta">
-  </div>
-</header><main class="content" id="quarto-document-content">
-<p>IHaskellで書いたnotebookを公開する場所</p>
-<p>Zennにも記事を書いています<br>
-<a href="https://zenn.dev/lotz" class="uri">https://zenn.dev/lotz</a></p>
+<main class="content quarto-banner-title-block" id="quarto-document-content">
 
 
-</main> 
-  <hr class="about-sep">
-   <div class="about-links">
-  <a href="https://github.com/lotz84" class="about-link" rel="" target="">
-    <i class="bi bi-github"></i>
-     <span class="about-link-text">Github</span>
-  </a>
-  <a href="https://twitter.com/lotz84_" class="about-link" rel="" target="">
-    <i class="bi bi-twitter"></i>
-     <span class="about-link-text">Twitter</span>
-  </a>
-</div>
-</div>
- <!-- /main -->
+
+
+
+<p>固有対とは<a href="https://ja.wikipedia.org/wiki/%E5%9B%BA%E6%9C%89%E5%80%A4%E3%81%A8%E5%9B%BA%E6%9C%89%E3%83%99%E3%82%AF%E3%83%88%E3%83%AB">固有値と固有ベクトル</a>のことです。行列の固有値と固有ベクトルを計算する手法には<a href="https://ja.wikipedia.org/wiki/%E5%9B%BA%E6%9C%89%E5%80%A4%E5%95%8F%E9%A1%8C%E3%81%AE%E6%95%B0%E5%80%A4%E8%A7%A3%E6%B3%95">様々な方法</a>が知られていますが、まずは代表的なアルゴリズムの一つである<strong>QR法</strong>について見ていきます。</p>
+<section id="qr法" class="level1">
+<h1>QR法</h1>
+<p><a href="https://lotz84.github.io/haskell-notebooks/posts/2024-05-12/">“HaskellでQR分解を実装する”</a>では与えられた実行列<span class="math inline">\(A\)</span>を直交行列<span class="math inline">\(Q\)</span>と上三角行列<span class="math inline">\(R\)</span>の積<span class="math inline">\(A=QR\)</span>に分解する<strong>QR分解</strong>を扱いました。QR法は与えられた行列にこのQR分解を繰り返し適用することで行列の固有値を計算する手法です。具体的には正方行列<span class="math inline">\(A_0\)</span>が与えられた時に、QR分解<span class="math inline">\(A_0=Q_0R_0\)</span>を行ない、新たな行列<span class="math inline">\(A_1\)</span>を<span class="math inline">\(A_1=R_0Q_0\)</span>と定義します。この時<span class="math inline">\(A_1 = Q_0^{\rm T}A_0Q_0\)</span>であり（<span class="math inline">\(Q_0\)</span>が直交行列であることより<span class="math inline">\(Q_0^{\rm T} = Q_0^{-1}\)</span>）、<span class="math inline">\(A_0\)</span>と<span class="math inline">\(A_1\)</span>は<a href="https://ja.wikipedia.org/wiki/%E8%A1%8C%E5%88%97%E3%81%AE%E7%9B%B8%E4%BC%BC">相似</a>なので固有値が一致します。この操作を繰り返すと<span class="math inline">\(A_n\)</span>は上三角行列に収束し<sup><a href="#note-1" style="text-decoration:none;">[1]</a></sup>、上三角行列の対角成分には固有値が並ぶので<span class="math inline">\(A_0\)</span>の固有値が分かります。固有値が求まれば、各固有値に対応する固有ベクトルは<a href="https://en.wikipedia.org/wiki/Inverse_iteration">逆べき乗法</a>によって求めることができます。</p>
+<p>行列を<span class="math inline">\(QR\)</span>に分解して<span class="math inline">\(RQ\)</span>を構成するというQRステップは<a href="https://ja.wikipedia.org/wiki/%E5%8F%AF%E7%A9%8D%E5%88%86%E7%B3%BB">可積分系</a>と<a href="https://repository.kulib.kyoto-u.ac.jp/dspace/handle/2433/84367">興味深い関係</a>があります。またQRステップには後述する<a href="https://en.wikipedia.org/wiki/Hessenberg_matrix">Hessenberg行列</a>の形を変えない（つまりHessenberg行列をQR分解して<span class="math inline">\(RQ\)</span>を計算するとまたHessenberg行列になる）という性質があります。Hessenberg行列のQR分解はギブンス回転によって効率的に計算できることから、与えられた行列を予めハウスホルダー変換によってHessenberg行列に変換してからQR法を用いることでより効率的に実装することができるのです。この方針によるQR法のHaskellによる実装が <a href="http://www.nct9.ne.jp/m_hiroi/func/haskell49.html">“お気楽 Haskell プログラミング入門 線形代数編”</a> に記載されています。</p>
+<p>Hessenberg行列は上三角行列より少し条件が緩く、対角線より1つ下の成分まで0でない値を持つような行列です。このような構造はHessenberg多様体に一般化され、QRアルゴリズムの分析はもちろん、<a href="https://www.ms.u-tokyo.ac.jp/video/danwakai/dw2023-007.html">超平面配置やグラフ理論との関連が研究されている</a>そうです。<a href="https://lotz84.github.io/haskell-notebooks/posts/2024-05-12/">前回実装したQR分解</a>ではハウスホルダー変換によって行列を上三角行列に変換しました。しかしQR法を考える時は上三角行列ではなくあえてHessenberg行列に留めることで、変換行列の逆行列を右から掛けてもHessenberg行列となり、元の行列と相似な、すなわち同じ固有値を持つHessenberg行列を計算することができるのです（上三角行列の場合は変換行列の逆行列を右から掛けると上三角行列ではなくなってしまいます）。</p>
+<p>特に対称行列をハウスホルダー変換を用いて共役なHessenberg行列に変換した場合、変換後の行列は対称な<a href="https://en.wikipedia.org/wiki/Tridiagonal_matrix">三重対角行列</a>となります。対称な三重対角行列の固有値を求める場合はQR法ではなく、その構造を活かして固有値を求める<strong>分割統治法に基づいたアルゴリズム</strong>が知られています。</p>
+<p>ちなみに Python のライブラリ numpy において、非対称行列にも使える <a href="https://numpy.org/doc/stable/reference/generated/numpy.linalg.eig.html">eig</a> はQR法を使ったLAPACKのルーチンを呼び出しており、対称行列に使える <a href="https://numpy.org/doc/stable/reference/generated/numpy.linalg.eigh.html">eigh</a> は分割統治法を使ったLAPACKのルーチンを呼び出しています。</p>
+</section>
+<section id="分割統治法" class="level1">
+<h1>分割統治法</h1>
+<ul>
+<li>分割統治法
+<ul>
+<li>https://people.inf.ethz.ch/arbenz/ewp/Lnotes/chapters5-6.pdf</li>
+</ul></li>
+</ul>
+<hr>
+<ul>
+<li><span id="note-1">[1]</span> <span class="math inline">\(A_n\)</span>が上三角行列に収束することの証明は<a href="https://168iroha.net/blog/topic/?id=201911251209">こちらの記事</a>が分かりやすいです</li>
+</ul>
+
+
+</section>
+
+</main> <!-- /main -->
 <script id="quarto-html-after-body" type="application/javascript">
 window.document.addEventListener("DOMContentLoaded", function (event) {
   const toggleBodyColorMode = (bsSheetEl) => {
@@ -176,6 +246,13 @@ window.document.addEventListener("DOMContentLoaded", function (event) {
     }
   }
   toggleBodyColorPrimary();  
+  const icon = "";
+  const anchorJS = new window.AnchorJS();
+  anchorJS.options = {
+    placement: 'right',
+    icon: icon
+  };
+  anchorJS.add('.anchored');
   const isCodeAnnotation = (el) => {
     for (const clz of el.classList) {
       if (clz.startsWith('code-annotation-')) {                     
@@ -184,7 +261,18 @@ window.document.addEventListener("DOMContentLoaded", function (event) {
     }
     return false;
   }
-  const onCopySuccess = function(e) {
+  const clipboard = new window.ClipboardJS('.code-copy-button', {
+    text: function(trigger) {
+      const codeEl = trigger.previousElementSibling.cloneNode(true);
+      for (const childEl of codeEl.children) {
+        if (isCodeAnnotation(childEl)) {
+          childEl.remove();
+        }
+      }
+      return codeEl.innerText;
+    }
+  });
+  clipboard.on('success', function(e) {
     // button target
     const button = e.trigger;
     // don't keep focus
@@ -216,47 +304,7 @@ window.document.addEventListener("DOMContentLoaded", function (event) {
     }, 1000);
     // clear code selection
     e.clearSelection();
-  }
-  const getTextToCopy = function(trigger) {
-      const codeEl = trigger.previousElementSibling.cloneNode(true);
-      for (const childEl of codeEl.children) {
-        if (isCodeAnnotation(childEl)) {
-          childEl.remove();
-        }
-      }
-      return codeEl.innerText;
-  }
-  const clipboard = new window.ClipboardJS('.code-copy-button:not([data-in-quarto-modal])', {
-    text: getTextToCopy
   });
-  clipboard.on('success', onCopySuccess);
-  if (window.document.getElementById('quarto-embedded-source-code-modal')) {
-    // For code content inside modals, clipBoardJS needs to be initialized with a container option
-    // TODO: Check when it could be a function (https://github.com/zenorocha/clipboard.js/issues/860)
-    const clipboardModal = new window.ClipboardJS('.code-copy-button[data-in-quarto-modal]', {
-      text: getTextToCopy,
-      container: window.document.getElementById('quarto-embedded-source-code-modal')
-    });
-    clipboardModal.on('success', onCopySuccess);
-  }
-    var localhostRegex = new RegExp(/^(?:http|https):\/\/localhost\:?[0-9]*\//);
-    var mailtoRegex = new RegExp(/^mailto:/);
-      var filterRegex = new RegExp("https:\/\/lotz84\.github\.io\/haskell-notebooks");
-    var isInternal = (href) => {
-        return filterRegex.test(href) || localhostRegex.test(href) || mailtoRegex.test(href);
-    }
-    // Inspect non-navigation links and adorn them if external
- 	var links = window.document.querySelectorAll('a[href]:not(.nav-link):not(.navbar-brand):not(.toc-action):not(.sidebar-link):not(.sidebar-item-toggle):not(.pagination-link):not(.no-external):not([aria-hidden]):not(.dropdown-item):not(.quarto-navigation-tool):not(.about-link)');
-    for (var i=0; i<links.length; i++) {
-      const link = links[i];
-      if (!isInternal(link.href)) {
-        // undo the damage that might have been done by quarto-nav.js in the case of
-        // links that we want to consider external
-        if (link.dataset.originalHref !== undefined) {
-          link.href = link.dataset.originalHref;
-        }
-      }
-    }
   function tippyHover(el, contentFn, onTriggerFn, onUntriggerFn) {
     const config = {
       allowHTML: true,
@@ -291,11 +339,7 @@ window.document.addEventListener("DOMContentLoaded", function (event) {
       try { href = new URL(href).hash; } catch {}
       const id = href.replace(/^#\/?/, "");
       const note = window.document.getElementById(id);
-      if (note) {
-        return note.innerHTML;
-      } else {
-        return "";
-      }
+      return note.innerHTML;
     });
   }
   const xrefs = window.document.querySelectorAll('a.quarto-xref');

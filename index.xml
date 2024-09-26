@@ -9,8 +9,601 @@
 <link>https://lotz84.github.io/haskell-notebooks/</link>
 <atom:link href="https://lotz84.github.io/haskell-notebooks/index.xml" rel="self" type="application/rss+xml"/>
 <description>IHaskellで書いたnotebookを公開する場所</description>
-<generator>quarto-1.4.550</generator>
-<lastBuildDate>Sat, 11 May 2024 15:00:00 GMT</lastBuildDate>
+<generator>quarto-1.5.56</generator>
+<lastBuildDate>Wed, 25 Sep 2024 15:00:00 GMT</lastBuildDate>
+<item>
+  <title>ランダムフィボナッチ数列をHaskellで実装する</title>
+  <dc:creator>lotz </dc:creator>
+  <link>https://lotz84.github.io/haskell-notebooks/posts/2024-09-26/</link>
+  <description><![CDATA[ 
+
+
+
+
+
+<p><a href="https://en.wikipedia.org/wiki/Random_Fibonacci_sequence">ランダムフィボナッチ数列</a>というフィボナッチ数列の計算にランダム要素を取り入れた数列があります。通常のフィボナッチ数列は <img src="https://latex.codecogs.com/png.latex?x_0%20=%201,%20x_1%20=%201"> から始まり</p>
+<p><img src="https://latex.codecogs.com/png.latex?%0Ax_n%20=%20x_%7Bn-1%7D%20+%20x_%7Bn-2%7D%0A"></p>
+<p>という漸化式で値が定まりますが、ランダムフィボナッチ数列は初項は同じで漸化式が</p>
+<p><img src="https://latex.codecogs.com/png.latex?%0Ax_n%20=%20%5Cbegin%7Bcases%7D%20x_%7Bn-1%7D%20+%20x_%7Bn-2%7D%20%5C%5C%20x_%7Bn-1%7D%20-%20x_%7Bn-2%7D%20%5Cend%7Bcases%7D%0A"></p>
+<p>となり±どちらになるかは各項において確率 <img src="https://latex.codecogs.com/png.latex?%5Cfrac%7B1%7D%7B2%7D"> でランダムに決まります。</p>
+<p>このランダムフィボナッチ数列には面白い性質が知られていて、数列の増大速度の割合が</p>
+<p><img src="https://latex.codecogs.com/png.latex?%0A%5Clim_%7Bn%5Crightarrow%5Cinfty%7D%5Csqrt%5Bn%5D%7B%7Cx_n%7C%7D%20=%201.1319882487943%5Cdots%0A"></p>
+<p>と一定の値に収束する確率が1となるのです。この値はViswanath定数と呼ばれフラクタル測度を使った積分による解析的な表示が知られているようです（ちなみに通常のフィボナッチ数列の場合、この値は黄金比になります）。</p>
+<p>今回はこのランダムフィボナッチ数列を実装しViswanath定数をシミュレーションにより計算してみたいと思います。</p>
+<section id="ランダムフィボナッチ数列の実装" class="level2">
+<h2 class="anchored" data-anchor-id="ランダムフィボナッチ数列の実装">ランダムフィボナッチ数列の実装</h2>
+<p>まずは通常のフィボナッチ数列の実装を思い出しましょう。Haskellによるフィボナッチ数列の実装は<a href="https://wiki.haskell.org/The_Fibonacci_sequence">様々あります</a>が、例えば以下のような方法が有名でしょう。</p>
+<div id="2752db89-e282-4083-9025-770df1457d6b" class="cell" data-execution_count="1">
+<div class="sourceCode cell-code" id="cb1" style="background: #f1f3f5;"><pre class="sourceCode haskell code-with-copy"><code class="sourceCode haskell"><span id="cb1-1"><span class="ot" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">fibs ::</span> [<span class="dt" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">Integer</span>]</span>
+<span id="cb1-2">fibs <span class="ot" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">=</span> <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">map</span> fib [<span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">0</span><span class="op" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">..</span>]</span>
+<span id="cb1-3"></span>
+<span id="cb1-4"><span class="ot" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">fib ::</span> <span class="dt" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">Int</span> <span class="ot" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">-&gt;</span> <span class="dt" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">Integer</span></span>
+<span id="cb1-5">fib <span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">0</span> <span class="ot" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">=</span> <span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">1</span></span>
+<span id="cb1-6">fib <span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">1</span> <span class="ot" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">=</span> <span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">1</span></span>
+<span id="cb1-7">fib n <span class="ot" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">=</span> fibs <span class="op" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">!!</span> (n<span class="op" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">-</span><span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">2</span>) <span class="op" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">+</span> fibs <span class="op" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">!!</span> (n<span class="op" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">-</span><span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">1</span>)</span></code></pre></div>
+</div>
+<div id="69a6fb38-8070-4434-bf29-2d0344ed7ac7" class="cell" data-execution_count="2">
+<div class="sourceCode cell-code" id="cb2" style="background: #f1f3f5;"><pre class="sourceCode haskell code-with-copy"><code class="sourceCode haskell"><span id="cb2-1"><span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">take</span> <span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">10</span> fibs</span></code></pre></div>
+<div class="cell-output cell-output-display">
+<pre><code>[1,1,2,3,5,8,13,21,34,55]</code></pre>
+</div>
+</div>
+<p>こちらに実装の<a href="https://twitter.com/lotz84_/status/1810297167493701976">動作の様子を表すアニメーション</a>もあります。</p>
+<p>まずはこれを参考にランダムフィボナッチ数列を計算する実装を書いてみましょう。</p>
+<div id="5087cfaa-bf14-4bca-90b2-95ca5fd6fa92" class="cell" data-execution_count="3">
+<div class="sourceCode cell-code" id="cb4" style="background: #f1f3f5;"><pre class="sourceCode haskell code-with-copy"><code class="sourceCode haskell"><span id="cb4-1"><span class="kw" style="color: #003B4F;
+background-color: null;
+font-weight: bold;
+font-style: inherit;">import</span> <span class="dt" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">System.Random</span> (randomIO)</span>
+<span id="cb4-2"></span>
+<span id="cb4-3"><span class="ot" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">rfibs1 ::</span> <span class="dt" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">IO</span> [<span class="dt" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">Integer</span>]</span>
+<span id="cb4-4">rfibs1 <span class="ot" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">=</span> <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">mapM</span> rfib1 [<span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">0</span><span class="op" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">..</span>]</span>
+<span id="cb4-5"></span>
+<span id="cb4-6"><span class="ot" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">rfib1 ::</span> <span class="dt" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">Int</span> <span class="ot" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">-&gt;</span> <span class="dt" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">IO</span> <span class="dt" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">Integer</span></span>
+<span id="cb4-7">rfib1 <span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">0</span> <span class="ot" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">=</span> <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">pure</span> <span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">1</span></span>
+<span id="cb4-8">rfib1 <span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">1</span> <span class="ot" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">=</span> <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">pure</span> <span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">1</span></span>
+<span id="cb4-9">rfib1 n <span class="ot" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">=</span> <span class="kw" style="color: #003B4F;
+background-color: null;
+font-weight: bold;
+font-style: inherit;">do</span></span>
+<span id="cb4-10">  x <span class="ot" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">&lt;-</span> (<span class="op" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">!!</span> (n<span class="op" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">-</span><span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">2</span>)) <span class="op" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">&lt;$&gt;</span> rfibs1</span>
+<span id="cb4-11">  y <span class="ot" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">&lt;-</span> (<span class="op" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">!!</span> (n<span class="op" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">-</span><span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">1</span>)) <span class="op" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">&lt;$&gt;</span> rfibs1</span>
+<span id="cb4-12">  b <span class="ot" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">&lt;-</span> randomIO</span>
+<span id="cb4-13">  <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">pure</span> <span class="op" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">$</span> <span class="kw" style="color: #003B4F;
+background-color: null;
+font-weight: bold;
+font-style: inherit;">if</span> b</span>
+<span id="cb4-14">    <span class="kw" style="color: #003B4F;
+background-color: null;
+font-weight: bold;
+font-style: inherit;">then</span> x <span class="op" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">+</span> y</span>
+<span id="cb4-15">    <span class="kw" style="color: #003B4F;
+background-color: null;
+font-weight: bold;
+font-style: inherit;">else</span> x <span class="op" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">-</span> y</span></code></pre></div>
+</div>
+<div id="d07a5c39-6475-42d8-96ad-e1bd542ce3cf" class="cell" data-execution_count="4">
+<div class="sourceCode cell-code" id="cb5" style="background: #f1f3f5;"><pre class="sourceCode haskell code-with-copy"><code class="sourceCode haskell"><span id="cb5-1"><span class="co" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">-- &gt; take 10 &lt;$&gt; rfibs1</span></span>
+<span id="cb5-2"><span class="co" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">-- 何も表示されず動作は終了しない</span></span></code></pre></div>
+</div>
+<p>こちらのナイーブな実装だと実行しても動作は終了しません。なぜでしょうか？</p>
+<p>これは <a href="https://stackoverflow.com/questions/5892653/whats-so-bad-about-lazy-i-o">Lazy I/O</a> を避けるため <code>IO</code> 型が正格評価を行っているからで、簡単に言えば <code>fibs</code> の場合と異なり <code>IO [Integer]</code> からは遅延評価でリストの必要な部分だけを取り出すことはできず、中身を見るにはまず無限リストを評価しないといけない状況になっているのです。</p>
+<p>単純な解決方法としては <a href="https://hackage.haskell.org/package/base-4.20.0.1/docs/System-IO-Unsafe.html#v:unsafeInterleaveIO"><code>unsafeInterleaveIO</code></a> を使用して<a href="https://stackoverflow.com/questions/12609208/lazy-version-of-mapm">遅延評価版の <code>mapM</code> を定義する</a>というものがありますが、unsafeな方法に頼るのは避けたいです。もちろん関数に必要な数列の長さも与えればこの問題を回避して実装することができますが、“無限の数列”と”必要な分だけ値を取り出す処理”の2つに分離して組み合わせる方が、実装を簡潔に保つことができるでしょう。ですので乱数が絡む数列であっても遅延評価をうまく使える無限列を定義できないか考えてみたいと思います。</p>
+<section id="listt" class="level3">
+<h3 class="anchored" data-anchor-id="listt"><code>ListT</code></h3>
+<p>遅延評価と <code>IO</code> を組み合わせたいと思ったときの解決策として <code>pipes</code> や <code>conduit</code> のようなストリーム処理をサポートするライブラリの活用が挙げられます。今回はその中でも基本的な <code>list-t</code> を使うことにしましょう。<code>ListT</code> は名前の通りリストをモナドトランスフォーマーに拡張したものになっています。</p>
+<div class="sourceCode" id="cb6" style="background: #f1f3f5;"><pre class="sourceCode haskell code-with-copy"><code class="sourceCode haskell"><span id="cb6-1"><span class="kw" style="color: #003B4F;
+background-color: null;
+font-weight: bold;
+font-style: inherit;">newtype</span> <span class="dt" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">ListT</span> m a <span class="ot" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">=</span> <span class="dt" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">ListT</span> (m (<span class="dt" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">Maybe</span> (a, <span class="dt" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">ListT</span> m a)))</span></code></pre></div>
+<p>なぜ <code>ListT</code> の定義が単純な <code>m [a]</code> ではなくこのような実装になっているかは面白い話なのですが、既に分かりやすい解説記事があるので気になる人は下記を参照してみてください。</p>
+<ul>
+<li><a href="https://viercc.github.io/blog/posts/2021-07-17-monads-from-adjunction-2.html">随伴から作られるMonad</a></li>
+<li><a href="https://blog.mudatobunka.org/entry/2018/01/03/233314">いろいろなパッケージから提供されている ListT モナド変換子の違いについて調べてみる</a></li>
+<li><a href="https://wiki.haskell.org/ListT_done_right">ListT done right</a></li>
+</ul>
+<p>早速 <code>ListT</code> を使ったランダムフィボナッチ数列の実装を考えてみましょう。</p>
+<div id="34109fd7-2ffe-4a19-9367-94b5b666f28e" class="cell" data-execution_count="5">
+<div class="sourceCode cell-code" id="cb7" style="background: #f1f3f5;"><pre class="sourceCode haskell code-with-copy"><code class="sourceCode haskell"><span id="cb7-1"><span class="kw" style="color: #003B4F;
+background-color: null;
+font-weight: bold;
+font-style: inherit;">import</span> <span class="dt" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">ListT</span> (<span class="dt" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">ListT</span>)</span>
+<span id="cb7-2"><span class="kw" style="color: #003B4F;
+background-color: null;
+font-weight: bold;
+font-style: inherit;">import</span> <span class="kw" style="color: #003B4F;
+background-color: null;
+font-weight: bold;
+font-style: inherit;">qualified</span> <span class="dt" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">ListT</span></span>
+<span id="cb7-3"></span>
+<span id="cb7-4"><span class="ot" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">rfibs2 ::</span> <span class="dt" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">ListT</span> <span class="dt" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">IO</span> <span class="dt" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">Integer</span></span>
+<span id="cb7-5">rfibs2 <span class="ot" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">=</span> ListT.traverse rfib2 <span class="op" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">$</span> ListT.fromFoldable [<span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">0</span><span class="op" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">..</span>]</span>
+<span id="cb7-6"></span>
+<span id="cb7-7"><span class="ot" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">rfib2 ::</span> <span class="dt" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">Int</span> <span class="ot" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">-&gt;</span> <span class="dt" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">IO</span> <span class="dt" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">Integer</span></span>
+<span id="cb7-8">rfib2 <span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">0</span> <span class="ot" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">=</span> <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">pure</span> <span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">1</span></span>
+<span id="cb7-9">rfib2 <span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">1</span> <span class="ot" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">=</span> <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">pure</span> <span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">1</span></span>
+<span id="cb7-10">rfib2 n <span class="ot" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">=</span> <span class="kw" style="color: #003B4F;
+background-color: null;
+font-weight: bold;
+font-style: inherit;">do</span></span>
+<span id="cb7-11">  (fs, _) <span class="ot" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">&lt;-</span> ListT.splitAt n rfibs2</span>
+<span id="cb7-12">  <span class="kw" style="color: #003B4F;
+background-color: null;
+font-weight: bold;
+font-style: inherit;">let</span> x <span class="ot" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">=</span> fs <span class="op" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">!!</span> (n<span class="op" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">-</span><span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">2</span>)</span>
+<span id="cb7-13">      y <span class="ot" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">=</span> fs <span class="op" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">!!</span> (n<span class="op" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">-</span><span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">1</span>)</span>
+<span id="cb7-14">  b <span class="ot" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">&lt;- randomIO ::</span> <span class="dt" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">IO</span> <span class="dt" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">Bool</span></span>
+<span id="cb7-15">  <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">pure</span> <span class="op" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">$</span> <span class="kw" style="color: #003B4F;
+background-color: null;
+font-weight: bold;
+font-style: inherit;">if</span> b</span>
+<span id="cb7-16">    <span class="kw" style="color: #003B4F;
+background-color: null;
+font-weight: bold;
+font-style: inherit;">then</span> x <span class="op" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">+</span> y</span>
+<span id="cb7-17">    <span class="kw" style="color: #003B4F;
+background-color: null;
+font-weight: bold;
+font-style: inherit;">else</span> x <span class="op" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">-</span> y</span></code></pre></div>
+</div>
+<div id="5d84a544-9ffc-43e4-b8cf-71f01a18271a" class="cell" data-execution_count="6">
+<div class="sourceCode cell-code" id="cb8" style="background: #f1f3f5;"><pre class="sourceCode haskell code-with-copy"><code class="sourceCode haskell"><span id="cb8-1">ListT.toList <span class="op" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">$</span> ListT.take <span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">10</span> rfibs2</span></code></pre></div>
+<div class="cell-output cell-output-display">
+<pre><code>[1,1,2,3,1,-2,-1,-1,-4,-5]</code></pre>
+</div>
+</div>
+<p>今度は動きました！しかし待ってください。よく見ると各項がバラバラで前2つの項の和や差に一致しておらずランダムフィボナッチ数列になっていません。これは <code>rfibs2</code> の要素はアクションであり計算結果がメモ化されるわけではないので <code>rfib2</code> の中で <code>rfibs2</code> が呼ばれる際に各項がまた再計算されてしまい起こっているのです。それなら仕方がないので数列全体をメモ化する方法は諦めて必要な項の値を引き回す実装に変えましょう。</p>
+<div id="8484feef-bbc0-4e63-9eef-11cdcda5c450" class="cell" data-execution_count="7">
+<div class="sourceCode cell-code" id="cb10" style="background: #f1f3f5;"><pre class="sourceCode haskell code-with-copy"><code class="sourceCode haskell"><span id="cb10-1"><span class="ot" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">rfibs ::</span> <span class="dt" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">ListT</span> <span class="dt" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">IO</span> <span class="dt" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">Integer</span></span>
+<span id="cb10-2">rfibs <span class="ot" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">=</span> <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">flip</span> ListT.unfoldM (<span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">1</span>, <span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">1</span>) <span class="op" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">$</span> \(x, y) <span class="ot" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">-&gt;</span> <span class="kw" style="color: #003B4F;
+background-color: null;
+font-weight: bold;
+font-style: inherit;">do</span></span>
+<span id="cb10-3">  b <span class="ot" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">&lt;-</span> randomIO</span>
+<span id="cb10-4">  <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">pure</span> (<span class="dt" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">Just</span> (x, (y, <span class="kw" style="color: #003B4F;
+background-color: null;
+font-weight: bold;
+font-style: inherit;">if</span> b <span class="kw" style="color: #003B4F;
+background-color: null;
+font-weight: bold;
+font-style: inherit;">then</span> x<span class="op" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">+</span>y <span class="kw" style="color: #003B4F;
+background-color: null;
+font-weight: bold;
+font-style: inherit;">else</span> x<span class="op" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">-</span>y)))</span></code></pre></div>
+</div>
+<div id="a03e6b7f-d7a2-4cf9-9041-97022c2417b5" class="cell" data-execution_count="8">
+<div class="sourceCode cell-code" id="cb11" style="background: #f1f3f5;"><pre class="sourceCode haskell code-with-copy"><code class="sourceCode haskell"><span id="cb11-1">ListT.toList <span class="op" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">$</span> ListT.take <span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">10</span> rfibs</span></code></pre></div>
+<div class="cell-output cell-output-display">
+<pre><code>[1,1,2,-1,1,0,1,-1,2,1]</code></pre>
+</div>
+</div>
+<div id="a14b754c-451f-41eb-8908-3a26fc8c2931" class="cell" data-execution_count="9">
+<div class="sourceCode cell-code" id="cb13" style="background: #f1f3f5;"><pre class="sourceCode haskell code-with-copy"><code class="sourceCode haskell"><span id="cb13-1">ListT.toList <span class="op" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">$</span> ListT.take <span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">100</span> rfibs</span></code></pre></div>
+<div class="cell-output cell-output-display">
+<pre><code>[1,1,0,1,1,2,3,-1,4,3,1,4,5,-1,4,3,1,4,-3,7,4,3,7,10,17,-7,10,3,13,16,-3,13,-16,29,-45,-16,-29,-45,-74,29,-103,132,-235,-103,-132,-235,-367,-602,-969,-1571,602,-2173,2775,602,2173,2775,4948,7723,12671,-4948,7723,-12671,20394,-33065,53459,-86524,-33065,-119589,86524,-206113,-119589,-325702,206113,-531815,-325702,-857517,-1183219,325702,-857517,1183219,-2040736,3223955,-5264691,8488646,3223955,5264691,8488646,-3223955,11712601,8488646,20201247,28689893,48891140,77581033,-28689893,48891140,-77581033,-28689893,-106270926,77581033]</code></pre>
+</div>
+</div>
+<p>今度はちゃんと動いてますね！</p>
+</section>
+</section>
+<section id="viswanath定数の計算" class="level2">
+<h2 class="anchored" data-anchor-id="viswanath定数の計算">Viswanath定数の計算</h2>
+<p>それでは実装したランダムフィボナッチ数列 <code>rfibs</code> を使ってViswanath定数を計算してみましょう。まずは最初の20個ほど計算して眺めてみます。</p>
+<div id="e5e87885-35c6-4ef0-88d0-1deaefe5435a" class="cell" data-execution_count="10">
+<div class="sourceCode cell-code" id="cb15" style="background: #f1f3f5;"><pre class="sourceCode haskell code-with-copy"><code class="sourceCode haskell"><span id="cb15-1"><span class="kw" style="color: #003B4F;
+background-color: null;
+font-weight: bold;
+font-style: inherit;">do</span></span>
+<span id="cb15-2">  xs <span class="ot" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">&lt;-</span> ListT.toList <span class="op" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">$</span> ListT.take <span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">20</span> rfibs</span>
+<span id="cb15-3">  <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">mapM_</span> <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">print</span> <span class="op" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">$</span> <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">zipWith</span> (\n x <span class="ot" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">-&gt;</span> <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">abs</span> (<span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">fromIntegral</span> x) <span class="op" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">**</span> (<span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">1</span><span class="op" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">/</span>n)) [<span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">0</span><span class="op" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">..</span>] xs</span></code></pre></div>
+<div class="cell-output cell-output-display">
+<pre><code>1.0
+1.0
+1.4142135623730951
+1.4422495703074083
+1.4953487812212205
+1.5157165665103982
+1.2009369551760027
+1.4085438884286994
+1.390804235062458
+1.4299691483087287
+1.4424689075546286
+1.271140212359713
+1.3921616171717222
+1.3818703308868108
+1.4077091909894845
+1.3030219289284708
+1.3005578511750604
+1.1679366751416516
+1.2467894073120835
+1.247697199056454</code></pre>
+</div>
+</div>
+<p>うまく計算できていそうですね！（<code>n=0</code>のところは <img src="https://latex.codecogs.com/png.latex?1%5E%5Cinfty%20=%201"> ）</p>
+<p>最後により大きな項まで計算して定数に収束していく様子を眺めて終わりましょう。</p>
+<div id="8612ef53-ab69-4be9-ac08-3795eba68ca8" class="cell" data-execution_count="11">
+<div class="sourceCode cell-code" id="cb17" style="background: #f1f3f5;"><pre class="sourceCode haskell code-with-copy"><code class="sourceCode haskell"><span id="cb17-1"><span class="kw" style="color: #003B4F;
+background-color: null;
+font-weight: bold;
+font-style: inherit;">import</span> <span class="dt" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">Graphics.Rendering.Chart.Easy</span></span>
+<span id="cb17-2"></span>
+<span id="cb17-3"><span class="kw" style="color: #003B4F;
+background-color: null;
+font-weight: bold;
+font-style: inherit;">do</span></span>
+<span id="cb17-4">  xs <span class="ot" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">&lt;-</span> ListT.toList <span class="op" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">$</span> ListT.take <span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">3000</span> rfibs</span>
+<span id="cb17-5">  <span class="kw" style="color: #003B4F;
+background-color: null;
+font-weight: bold;
+font-style: inherit;">let</span> cs <span class="ot" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">=</span> <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">zipWith</span> (\n x <span class="ot" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">-&gt;</span> <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">abs</span> (<span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">fromIntegral</span> x) <span class="op" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">**</span> (<span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">1</span><span class="op" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">/</span>n)) [<span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">0</span><span class="op" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">..</span>] xs</span>
+<span id="cb17-6">  <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">pure</span> <span class="op" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">.</span> toRenderable <span class="op" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">$</span> <span class="kw" style="color: #003B4F;
+background-color: null;
+font-weight: bold;
+font-style: inherit;">do</span>  </span>
+<span id="cb17-7">    layout_title <span class="op" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">.=</span> (<span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"last cs = "</span> <span class="op" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">++</span> <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">show</span> (<span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">last</span> cs))</span>
+<span id="cb17-8">    plot (line <span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">""</span> [<span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">zip</span> [<span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">0</span><span class="op" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">..</span>] cs])</span></code></pre></div>
+<div class="cell-output cell-output-display">
+<div>
+<figure class="figure">
+<p><img src="https://lotz84.github.io/haskell-notebooks/posts/2024-09-26/index_files/figure-html/cell-12-output-1.svg" class="img-fluid figure-img"></p>
+</figure>
+</div>
+</div>
+</div>
+
+
+</section>
+
+ ]]></description>
+  <guid>https://lotz84.github.io/haskell-notebooks/posts/2024-09-26/</guid>
+  <pubDate>Wed, 25 Sep 2024 15:00:00 GMT</pubDate>
+</item>
 <item>
   <title>HaskellでQR分解を実装する</title>
   <dc:creator>lotz </dc:creator>
@@ -36,17 +629,20 @@
 <div id="8e633304-5173-40e0-9b2f-ccab2def1c5b" class="cell" data-execution_count="1">
 <div class="sourceCode cell-code" id="cb1" style="background: #f1f3f5;"><pre class="sourceCode haskell code-with-copy"><code class="sourceCode haskell"><span id="cb1-1"><span class="kw" style="color: #003B4F;
 background-color: null;
+font-weight: bold;
 font-style: inherit;">import</span> <span class="dt" style="color: #AD0000;
 background-color: null;
 font-style: inherit;">GHC.TypeLits</span></span>
 <span id="cb1-2"><span class="kw" style="color: #003B4F;
 background-color: null;
+font-weight: bold;
 font-style: inherit;">import</span> <span class="dt" style="color: #AD0000;
 background-color: null;
 font-style: inherit;">Text.Printf</span></span>
 <span id="cb1-3"></span>
 <span id="cb1-4"><span class="kw" style="color: #003B4F;
 background-color: null;
+font-weight: bold;
 font-style: inherit;">import</span> <span class="dt" style="color: #AD0000;
 background-color: null;
 font-style: inherit;">Data.Vector.Sized</span> (<span class="dt" style="color: #AD0000;
@@ -54,18 +650,22 @@ background-color: null;
 font-style: inherit;">Vector</span>)</span>
 <span id="cb1-5"><span class="kw" style="color: #003B4F;
 background-color: null;
+font-weight: bold;
 font-style: inherit;">import</span> <span class="kw" style="color: #003B4F;
 background-color: null;
+font-weight: bold;
 font-style: inherit;">qualified</span> <span class="dt" style="color: #AD0000;
 background-color: null;
 font-style: inherit;">Data.Vector.Sized</span> <span class="kw" style="color: #003B4F;
 background-color: null;
+font-weight: bold;
 font-style: inherit;">as</span> <span class="dt" style="color: #AD0000;
 background-color: null;
 font-style: inherit;">V</span></span>
 <span id="cb1-6"></span>
 <span id="cb1-7"><span class="kw" style="color: #003B4F;
 background-color: null;
+font-weight: bold;
 font-style: inherit;">type</span> <span class="dt" style="color: #AD0000;
 background-color: null;
 font-style: inherit;">Matrix</span> m n a <span class="ot" style="color: #003B4F;
@@ -326,14 +926,17 @@ font-style: inherit;">-&gt;</span> V.generate (\y <span class="ot" style="color:
 background-color: null;
 font-style: inherit;">-&gt;</span> <span class="kw" style="color: #003B4F;
 background-color: null;
+font-weight: bold;
 font-style: inherit;">if</span> x <span class="op" style="color: #5E5E5E;
 background-color: null;
 font-style: inherit;">==</span> y <span class="kw" style="color: #003B4F;
 background-color: null;
+font-weight: bold;
 font-style: inherit;">then</span> <span class="dv" style="color: #AD0000;
 background-color: null;
 font-style: inherit;">1</span> <span class="kw" style="color: #003B4F;
 background-color: null;
+font-weight: bold;
 font-style: inherit;">else</span> <span class="dv" style="color: #AD0000;
 background-color: null;
 font-style: inherit;">0</span>))</span>
@@ -430,12 +1033,14 @@ font-style: inherit;">.</span> dot) a</span></code></pre></div>
 <div id="fb9662a3-76d4-410d-93bf-061e0b2f44f4" class="cell" data-execution_count="2">
 <div class="sourceCode cell-code" id="cb2" style="background: #f1f3f5;"><pre class="sourceCode haskell code-with-copy"><code class="sourceCode haskell"><span id="cb2-1"><span class="kw" style="color: #003B4F;
 background-color: null;
+font-weight: bold;
 font-style: inherit;">import</span> <span class="dt" style="color: #AD0000;
 background-color: null;
 font-style: inherit;">Data.Maybe</span> (fromJust)</span>
 <span id="cb2-2"></span>
 <span id="cb2-3"><span class="kw" style="color: #003B4F;
 background-color: null;
+font-weight: bold;
 font-style: inherit;">import</span> <span class="dt" style="color: #AD0000;
 background-color: null;
 font-style: inherit;">Data.Finite</span> (<span class="dt" style="color: #AD0000;
@@ -443,12 +1048,15 @@ background-color: null;
 font-style: inherit;">Finite</span>)</span>
 <span id="cb2-4"><span class="kw" style="color: #003B4F;
 background-color: null;
+font-weight: bold;
 font-style: inherit;">import</span> <span class="kw" style="color: #003B4F;
 background-color: null;
+font-weight: bold;
 font-style: inherit;">qualified</span> <span class="dt" style="color: #AD0000;
 background-color: null;
 font-style: inherit;">Data.Vector</span> <span class="kw" style="color: #003B4F;
 background-color: null;
+font-weight: bold;
 font-style: inherit;">as</span> <span class="dt" style="color: #AD0000;
 background-color: null;
 font-style: inherit;">V'</span></span>
@@ -482,6 +1090,7 @@ background-color: null;
 font-style: inherit;">=</span></span>
 <span id="cb2-9">  <span class="kw" style="color: #003B4F;
 background-color: null;
+font-weight: bold;
 font-style: inherit;">let</span> i <span class="ot" style="color: #003B4F;
 background-color: null;
 font-style: inherit;">=</span> <span class="fu" style="color: #4758AB;
@@ -528,8 +1137,10 @@ background-color: null;
 font-style: inherit;">/</span>u_norm) u</span>
 <span id="cb2-15">   <span class="kw" style="color: #003B4F;
 background-color: null;
+font-weight: bold;
 font-style: inherit;">in</span> <span class="kw" style="color: #003B4F;
 background-color: null;
+font-weight: bold;
 font-style: inherit;">if</span> <span class="fu" style="color: #4758AB;
 background-color: null;
 font-style: inherit;">abs</span> u_norm <span class="op" style="color: #5E5E5E;
@@ -538,8 +1149,10 @@ font-style: inherit;">&lt;</span> <span class="fl" style="color: #AD0000;
 background-color: null;
 font-style: inherit;">1e-12</span> <span class="kw" style="color: #003B4F;
 background-color: null;
+font-weight: bold;
 font-style: inherit;">then</span> identity <span class="kw" style="color: #003B4F;
 background-color: null;
+font-weight: bold;
 font-style: inherit;">else</span> identity <span class="op" style="color: #5E5E5E;
 background-color: null;
 font-style: inherit;">-</span> <span class="dv" style="color: #AD0000;
@@ -561,12 +1174,14 @@ font-style: inherit;">{-# LANGUAGE ScopedTypeVariables #-}</span></span>
 <span id="cb3-2"></span>
 <span id="cb3-3"><span class="kw" style="color: #003B4F;
 background-color: null;
+font-weight: bold;
 font-style: inherit;">import</span> <span class="dt" style="color: #AD0000;
 background-color: null;
 font-style: inherit;">Data.Proxy</span></span>
 <span id="cb3-4"></span>
 <span id="cb3-5"><span class="kw" style="color: #003B4F;
 background-color: null;
+font-weight: bold;
 font-style: inherit;">import</span> <span class="dt" style="color: #AD0000;
 background-color: null;
 font-style: inherit;">Data.Finite</span> (finite)</span>
@@ -575,6 +1190,7 @@ font-style: inherit;">Data.Finite</span> (finite)</span>
 background-color: null;
 font-style: inherit;">qr ::</span> <span class="kw" style="color: #003B4F;
 background-color: null;
+font-weight: bold;
 font-style: inherit;">forall</span> m n a<span class="op" style="color: #5E5E5E;
 background-color: null;
 font-style: inherit;">.</span> (<span class="dt" style="color: #AD0000;
@@ -609,11 +1225,13 @@ background-color: null;
 font-style: inherit;">-&gt;</span></span>
 <span id="cb3-11">      <span class="kw" style="color: #003B4F;
 background-color: null;
+font-weight: bold;
 font-style: inherit;">let</span> p <span class="ot" style="color: #003B4F;
 background-color: null;
 font-style: inherit;">=</span> householder (finite i) (V.index r (finite i))</span>
 <span id="cb3-12">       <span class="kw" style="color: #003B4F;
 background-color: null;
+font-weight: bold;
 font-style: inherit;">in</span> (q <span class="op" style="color: #5E5E5E;
 background-color: null;
 font-style: inherit;">!*!</span> p, r <span class="op" style="color: #5E5E5E;
@@ -630,6 +1248,7 @@ background-color: null;
 font-style: inherit;">1</span>]</span>
 <span id="cb3-14">  <span class="kw" style="color: #003B4F;
 background-color: null;
+font-weight: bold;
 font-style: inherit;">where</span> k <span class="ot" style="color: #003B4F;
 background-color: null;
 font-style: inherit;">=</span> <span class="fu" style="color: #4758AB;
@@ -661,9 +1280,11 @@ font-style: inherit;">{-# LANGUAGE DataKinds #-}</span></span>
 <span id="cb4-2"></span>
 <span id="cb4-3"><span class="kw" style="color: #003B4F;
 background-color: null;
+font-weight: bold;
 font-style: inherit;">do</span></span>
 <span id="cb4-4">  <span class="kw" style="color: #003B4F;
 background-color: null;
+font-weight: bold;
 font-style: inherit;">let</span> x <span class="ot" style="color: #003B4F;
 background-color: null;
 font-style: inherit;">=</span> fromJust <span class="op" style="color: #5E5E5E;
@@ -784,9 +1405,11 @@ Q^TQ =
 <div id="b37410ca-839d-431e-9268-2074d1a49bd5" class="cell" data-execution_count="5">
 <div class="sourceCode cell-code" id="cb6" style="background: #f1f3f5;"><pre class="sourceCode haskell code-with-copy"><code class="sourceCode haskell"><span id="cb6-1"><span class="kw" style="color: #003B4F;
 background-color: null;
+font-weight: bold;
 font-style: inherit;">do</span></span>
 <span id="cb6-2">  <span class="kw" style="color: #003B4F;
 background-color: null;
+font-weight: bold;
 font-style: inherit;">let</span> x <span class="ot" style="color: #003B4F;
 background-color: null;
 font-style: inherit;">=</span> fromJust <span class="op" style="color: #5E5E5E;
@@ -901,9 +1524,11 @@ Q^TQ =
 <div id="52287087-9679-47b8-81c5-265c7249e4db" class="cell" data-execution_count="6">
 <div class="sourceCode cell-code" id="cb8" style="background: #f1f3f5;"><pre class="sourceCode haskell code-with-copy"><code class="sourceCode haskell"><span id="cb8-1"><span class="kw" style="color: #003B4F;
 background-color: null;
+font-weight: bold;
 font-style: inherit;">do</span></span>
 <span id="cb8-2">  <span class="kw" style="color: #003B4F;
 background-color: null;
+font-weight: bold;
 font-style: inherit;">let</span> x <span class="ot" style="color: #003B4F;
 background-color: null;
 font-style: inherit;">=</span> fromJust <span class="op" style="color: #5E5E5E;
@@ -1012,9 +1637,11 @@ Q^TQ =
 <div id="e172aa6b-1128-4154-a787-c244348a533b" class="cell" data-execution_count="7">
 <div class="sourceCode cell-code" id="cb10" style="background: #f1f3f5;"><pre class="sourceCode haskell code-with-copy"><code class="sourceCode haskell"><span id="cb10-1"><span class="kw" style="color: #003B4F;
 background-color: null;
+font-weight: bold;
 font-style: inherit;">do</span></span>
 <span id="cb10-2">  <span class="kw" style="color: #003B4F;
 background-color: null;
+font-weight: bold;
 font-style: inherit;">let</span> x <span class="ot" style="color: #003B4F;
 background-color: null;
 font-style: inherit;">=</span> fromJust <span class="op" style="color: #5E5E5E;
@@ -1167,18 +1794,22 @@ font-style: inherit;">{-# LANGUAGE BlockArguments, DataKinds #-}</span> </span>
 <span id="cb1-2"></span>
 <span id="cb1-3"><span class="kw" style="color: #003B4F;
 background-color: null;
+font-weight: bold;
 font-style: inherit;">import</span> <span class="dt" style="color: #AD0000;
 background-color: null;
 font-style: inherit;">GHC.TypeLits</span></span>
 <span id="cb1-4"></span>
 <span id="cb1-5"><span class="kw" style="color: #003B4F;
 background-color: null;
+font-weight: bold;
 font-style: inherit;">import</span> <span class="kw" style="color: #003B4F;
 background-color: null;
+font-weight: bold;
 font-style: inherit;">qualified</span> <span class="dt" style="color: #AD0000;
 background-color: null;
 font-style: inherit;">Data.Vector.Sized</span> <span class="kw" style="color: #003B4F;
 background-color: null;
+font-weight: bold;
 font-style: inherit;">as</span> <span class="dt" style="color: #AD0000;
 background-color: null;
 font-style: inherit;">V</span></span>
@@ -1317,6 +1948,7 @@ background-color: null;
 font-style: inherit;">=</span></span>
 <span id="cb1-27">  <span class="kw" style="color: #003B4F;
 background-color: null;
+font-weight: bold;
 font-style: inherit;">let</span> cs' <span class="ot" style="color: #003B4F;
 background-color: null;
 font-style: inherit;">=</span> V.map aggregate <span class="op" style="color: #5E5E5E;
@@ -1324,14 +1956,18 @@ background-color: null;
 font-style: inherit;">$</span> voronoiDecompose distance ds cs</span>
 <span id="cb1-28">   <span class="kw" style="color: #003B4F;
 background-color: null;
+font-weight: bold;
 font-style: inherit;">in</span> <span class="kw" style="color: #003B4F;
 background-color: null;
+font-weight: bold;
 font-style: inherit;">if</span> cs <span class="op" style="color: #5E5E5E;
 background-color: null;
 font-style: inherit;">==</span> cs' <span class="kw" style="color: #003B4F;
 background-color: null;
+font-weight: bold;
 font-style: inherit;">then</span> cs' <span class="kw" style="color: #003B4F;
 background-color: null;
+font-weight: bold;
 font-style: inherit;">else</span> kMeans distance aggregate ds cs'</span></code></pre></div>
 </div>
 <p><code>voronoiDecompose</code> は与えられた中心点に従ってデータ点を<a href="https://ja.wikipedia.org/wiki/%E3%83%9C%E3%83%AD%E3%83%8E%E3%82%A4%E5%9B%B3">ボロノイ領域</a>で分類する関数です。データ点はリストとして扱っていますが、中心点はランダムアクセスしたいので <a href="https://hackage.haskell.org/package/vector-sized-1.6.1/docs/Data-Vector-Sized.html#t:Vector"><code>Vector</code></a> を使って <img src="https://latex.codecogs.com/png.latex?O(1)"> アクセスできるようにしています。データ点の型は型変数で抽象化しており、必要になる距離関数は後から与えられるようになっています。</p>
@@ -1353,6 +1989,7 @@ font-style: inherit;">else</span> kMeans distance aggregate ds cs'</span></code>
 <div id="50ddaa4b-23cb-4dc6-8201-0523c1bda092" class="cell" data-execution_count="2">
 <div class="sourceCode cell-code" id="cb2" style="background: #f1f3f5;"><pre class="sourceCode haskell code-with-copy"><code class="sourceCode haskell"><span id="cb2-1"><span class="kw" style="color: #003B4F;
 background-color: null;
+font-weight: bold;
 font-style: inherit;">import</span> <span class="dt" style="color: #AD0000;
 background-color: null;
 font-style: inherit;">Data.Proxy</span> (<span class="dt" style="color: #AD0000;
@@ -1361,28 +1998,35 @@ font-style: inherit;">Proxy</span>(..))</span>
 <span id="cb2-2"></span>
 <span id="cb2-3"><span class="kw" style="color: #003B4F;
 background-color: null;
+font-weight: bold;
 font-style: inherit;">import</span> <span class="kw" style="color: #003B4F;
 background-color: null;
+font-weight: bold;
 font-style: inherit;">qualified</span> <span class="dt" style="color: #AD0000;
 background-color: null;
 font-style: inherit;">Data.Vector.Generic</span> <span class="kw" style="color: #003B4F;
 background-color: null;
+font-weight: bold;
 font-style: inherit;">as</span> <span class="dt" style="color: #AD0000;
 background-color: null;
 font-style: inherit;">VG</span></span>
 <span id="cb2-4"><span class="kw" style="color: #003B4F;
 background-color: null;
+font-weight: bold;
 font-style: inherit;">import</span> <span class="kw" style="color: #003B4F;
 background-color: null;
+font-weight: bold;
 font-style: inherit;">qualified</span> <span class="dt" style="color: #AD0000;
 background-color: null;
 font-style: inherit;">Data.Vector.Generic.Sized.Internal</span> <span class="kw" style="color: #003B4F;
 background-color: null;
+font-weight: bold;
 font-style: inherit;">as</span> <span class="dt" style="color: #AD0000;
 background-color: null;
 font-style: inherit;">VGSI</span></span>
 <span id="cb2-5"><span class="kw" style="color: #003B4F;
 background-color: null;
+font-weight: bold;
 font-style: inherit;">import</span> <span class="dt" style="color: #AD0000;
 background-color: null;
 font-style: inherit;">Data.Random</span> (randomElement, <span class="dt" style="color: #AD0000;
@@ -1390,6 +2034,7 @@ background-color: null;
 font-style: inherit;">RVar</span>)</span>
 <span id="cb2-6"><span class="kw" style="color: #003B4F;
 background-color: null;
+font-weight: bold;
 font-style: inherit;">import</span> <span class="dt" style="color: #AD0000;
 background-color: null;
 font-style: inherit;">Data.Random.Distribution.Categorical</span> (weightedCategorical)</span>
@@ -1402,6 +2047,7 @@ font-style: inherit;">-- ref. https://github.com/expipiplus1/vector-sized/issues
 background-color: null;
 font-style: inherit;">unfoldrM ::</span> <span class="kw" style="color: #003B4F;
 background-color: null;
+font-weight: bold;
 font-style: inherit;">forall</span> m n a b<span class="op" style="color: #5E5E5E;
 background-color: null;
 font-style: inherit;">.</span> (<span class="dt" style="color: #AD0000;
@@ -1429,6 +2075,7 @@ background-color: null;
 font-style: inherit;">&lt;$&gt;</span> VG.unfoldrExactNM i f z</span>
 <span id="cb2-13">  <span class="kw" style="color: #003B4F;
 background-color: null;
+font-weight: bold;
 font-style: inherit;">where</span> i <span class="ot" style="color: #003B4F;
 background-color: null;
 font-style: inherit;">=</span> <span class="fu" style="color: #4758AB;
@@ -1480,11 +2127,13 @@ background-color: null;
 font-style: inherit;">=</span> unfoldrM f []</span>
 <span id="cb2-22">  <span class="kw" style="color: #003B4F;
 background-color: null;
+font-weight: bold;
 font-style: inherit;">where</span></span>
 <span id="cb2-23">  f [] <span class="ot" style="color: #003B4F;
 background-color: null;
 font-style: inherit;">=</span> <span class="kw" style="color: #003B4F;
 background-color: null;
+font-weight: bold;
 font-style: inherit;">do</span></span>
 <span id="cb2-24">    c <span class="ot" style="color: #003B4F;
 background-color: null;
@@ -1496,9 +2145,11 @@ font-style: inherit;">pure</span> (c, [c])</span>
 background-color: null;
 font-style: inherit;">=</span> <span class="kw" style="color: #003B4F;
 background-color: null;
+font-weight: bold;
 font-style: inherit;">do</span></span>
 <span id="cb2-27">    <span class="kw" style="color: #003B4F;
 background-color: null;
+font-weight: bold;
 font-style: inherit;">let</span> ws <span class="ot" style="color: #003B4F;
 background-color: null;
 font-style: inherit;">=</span> <span class="fu" style="color: #4758AB;
@@ -1538,11 +2189,13 @@ font-style: inherit;">:</span>cs)</span></code></pre></div>
 <div id="295b594b-15dc-4202-8160-79596d592867" class="cell" data-execution_count="3">
 <div class="sourceCode cell-code" id="cb3" style="background: #f1f3f5;"><pre class="sourceCode haskell code-with-copy"><code class="sourceCode haskell"><span id="cb3-1"><span class="kw" style="color: #003B4F;
 background-color: null;
+font-weight: bold;
 font-style: inherit;">import</span> <span class="dt" style="color: #AD0000;
 background-color: null;
 font-style: inherit;">Data.List</span> (foldl')</span>
 <span id="cb3-2"><span class="kw" style="color: #003B4F;
 background-color: null;
+font-weight: bold;
 font-style: inherit;">import</span> <span class="dt" style="color: #AD0000;
 background-color: null;
 font-style: inherit;">Data.Maybe</span> (fromJust)</span>
@@ -1553,6 +2206,7 @@ background-color: null;
 font-style: inherit;">-- | 平面上の点</span></span>
 <span id="cb3-6"><span class="kw" style="color: #003B4F;
 background-color: null;
+font-weight: bold;
 font-style: inherit;">type</span> <span class="dt" style="color: #AD0000;
 background-color: null;
 font-style: inherit;">Point</span> <span class="ot" style="color: #003B4F;
@@ -1641,6 +2295,7 @@ background-color: null;
 font-style: inherit;">=</span></span>
 <span id="cb3-22">  <span class="kw" style="color: #003B4F;
 background-color: null;
+font-weight: bold;
 font-style: inherit;">let</span> n <span class="ot" style="color: #003B4F;
 background-color: null;
 font-style: inherit;">=</span> <span class="fu" style="color: #4758AB;
@@ -1652,6 +2307,7 @@ background-color: null;
 font-style: inherit;">length</span> ps</span>
 <span id="cb3-23">   <span class="kw" style="color: #003B4F;
 background-color: null;
+font-weight: bold;
 font-style: inherit;">in</span> V.map (<span class="op" style="color: #5E5E5E;
 background-color: null;
 font-style: inherit;">/</span>n) <span class="op" style="color: #5E5E5E;
@@ -1666,27 +2322,32 @@ font-style: inherit;">0</span>) ps</span></code></pre></div>
 <div id="b737df9e-d1c8-488a-b98f-c6b008da101d" class="cell" data-execution_count="4">
 <div class="sourceCode cell-code" id="cb4" style="background: #f1f3f5;"><pre class="sourceCode haskell code-with-copy"><code class="sourceCode haskell"><span id="cb4-1"><span class="kw" style="color: #003B4F;
 background-color: null;
+font-weight: bold;
 font-style: inherit;">import</span> <span class="dt" style="color: #AD0000;
 background-color: null;
 font-style: inherit;">Control.Monad</span> (replicateM)</span>
 <span id="cb4-2"><span class="kw" style="color: #003B4F;
 background-color: null;
+font-weight: bold;
 font-style: inherit;">import</span> <span class="dt" style="color: #AD0000;
 background-color: null;
 font-style: inherit;">Data.Traversable</span> (forM)</span>
 <span id="cb4-3"></span>
 <span id="cb4-4"><span class="kw" style="color: #003B4F;
 background-color: null;
+font-weight: bold;
 font-style: inherit;">import</span> <span class="dt" style="color: #AD0000;
 background-color: null;
 font-style: inherit;">Data.Random</span> (normal, sampleFrom)</span>
 <span id="cb4-5"><span class="kw" style="color: #003B4F;
 background-color: null;
+font-weight: bold;
 font-style: inherit;">import</span> <span class="dt" style="color: #AD0000;
 background-color: null;
 font-style: inherit;">Graphics.Rendering.Chart.Easy</span></span>
 <span id="cb4-6"><span class="kw" style="color: #003B4F;
 background-color: null;
+font-weight: bold;
 font-style: inherit;">import</span> <span class="dt" style="color: #AD0000;
 background-color: null;
 font-style: inherit;">System.Random.Stateful</span> (newIOGenM, mkStdGen)</span>
@@ -1717,6 +2378,7 @@ background-color: null;
 font-style: inherit;">&lt;*&gt;</span> normal m s</span>
 <span id="cb4-12">  <span class="kw" style="color: #003B4F;
 background-color: null;
+font-weight: bold;
 font-style: inherit;">where</span></span>
 <span id="cb4-13">  nEachSamples <span class="ot" style="color: #003B4F;
 background-color: null;
@@ -1740,6 +2402,7 @@ font-style: inherit;">2</span>)]</span>
 <span id="cb4-16"></span>
 <span id="cb4-17"><span class="kw" style="color: #003B4F;
 background-color: null;
+font-weight: bold;
 font-style: inherit;">do</span></span>
 <span id="cb4-18">  gen <span class="ot" style="color: #003B4F;
 background-color: null;
@@ -1769,6 +2432,7 @@ background-color: null;
 font-style: inherit;">-- k-means++法</span></span>
 <span id="cb4-22">  <span class="kw" style="color: #003B4F;
 background-color: null;
+font-weight: bold;
 font-style: inherit;">let</span> cs' <span class="ot" style="color: #003B4F;
 background-color: null;
 font-style: inherit;">=</span> kMeans distance average ds cs  <span class="co" style="color: #5E5E5E;
@@ -1792,6 +2456,7 @@ font-style: inherit;">$</span> toRenderable <span class="op" style="color: #5E5E
 background-color: null;
 font-style: inherit;">$</span> <span class="kw" style="color: #003B4F;
 background-color: null;
+font-weight: bold;
 font-style: inherit;">do</span></span>
 <span id="cb4-26">    plot (points <span class="st" style="color: #20794D;
 background-color: null;
@@ -1851,11 +2516,13 @@ font-style: inherit;">1</span>)</span></code></pre></div>
 <div id="cell-2" class="cell" data-execution_count="1">
 <div class="sourceCode cell-code" id="cb1" style="background: #f1f3f5;"><pre class="sourceCode haskell code-with-copy"><code class="sourceCode haskell"><span id="cb1-1"><span class="kw" style="color: #003B4F;
 background-color: null;
+font-weight: bold;
 font-style: inherit;">import</span> <span class="dt" style="color: #AD0000;
 background-color: null;
 font-style: inherit;">Control.Monad</span> (replicateM)</span>
 <span id="cb1-2"><span class="kw" style="color: #003B4F;
 background-color: null;
+font-weight: bold;
 font-style: inherit;">import</span> <span class="dt" style="color: #AD0000;
 background-color: null;
 font-style: inherit;">System.Random.MWC</span></span>
@@ -1866,6 +2533,7 @@ background-color: null;
 font-style: inherit;">-- | 確率変数</span></span>
 <span id="cb1-6"><span class="kw" style="color: #003B4F;
 background-color: null;
+font-weight: bold;
 font-style: inherit;">type</span> <span class="dt" style="color: #AD0000;
 background-color: null;
 font-style: inherit;">RVar</span> a <span class="ot" style="color: #003B4F;
@@ -1900,6 +2568,7 @@ background-color: null;
 font-style: inherit;">=</span> sample n</span>
 <span id="cb1-12">  <span class="kw" style="color: #003B4F;
 background-color: null;
+font-weight: bold;
 font-style: inherit;">where</span></span>
 <span id="cb1-13">    sample <span class="dv" style="color: #AD0000;
 background-color: null;
@@ -1912,6 +2581,7 @@ font-style: inherit;">pure</span> []</span>
 background-color: null;
 font-style: inherit;">=</span> <span class="kw" style="color: #003B4F;
 background-color: null;
+font-weight: bold;
 font-style: inherit;">do</span></span>
 <span id="cb1-15">      a <span class="ot" style="color: #003B4F;
 background-color: null;
@@ -2001,6 +2671,7 @@ background-color: null;
 font-style: inherit;">=</span></span>
 <span id="cb1-31">  <span class="kw" style="color: #003B4F;
 background-color: null;
+font-weight: bold;
 font-style: inherit;">let</span> xs g <span class="ot" style="color: #003B4F;
 background-color: null;
 font-style: inherit;">=</span> replicateM d (uniformR (<span class="fl" style="color: #AD0000;
@@ -2010,14 +2681,17 @@ background-color: null;
 font-style: inherit;">1.0</span>) g)</span>
 <span id="cb1-32">   <span class="kw" style="color: #003B4F;
 background-color: null;
+font-weight: bold;
 font-style: inherit;">in</span> <span class="kw" style="color: #003B4F;
 background-color: null;
+font-weight: bold;
 font-style: inherit;">do</span></span>
 <span id="cb1-33">     xss <span class="ot" style="color: #003B4F;
 background-color: null;
 font-style: inherit;">&lt;-</span> randomNs n xs g</span>
 <span id="cb1-34">     <span class="kw" style="color: #003B4F;
 background-color: null;
+font-weight: bold;
 font-style: inherit;">let</span> ds <span class="ot" style="color: #003B4F;
 background-color: null;
 font-style: inherit;">=</span> <span class="fu" style="color: #4758AB;
@@ -2069,6 +2743,7 @@ font-style: inherit;">-- 期待値の確率変数</span></span>
 background-color: null;
 font-style: inherit;">=</span> <span class="kw" style="color: #003B4F;
 background-color: null;
+font-weight: bold;
 font-style: inherit;">do</span></span>
 <span id="cb1-44">  as <span class="ot" style="color: #003B4F;
 background-color: null;
@@ -2088,11 +2763,13 @@ font-style: inherit;">fromIntegral</span> n</span></code></pre></div>
 <div id="cell-3" class="cell" data-execution_count="2">
 <div class="sourceCode cell-code" id="cb2" style="background: #f1f3f5;"><pre class="sourceCode haskell code-with-copy"><code class="sourceCode haskell"><span id="cb2-1"><span class="kw" style="color: #003B4F;
 background-color: null;
+font-weight: bold;
 font-style: inherit;">import</span> <span class="dt" style="color: #AD0000;
 background-color: null;
 font-style: inherit;">Data.Traversable</span> (forM)</span>
 <span id="cb2-2"><span class="kw" style="color: #003B4F;
 background-color: null;
+font-weight: bold;
 font-style: inherit;">import</span> <span class="dt" style="color: #AD0000;
 background-color: null;
 font-style: inherit;">Graphics.Rendering.Chart.Easy</span></span>
@@ -2118,6 +2795,7 @@ font-style: inherit;">$</span> \gen <span class="ot" style="color: #003B4F;
 background-color: null;
 font-style: inherit;">-&gt;</span> <span class="kw" style="color: #003B4F;
 background-color: null;
+font-weight: bold;
 font-style: inherit;">do</span></span>
 <span id="cb2-8">  diff1 <span class="ot" style="color: #003B4F;
 background-color: null;
@@ -2179,6 +2857,7 @@ font-style: inherit;">.</span> toRenderable <span class="op" style="color: #5E5E
 background-color: null;
 font-style: inherit;">$</span> <span class="kw" style="color: #003B4F;
 background-color: null;
+font-weight: bold;
 font-style: inherit;">do</span></span>
 <span id="cb2-13">      plot (line <span class="st" style="color: #20794D;
 background-color: null;
@@ -2265,17 +2944,20 @@ font-style: inherit;">{-# LANGUAGE RankNTypes #-}</span></span>
 <span id="cb1-2"></span>
 <span id="cb1-3"><span class="kw" style="color: #003B4F;
 background-color: null;
+font-weight: bold;
 font-style: inherit;">import</span> <span class="dt" style="color: #AD0000;
 background-color: null;
 font-style: inherit;">Data.Number.Symbolic</span></span>
 <span id="cb1-4"></span>
 <span id="cb1-5"><span class="kw" style="color: #003B4F;
 background-color: null;
+font-weight: bold;
 font-style: inherit;">import</span> <span class="dt" style="color: #AD0000;
 background-color: null;
 font-style: inherit;">Numeric.AD</span></span>
 <span id="cb1-6"><span class="kw" style="color: #003B4F;
 background-color: null;
+font-weight: bold;
 font-style: inherit;">import</span> <span class="dt" style="color: #AD0000;
 background-color: null;
 font-style: inherit;">Numeric.AD.Mode.Tower</span></span>
@@ -2323,6 +3005,7 @@ font-style: inherit;">-- この次数以下の級数まで展開する</span></s
 background-color: null;
 font-style: inherit;">-&gt;</span> (<span class="kw" style="color: #003B4F;
 background-color: null;
+font-weight: bold;
 font-style: inherit;">forall</span> s<span class="op" style="color: #5E5E5E;
 background-color: null;
 font-style: inherit;">.</span> <span class="dt" style="color: #AD0000;
@@ -2365,6 +3048,7 @@ background-color: null;
 font-style: inherit;">|*|</span> polynomials</span>
 <span id="cb1-21">  <span class="kw" style="color: #003B4F;
 background-color: null;
+font-weight: bold;
 font-style: inherit;">where</span></span>
 <span id="cb1-22">  coefficients <span class="ot" style="color: #003B4F;
 background-color: null;
@@ -2459,6 +3143,7 @@ font-style: inherit;">-- この次数以下の級数まで展開する</span></s
 background-color: null;
 font-style: inherit;">-&gt;</span> (<span class="kw" style="color: #003B4F;
 background-color: null;
+font-weight: bold;
 font-style: inherit;">forall</span> s<span class="op" style="color: #5E5E5E;
 background-color: null;
 font-style: inherit;">.</span> <span class="dt" style="color: #AD0000;
@@ -2498,6 +3183,7 @@ background-color: null;
 font-style: inherit;">+</span> seriesB</span>
 <span id="cb3-9">  <span class="kw" style="color: #003B4F;
 background-color: null;
+font-weight: bold;
 font-style: inherit;">where</span></span>
 <span id="cb3-10">  seriesA <span class="ot" style="color: #003B4F;
 background-color: null;
@@ -2661,6 +3347,7 @@ font-style: inherit;">-- id ≡ f(x) = x</span></span></code></pre></div>
 <div id="cell-7" class="cell" data-execution_count="3">
 <div class="sourceCode cell-code" id="cb5" style="background: #f1f3f5;"><pre class="sourceCode haskell code-with-copy"><code class="sourceCode haskell"><span id="cb5-1"><span class="kw" style="color: #003B4F;
 background-color: null;
+font-weight: bold;
 font-style: inherit;">import</span> <span class="dt" style="color: #AD0000;
 background-color: null;
 font-style: inherit;">Graphics.Rendering.Chart.Easy</span></span>
@@ -2721,6 +3408,7 @@ font-style: inherit;">100</span>]</span>
 background-color: null;
 font-style: inherit;">$</span> <span class="kw" style="color: #003B4F;
 background-color: null;
+font-weight: bold;
 font-style: inherit;">do</span></span>
 <span id="cb5-10">    plot (line <span class="st" style="color: #20794D;
 background-color: null;
@@ -2801,6 +3489,7 @@ font-style: inherit;">0</span></span>
 background-color: null;
 font-style: inherit;">$</span> <span class="kw" style="color: #003B4F;
 background-color: null;
+font-weight: bold;
 font-style: inherit;">do</span></span>
 <span id="cb6-5">    plot (line <span class="st" style="color: #20794D;
 background-color: null;
@@ -2892,20 +3581,24 @@ font-style: inherit;">-- https://github.com/simonmar/parconc-examples/blob/maste
 <span id="cb1-2"></span>
 <span id="cb1-3"><span class="kw" style="color: #003B4F;
 background-color: null;
+font-weight: bold;
 font-style: inherit;">import</span> <span class="dt" style="color: #AD0000;
 background-color: null;
 font-style: inherit;">Control.Concurrent</span></span>
 <span id="cb1-4"><span class="kw" style="color: #003B4F;
 background-color: null;
+font-weight: bold;
 font-style: inherit;">import</span> <span class="dt" style="color: #AD0000;
 background-color: null;
 font-style: inherit;">Data.ByteString.Char8</span> <span class="kw" style="color: #003B4F;
 background-color: null;
+font-weight: bold;
 font-style: inherit;">as</span> <span class="dt" style="color: #AD0000;
 background-color: null;
 font-style: inherit;">B</span></span>
 <span id="cb1-5"><span class="kw" style="color: #003B4F;
 background-color: null;
+font-weight: bold;
 font-style: inherit;">import</span> <span class="dt" style="color: #AD0000;
 background-color: null;
 font-style: inherit;">System.Random</span></span>
@@ -2925,6 +3618,7 @@ font-style: inherit;">ByteString</span></span>
 background-color: null;
 font-style: inherit;">=</span> <span class="kw" style="color: #003B4F;
 background-color: null;
+font-weight: bold;
 font-style: inherit;">do</span></span>
 <span id="cb1-9">  delay <span class="ot" style="color: #003B4F;
 background-color: null;
@@ -2949,6 +3643,7 @@ font-style: inherit;">IO</span> ()</span>
 background-color: null;
 font-style: inherit;">=</span> <span class="kw" style="color: #003B4F;
 background-color: null;
+font-weight: bold;
 font-style: inherit;">do</span></span>
 <span id="cb1-15">  m1 <span class="ot" style="color: #003B4F;
 background-color: null;
@@ -2961,6 +3656,7 @@ font-style: inherit;">&lt;-</span> newEmptyMVar</span>
 background-color: null;
 font-style: inherit;">$</span> <span class="kw" style="color: #003B4F;
 background-color: null;
+font-weight: bold;
 font-style: inherit;">do</span></span>
 <span id="cb1-19">    r <span class="ot" style="color: #003B4F;
 background-color: null;
@@ -2973,6 +3669,7 @@ font-style: inherit;">"https://en.wikipedia.org/wiki/Shovel"</span></span>
 background-color: null;
 font-style: inherit;">$</span> <span class="kw" style="color: #003B4F;
 background-color: null;
+font-weight: bold;
 font-style: inherit;">do</span></span>
 <span id="cb1-23">    r <span class="ot" style="color: #003B4F;
 background-color: null;
@@ -3005,6 +3702,7 @@ font-style: inherit;">-- https://github.com/simonmar/parconc-examples/blob/maste
 <span id="cb2-2"></span>
 <span id="cb2-3"><span class="kw" style="color: #003B4F;
 background-color: null;
+font-weight: bold;
 font-style: inherit;">newtype</span> <span class="dt" style="color: #AD0000;
 background-color: null;
 font-style: inherit;">Async</span> a <span class="ot" style="color: #003B4F;
@@ -3030,6 +3728,7 @@ font-style: inherit;">Async</span> a)</span>
 background-color: null;
 font-style: inherit;">=</span> <span class="kw" style="color: #003B4F;
 background-color: null;
+font-weight: bold;
 font-style: inherit;">do</span></span>
 <span id="cb2-7">  var <span class="ot" style="color: #003B4F;
 background-color: null;
@@ -3074,6 +3773,7 @@ font-style: inherit;">IO</span> ()</span>
 background-color: null;
 font-style: inherit;">=</span> <span class="kw" style="color: #003B4F;
 background-color: null;
+font-weight: bold;
 font-style: inherit;">do</span></span>
 <span id="cb3-5">  a1 <span class="ot" style="color: #003B4F;
 background-color: null;
@@ -3135,6 +3835,7 @@ font-style: inherit;">IO</span> ()</span>
 background-color: null;
 font-style: inherit;">=</span> <span class="kw" style="color: #003B4F;
 background-color: null;
+font-weight: bold;
 font-style: inherit;">do</span></span>
 <span id="cb5-13">  as <span class="ot" style="color: #003B4F;
 background-color: null;
@@ -3167,6 +3868,7 @@ font-style: inherit;">fmap</span> B.length result</span>
 <div id="cell-10" class="cell" data-execution_count="5">
 <div class="sourceCode cell-code" id="cb7" style="background: #f1f3f5;"><pre class="sourceCode haskell code-with-copy"><code class="sourceCode haskell"><span id="cb7-1"><span class="kw" style="color: #003B4F;
 background-color: null;
+font-weight: bold;
 font-style: inherit;">import</span> <span class="dt" style="color: #AD0000;
 background-color: null;
 font-style: inherit;">Control.Exception</span></span>
@@ -3186,6 +3888,7 @@ font-style: inherit;">ByteString</span></span>
 background-color: null;
 font-style: inherit;">=</span> <span class="kw" style="color: #003B4F;
 background-color: null;
+font-weight: bold;
 font-style: inherit;">do</span></span>
 <span id="cb7-5">  throwIO (<span class="dt" style="color: #AD0000;
 background-color: null;
@@ -3205,6 +3908,7 @@ font-style: inherit;">IO</span> ()</span>
 background-color: null;
 font-style: inherit;">=</span> <span class="kw" style="color: #003B4F;
 background-color: null;
+font-weight: bold;
 font-style: inherit;">do</span></span>
 <span id="cb7-10">  as <span class="ot" style="color: #003B4F;
 background-color: null;
@@ -3228,7 +3932,8 @@ font-style: inherit;">fmap</span> B.length result</span>
 <span id="cb7-13"></span>
 <span id="cb7-14">example4</span></code></pre></div>
 <div class="cell-output cell-output-error">
-<pre><code>: </code></pre>
+<pre><code>: 
+thread blocked indefinitely in an MVar operation</code></pre>
 </div>
 </div>
 <p><code>getURL'</code> では <code>async</code> の中で <code>putMVar</code> が実行される前に例外が投げられてしまうので <code>wait</code> における <code>readMVar</code> が永遠にスレッドをブロックしてしまいます</p>
@@ -3240,6 +3945,7 @@ font-style: inherit;">-- https://github.com/simonmar/parconc-examples/blob/maste
 <span id="cb9-2"></span>
 <span id="cb9-3"><span class="kw" style="color: #003B4F;
 background-color: null;
+font-weight: bold;
 font-style: inherit;">newtype</span> <span class="dt" style="color: #AD0000;
 background-color: null;
 font-style: inherit;">Async</span> a <span class="ot" style="color: #003B4F;
@@ -3269,6 +3975,7 @@ font-style: inherit;">Async</span> a)</span>
 background-color: null;
 font-style: inherit;">=</span> <span class="kw" style="color: #003B4F;
 background-color: null;
+font-weight: bold;
 font-style: inherit;">do</span></span>
 <span id="cb9-7">  var <span class="ot" style="color: #003B4F;
 background-color: null;
@@ -3314,14 +4021,17 @@ font-style: inherit;">IO</span> a</span>
 background-color: null;
 font-style: inherit;">=</span> <span class="kw" style="color: #003B4F;
 background-color: null;
+font-weight: bold;
 font-style: inherit;">do</span></span>
 <span id="cb9-16">  r <span class="ot" style="color: #003B4F;
 background-color: null;
 font-style: inherit;">&lt;-</span> waitCatch a</span>
 <span id="cb9-17">  <span class="kw" style="color: #003B4F;
 background-color: null;
+font-weight: bold;
 font-style: inherit;">case</span> r <span class="kw" style="color: #003B4F;
 background-color: null;
+font-weight: bold;
 font-style: inherit;">of</span></span>
 <span id="cb9-18">    <span class="dt" style="color: #AD0000;
 background-color: null;
@@ -3347,6 +4057,7 @@ font-style: inherit;">IO</span> ()</span>
 background-color: null;
 font-style: inherit;">=</span> <span class="kw" style="color: #003B4F;
 background-color: null;
+font-weight: bold;
 font-style: inherit;">do</span></span>
 <span id="cb10-3">  as <span class="ot" style="color: #003B4F;
 background-color: null;
@@ -3370,7 +4081,8 @@ font-style: inherit;">fmap</span> B.length result</span>
 <span id="cb10-6"></span>
 <span id="cb10-7">example5</span></code></pre></div>
 <div class="cell-output cell-output-error">
-<pre><code>: </code></pre>
+<pre><code>: 
+oops!</code></pre>
 </div>
 </div>
 <p>最初に非同期処理が例外を投げた時点でプログラム全体が停止しているのが分かります</p>
@@ -3391,6 +4103,7 @@ font-style: inherit;">-- https://github.com/simonmar/parconc-examples/blob/maste
 <span id="cb12-2"></span>
 <span id="cb12-3"><span class="kw" style="color: #003B4F;
 background-color: null;
+font-weight: bold;
 font-style: inherit;">import</span> <span class="dt" style="color: #AD0000;
 background-color: null;
 font-style: inherit;">Control.Monad</span></span>
@@ -3404,16 +4117,19 @@ font-style: inherit;">IO</span> ()</span>
 background-color: null;
 font-style: inherit;">=</span> <span class="kw" style="color: #003B4F;
 background-color: null;
+font-weight: bold;
 font-style: inherit;">do</span></span>
 <span id="cb12-7">  m <span class="ot" style="color: #003B4F;
 background-color: null;
 font-style: inherit;">&lt;-</span> newEmptyMVar</span>
 <span id="cb12-8">  <span class="kw" style="color: #003B4F;
 background-color: null;
+font-weight: bold;
 font-style: inherit;">let</span> download url <span class="ot" style="color: #003B4F;
 background-color: null;
 font-style: inherit;">=</span> <span class="kw" style="color: #003B4F;
 background-color: null;
+font-weight: bold;
 font-style: inherit;">do</span></span>
 <span id="cb12-9">        r <span class="ot" style="color: #003B4F;
 background-color: null;
@@ -3476,6 +4192,7 @@ font-style: inherit;">Either</span> a b)</span>
 background-color: null;
 font-style: inherit;">=</span> <span class="kw" style="color: #003B4F;
 background-color: null;
+font-weight: bold;
 font-style: inherit;">do</span></span>
 <span id="cb14-3">  m <span class="ot" style="color: #003B4F;
 background-color: null;
@@ -3517,12 +4234,14 @@ font-style: inherit;">IO</span> a</span>
 background-color: null;
 font-style: inherit;">=</span> <span class="kw" style="color: #003B4F;
 background-color: null;
+font-weight: bold;
 font-style: inherit;">do</span></span>
 <span id="cb15-3">  m <span class="ot" style="color: #003B4F;
 background-color: null;
 font-style: inherit;">&lt;-</span> newEmptyMVar</span>
 <span id="cb15-4">  <span class="kw" style="color: #003B4F;
 background-color: null;
+font-weight: bold;
 font-style: inherit;">let</span> forkwait a <span class="ot" style="color: #003B4F;
 background-color: null;
 font-style: inherit;">=</span> forkIO <span class="op" style="color: #5E5E5E;
@@ -3571,13 +4290,16 @@ font-style: inherit;">IO</span> ()</span>
 background-color: null;
 font-style: inherit;">=</span> <span class="kw" style="color: #003B4F;
 background-color: null;
+font-weight: bold;
 font-style: inherit;">do</span></span>
 <span id="cb16-5">  <span class="kw" style="color: #003B4F;
 background-color: null;
+font-weight: bold;
 font-style: inherit;">let</span> download url <span class="ot" style="color: #003B4F;
 background-color: null;
 font-style: inherit;">=</span> <span class="kw" style="color: #003B4F;
 background-color: null;
+font-weight: bold;
 font-style: inherit;">do</span></span>
 <span id="cb16-6">        r <span class="ot" style="color: #003B4F;
 background-color: null;
@@ -3643,6 +4365,7 @@ font-style: inherit;">mapM_</span> wait as</span>
 <div id="cell-2" class="cell" data-execution_count="1">
 <div class="sourceCode cell-code" id="cb1" style="background: #f1f3f5;"><pre class="sourceCode haskell code-with-copy"><code class="sourceCode haskell"><span id="cb1-1"><span class="kw" style="color: #003B4F;
 background-color: null;
+font-weight: bold;
 font-style: inherit;">let</span> x <span class="ot" style="color: #003B4F;
 background-color: null;
 font-style: inherit;">=</span> <span class="dv" style="color: #AD0000;
@@ -4340,6 +5063,7 @@ font-weight: bold;
 <div id="cell-11" class="cell" data-execution_count="6">
 <div class="sourceCode cell-code" id="cb8" style="background: #f1f3f5;"><pre class="sourceCode haskell code-with-copy"><code class="sourceCode haskell"><span id="cb8-1"><span class="kw" style="color: #003B4F;
 background-color: null;
+font-weight: bold;
 font-style: inherit;">import</span> <span class="dt" style="color: #AD0000;
 background-color: null;
 font-style: inherit;">Data.Tuple</span></span>
@@ -5067,6 +5791,7 @@ font-weight: bold;
 <div id="cell-3" class="cell" data-execution_count="1">
 <div class="sourceCode cell-code" id="cb1" style="background: #f1f3f5;"><pre class="sourceCode haskell code-with-copy"><code class="sourceCode haskell"><span id="cb1-1"><span class="kw" style="color: #003B4F;
 background-color: null;
+font-weight: bold;
 font-style: inherit;">import</span> <span class="dt" style="color: #AD0000;
 background-color: null;
 font-style: inherit;">Data.Complex</span></span>
@@ -5089,6 +5814,7 @@ background-color: null;
 font-style: inherit;">=</span></span>
 <span id="cb1-5">  <span class="kw" style="color: #003B4F;
 background-color: null;
+font-weight: bold;
 font-style: inherit;">let</span> n <span class="ot" style="color: #003B4F;
 background-color: null;
 font-style: inherit;">=</span> <span class="fu" style="color: #4758AB;
@@ -5117,6 +5843,7 @@ background-color: null;
 font-style: inherit;">fromIntegral</span> n)</span>
 <span id="cb1-7">   <span class="kw" style="color: #003B4F;
 background-color: null;
+font-weight: bold;
 font-style: inherit;">in</span> <span class="fu" style="color: #4758AB;
 background-color: null;
 font-style: inherit;">flip</span> <span class="fu" style="color: #4758AB;
@@ -5167,6 +5894,7 @@ background-color: null;
 font-style: inherit;">=</span></span>
 <span id="cb1-11">  <span class="kw" style="color: #003B4F;
 background-color: null;
+font-weight: bold;
 font-style: inherit;">let</span> n <span class="ot" style="color: #003B4F;
 background-color: null;
 font-style: inherit;">=</span> <span class="fu" style="color: #4758AB;
@@ -5197,6 +5925,7 @@ background-color: null;
 font-style: inherit;">fromIntegral</span> n)</span>
 <span id="cb1-13">   <span class="kw" style="color: #003B4F;
 background-color: null;
+font-weight: bold;
 font-style: inherit;">in</span> <span class="fu" style="color: #4758AB;
 background-color: null;
 font-style: inherit;">flip</span> <span class="fu" style="color: #4758AB;
@@ -5258,6 +5987,7 @@ font-style: inherit;">4</span>]</span></code></pre></div>
 <div id="cell-7" class="cell" data-execution_count="3">
 <div class="sourceCode cell-code" id="cb4" style="background: #f1f3f5;"><pre class="sourceCode haskell code-with-copy"><code class="sourceCode haskell"><span id="cb4-1"><span class="kw" style="color: #003B4F;
 background-color: null;
+font-weight: bold;
 font-style: inherit;">import</span> <span class="dt" style="color: #AD0000;
 background-color: null;
 font-style: inherit;">Control.Arrow</span></span>
@@ -5280,6 +6010,7 @@ background-color: null;
 font-style: inherit;">.</span> go ([], [])</span>
 <span id="cb4-5">  <span class="kw" style="color: #003B4F;
 background-color: null;
+font-weight: bold;
 font-style: inherit;">where</span> go x [] <span class="ot" style="color: #003B4F;
 background-color: null;
 font-style: inherit;">=</span> x</span>
@@ -5341,6 +6072,7 @@ background-color: null;
 font-style: inherit;">=</span></span>
 <span id="cb4-16">  <span class="kw" style="color: #003B4F;
 background-color: null;
+font-weight: bold;
 font-style: inherit;">let</span> n <span class="ot" style="color: #003B4F;
 background-color: null;
 font-style: inherit;">=</span> <span class="fu" style="color: #4758AB;
@@ -5389,6 +6121,7 @@ background-color: null;
 font-style: inherit;">fromIntegral</span> n)</span>
 <span id="cb4-20">   <span class="kw" style="color: #003B4F;
 background-color: null;
+font-weight: bold;
 font-style: inherit;">in</span> <span class="fu" style="color: #4758AB;
 background-color: null;
 font-style: inherit;">map</span> f [<span class="dv" style="color: #AD0000;
@@ -5429,6 +6162,7 @@ background-color: null;
 font-style: inherit;">$</span> ifft xs</span>
 <span id="cb4-24">  <span class="kw" style="color: #003B4F;
 background-color: null;
+font-weight: bold;
 font-style: inherit;">where</span></span>
 <span id="cb4-25">    ifft []  <span class="ot" style="color: #003B4F;
 background-color: null;
@@ -5445,6 +6179,7 @@ background-color: null;
 font-style: inherit;">=</span></span>
 <span id="cb4-28">      <span class="kw" style="color: #003B4F;
 background-color: null;
+font-weight: bold;
 font-style: inherit;">let</span> n <span class="ot" style="color: #003B4F;
 background-color: null;
 font-style: inherit;">=</span> <span class="fu" style="color: #4758AB;
@@ -5495,6 +6230,7 @@ background-color: null;
 font-style: inherit;">fromIntegral</span> n)</span>
 <span id="cb4-32">       <span class="kw" style="color: #003B4F;
 background-color: null;
+font-weight: bold;
 font-style: inherit;">in</span> <span class="fu" style="color: #4758AB;
 background-color: null;
 font-style: inherit;">map</span> f [<span class="dv" style="color: #AD0000;
@@ -5531,6 +6267,7 @@ font-style: inherit;">4</span>]</span></code></pre></div>
 <div id="cell-11" class="cell" data-scrolled="false" data-execution_count="5">
 <div class="sourceCode cell-code" id="cb7" style="background: #f1f3f5;"><pre class="sourceCode haskell code-with-copy"><code class="sourceCode haskell"><span id="cb7-1"><span class="kw" style="color: #003B4F;
 background-color: null;
+font-weight: bold;
 font-style: inherit;">import</span> <span class="dt" style="color: #AD0000;
 background-color: null;
 font-style: inherit;">Graphics.Rendering.Chart.Easy</span></span>
@@ -5648,6 +6385,7 @@ font-style: inherit;">map</span> imagPart fSignal</span>
 background-color: null;
 font-style: inherit;">$</span> <span class="kw" style="color: #003B4F;
 background-color: null;
+font-weight: bold;
 font-style: inherit;">do</span></span>
 <span id="cb8-9">    plot (line <span class="st" style="color: #20794D;
 background-color: null;
