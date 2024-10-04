@@ -8,6 +8,7 @@ website:
   favicon: favicon.ico
   twitter-card: true
   open-graph: true
+  google-analytics: "G-93CF9ET961"
   navbar:
     right:
       - about.qmd
