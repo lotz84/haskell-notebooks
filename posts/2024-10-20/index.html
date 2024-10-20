@@ -246,7 +246,7 @@ window.Quarto = {
 
 
 <p><a href="https://hardmath123.github.io/conways-gradient.html">“Conway’s Gradient of Life”</a> という記事に、ライフゲームを逆算する手法について書かれており、面白かったので私も自分で試してみることにしました。ライフゲームは、セル・オートマトンと呼ばれる2次元のグリッド上で動作するシミュレーションで、各セルは隣接するセルの状態に応じて次のステップでの生死の状態が決定します。ライフゲームを「逆算する」とは、ある特定のパターンに至る前の状態を推定することを意味します。つまり、1ステップ進めるとある形に収束する状態を、その形から逆に探し出す課題です。</p>
-<p>今回は、ライフゲームのルールに基づいて1ステップ進めた時に、私のアイコンが現れるような初期状態を求めてみたいと思います。このテーマは以前、<a href="https://www.kaggle.com/c/conways-reverse-game-of-life-2020">Kaggleのコンペ</a>でも扱われていたことがあったり、調べてみるといくつかのアプローチが存在します。例えば、<a href="https://proc-cpuinfo.fixstars.com/2021/03/kaggle-conways-reverse-game-of-life-2020/">焼きなまし法を用いたもの</a>、<a href="https://www.youtube.com/watch?v=g8pjrVbdafY">SMTソルバーを駆使したもの</a>、さらに<a href="https://www2.stat.duke.edu/~sayan/561/2020/projects/writeup/Li,%20Dennis(dkl12@duke.edu)/Submission%20attachment(s)/solution.pdf">状態にベルヌーイ分布を仮定した確率モデルをMCMCで推定する方法</a>などがありました。</p>
+<p>今回は、ライフゲームのルールに基づいて1ステップ進めた時に、私のアイコンが現れるような初期状態を求めてみたいと思います。このテーマは以前、<a href="https://www.kaggle.com/c/conways-reverse-game-of-life-2020">Kaggleのコンペ</a>でも扱われていたことがあったり、調べてみるといくつかのアプローチが存在します。例えば、<a href="https://proc-cpuinfo.fixstars.com/2021/03/kaggle-conways-reverse-game-of-life-2020/">焼きなまし法を用いたもの</a>、<a href="https://vigne-cla.com/9-9/">遺伝的アルゴリズムを用いたもの</a>、<a href="https://www.youtube.com/watch?v=g8pjrVbdafY">SMTソルバーを駆使したもの</a>、さらに<a href="https://www2.stat.duke.edu/~sayan/561/2020/projects/writeup/Li,%20Dennis(dkl12@duke.edu)/Submission%20attachment(s)/solution.pdf">状態にベルヌーイ分布を仮定した確率モデルをMCMCで推定する方法</a>などがありました。</p>
 <p>本稿では、基本的には元の記事と同じアプローチを取り、ライフゲームの時間発展に使用されているルールを微分可能な形式に緩和し、これを勾配降下法による最適化問題として解くことにします。</p>
 <section id="ライフゲームの実装" class="level2">
 <h2 class="anchored" data-anchor-id="ライフゲームの実装">ライフゲームの実装</h2>
