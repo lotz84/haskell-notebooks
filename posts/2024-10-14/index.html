@@ -1,0 +1,2190 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en"><head>
+
+<meta charset="utf-8">
+<meta name="generator" content="quarto-1.5.56">
+
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+
+<meta name="author" content="lotz">
+<meta name="dcterms.date" content="2024-10-14">
+
+<title>微分可能な比較演算子でライフゲームを逆算する – lotz’s Haskell notebooks</title>
+<style>
+code{white-space: pre-wrap;}
+span.smallcaps{font-variant: small-caps;}
+div.columns{display: flex; gap: min(4vw, 1.5em);}
+div.column{flex: auto; overflow-x: auto;}
+div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+ul.task-list{list-style: none;}
+ul.task-list li input[type="checkbox"] {
+  width: 0.8em;
+  margin: 0 0.8em 0.2em -1em; /* quarto-specific, see https://github.com/quarto-dev/quarto-cli/issues/4556 */ 
+  vertical-align: middle;
+}
+/* CSS for syntax highlighting */
+pre > code.sourceCode { white-space: pre; position: relative; }
+pre > code.sourceCode > span { line-height: 1.25; }
+pre > code.sourceCode > span:empty { height: 1.2em; }
+.sourceCode { overflow: visible; }
+code.sourceCode > span { color: inherit; text-decoration: inherit; }
+div.sourceCode { margin: 1em 0; }
+pre.sourceCode { margin: 0; }
+@media screen {
+div.sourceCode { overflow: auto; }
+}
+@media print {
+pre > code.sourceCode { white-space: pre-wrap; }
+pre > code.sourceCode > span { display: inline-block; text-indent: -5em; padding-left: 5em; }
+}
+pre.numberSource code
+  { counter-reset: source-line 0; }
+pre.numberSource code > span
+  { position: relative; left: -4em; counter-increment: source-line; }
+pre.numberSource code > span > a:first-child::before
+  { content: counter(source-line);
+    position: relative; left: -1em; text-align: right; vertical-align: baseline;
+    border: none; display: inline-block;
+    -webkit-touch-callout: none; -webkit-user-select: none;
+    -khtml-user-select: none; -moz-user-select: none;
+    -ms-user-select: none; user-select: none;
+    padding: 0 4px; width: 4em;
+  }
+pre.numberSource { margin-left: 3em;  padding-left: 4px; }
+div.sourceCode
+  {   }
+@media screen {
+pre > code.sourceCode > span > a:first-child::before { text-decoration: underline; }
+}
+</style>
+
+
+<script src="../../site_libs/quarto-nav/quarto-nav.js"></script>
+<script src="../../site_libs/quarto-nav/headroom.min.js"></script>
+<script src="../../site_libs/clipboard/clipboard.min.js"></script>
+<script src="../../site_libs/quarto-search/autocomplete.umd.js"></script>
+<script src="../../site_libs/quarto-search/fuse.min.js"></script>
+<script src="../../site_libs/quarto-search/quarto-search.js"></script>
+<meta name="quarto:offset" content="../../">
+<link href="../../favicon.ico" rel="icon">
+<script src="../../site_libs/quarto-html/quarto.js"></script>
+<script src="../../site_libs/quarto-html/popper.min.js"></script>
+<script src="../../site_libs/quarto-html/tippy.umd.min.js"></script>
+<script src="../../site_libs/quarto-html/anchor.min.js"></script>
+<link href="../../site_libs/quarto-html/tippy.css" rel="stylesheet">
+<link href="../../site_libs/quarto-html/quarto-syntax-highlighting.css" rel="stylesheet" id="quarto-text-highlighting-styles">
+<script src="../../site_libs/bootstrap/bootstrap.min.js"></script>
+<link href="../../site_libs/bootstrap/bootstrap-icons.css" rel="stylesheet">
+<link href="../../site_libs/bootstrap/bootstrap.min.css" rel="stylesheet" id="quarto-bootstrap" data-mode="light">
+<script id="quarto-search-options" type="application/json">{
+  "location": "navbar",
+  "copy-button": false,
+  "collapse-after": 3,
+  "panel-placement": "end",
+  "type": "overlay",
+  "limit": 50,
+  "keyboard-shortcut": [
+    "f",
+    "/",
+    "s"
+  ],
+  "show-item-context": false,
+  "language": {
+    "search-no-results-text": "No results",
+    "search-matching-documents-text": "matching documents",
+    "search-copy-link-title": "Copy link to search",
+    "search-hide-matches-text": "Hide additional matches",
+    "search-more-match-text": "more match in this document",
+    "search-more-matches-text": "more matches in this document",
+    "search-clear-button-title": "Clear",
+    "search-text-placeholder": "",
+    "search-detached-cancel-button-title": "Cancel",
+    "search-submit-button-title": "Submit",
+    "search-label": "Search"
+  }
+}</script>
+<script async="" src="https://www.googletagmanager.com/gtag/js?id=G-93CF9ET961"></script>
+
+<script type="text/javascript">
+
+window.dataLayer = window.dataLayer || [];
+function gtag(){dataLayer.push(arguments);}
+gtag('js', new Date());
+gtag('config', 'G-93CF9ET961', { 'anonymize_ip': true});
+</script>
+
+  <script src="https://cdnjs.cloudflare.com/polyfill/v3/polyfill.min.js?features=es6"></script>
+  <script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-chtml-full.js" type="text/javascript"></script>
+
+<script type="text/javascript">
+const typesetMath = (el) => {
+  if (window.MathJax) {
+    // MathJax Typeset
+    window.MathJax.typeset([el]);
+  } else if (window.katex) {
+    // KaTeX Render
+    var mathElements = el.getElementsByClassName("math");
+    var macros = [];
+    for (var i = 0; i < mathElements.length; i++) {
+      var texText = mathElements[i].firstChild;
+      if (mathElements[i].tagName == "SPAN") {
+        window.katex.render(texText.data, mathElements[i], {
+          displayMode: mathElements[i].classList.contains('display'),
+          throwOnError: false,
+          macros: macros,
+          fleqn: false
+        });
+      }
+    }
+  }
+}
+window.Quarto = {
+  typesetMath
+};
+</script>
+
+<meta property="og:title" content="微分可能な比較演算子でライフゲームを逆算する – lotz’s Haskell notebooks">
+<meta property="og:description" content="IHaskellで書いたnotebookを公開する場所">
+<meta property="og:site_name" content="lotz's Haskell notebooks">
+<meta name="twitter:title" content="微分可能な比較演算子でライフゲームを逆算する – lotz’s Haskell notebooks">
+<meta name="twitter:description" content="IHaskellで書いたnotebookを公開する場所">
+<meta name="twitter:card" content="summary">
+</head>
+
+<body class="nav-fixed">
+
+<div id="quarto-search-results"></div>
+  <header id="quarto-header" class="headroom fixed-top quarto-banner">
+    <nav class="navbar navbar-expand-lg " data-bs-theme="dark">
+      <div class="navbar-container container-fluid">
+      <div class="navbar-brand-container mx-auto">
+    <a class="navbar-brand" href="../../index.html">
+    <span class="navbar-title">lotz’s Haskell notebooks</span>
+    </a>
+  </div>
+            <div id="quarto-search" class="" title="Search"></div>
+          <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarCollapse" aria-controls="navbarCollapse" role="menu" aria-expanded="false" aria-label="Toggle navigation" onclick="if (window.quartoToggleHeadroom) { window.quartoToggleHeadroom(); }">
+  <span class="navbar-toggler-icon"></span>
+</button>
+          <div class="collapse navbar-collapse" id="navbarCollapse">
+            <ul class="navbar-nav navbar-nav-scroll ms-auto">
+  <li class="nav-item">
+    <a class="nav-link" href="../../about.html"> 
+<span class="menu-text">About</span></a>
+  </li>  
+  <li class="nav-item compact">
+    <a class="nav-link" href="https://github.com/lotz84"> <i class="bi bi-github" role="img">
+</i> 
+<span class="menu-text"></span></a>
+  </li>  
+  <li class="nav-item compact">
+    <a class="nav-link" href="https://twitter.com/lotz84_"> <i class="bi bi-twitter" role="img">
+</i> 
+<span class="menu-text"></span></a>
+  </li>  
+  <li class="nav-item compact">
+    <a class="nav-link" href="../../index.xml"> <i class="bi bi-rss" role="img">
+</i> 
+<span class="menu-text"></span></a>
+  </li>  
+</ul>
+          </div> <!-- /navcollapse -->
+            <div class="quarto-navbar-tools">
+</div>
+      </div> <!-- /container-fluid -->
+    </nav>
+</header>
+<!-- content -->
+<header id="title-block-header" class="quarto-title-block default page-columns page-full">
+  <div class="quarto-title-banner page-columns page-full">
+    <div class="quarto-title column-body">
+      <h1 class="title">微分可能な比較演算子でライフゲームを逆算する</h1>
+                      </div>
+  </div>
+    
+  
+  <div class="quarto-title-meta">
+
+      <div>
+      <div class="quarto-title-meta-heading">Author</div>
+      <div class="quarto-title-meta-contents">
+               <p>lotz </p>
+            </div>
+    </div>
+      
+      <div>
+      <div class="quarto-title-meta-heading">Published</div>
+      <div class="quarto-title-meta-contents">
+        <p class="date">October 14, 2024</p>
+      </div>
+    </div>
+    
+      
+    </div>
+    
+  
+  </header><div id="quarto-content" class="quarto-container page-columns page-rows-contents page-layout-article page-navbar">
+<!-- sidebar -->
+<!-- margin-sidebar -->
+    <div id="quarto-margin-sidebar" class="sidebar margin-sidebar">
+        <nav id="TOC" role="doc-toc" class="toc-active">
+    <h2 id="toc-title">On this page</h2>
+   
+  <ul>
+  <li><a href="#ライフゲームの実装" id="toc-ライフゲームの実装" class="nav-link active" data-scroll-target="#ライフゲームの実装">ライフゲームの実装</a></li>
+  <li><a href="#画像の読み込み" id="toc-画像の読み込み" class="nav-link" data-scroll-target="#画像の読み込み">画像の読み込み</a></li>
+  <li><a href="#微分可能なライフゲーム" id="toc-微分可能なライフゲーム" class="nav-link" data-scroll-target="#微分可能なライフゲーム">微分可能なライフゲーム</a></li>
+  <li><a href="#つ前の状態を推定する" id="toc-つ前の状態を推定する" class="nav-link" data-scroll-target="#つ前の状態を推定する">1つ前の状態を推定する</a></li>
+  </ul>
+</nav>
+    </div>
+<!-- main -->
+<main class="content quarto-banner-title-block" id="quarto-document-content">
+
+
+
+
+
+<p><a href="https://hardmath123.github.io/conways-gradient.html">“Conway’s Gradient of Life”</a> という記事に、ライフゲームを逆算する手法について書かれており、面白かったので私も自分で試してみることにしました。ライフゲームは、セル・オートマトンと呼ばれる2次元のグリッド上で動作するシミュレーションで、各セルは隣接するセルの状態に応じて次のステップで生死が決まります。ライフゲームを「逆算する」とは、ある特定のパターンに至る前の状態を推定することを意味します。つまり、1ステップ進めるとある形に収束する状態を、その形から逆に探し出す作業です。</p>
+<p>今回は、ライフゲームのルールに基づいて1ステップ進めた時に、私のアイコンが現れるような初期状態を求めてみたいと思います。このテーマは以前、<a href="https://www.kaggle.com/c/conways-reverse-game-of-life-2020">Kaggleのコンペ</a>でも扱われていたことがあり、調べてみるといくつかのアプローチが存在します。例えば、<a href="https://proc-cpuinfo.fixstars.com/2021/03/kaggle-conways-reverse-game-of-life-2020/">焼きなまし法を用いたもの</a>、<a href="https://www.youtube.com/watch?v=g8pjrVbdafY">SMTソルバーを駆使したもの</a>、さらに<a href="https://www2.stat.duke.edu/~sayan/561/2020/projects/writeup/Li,%20Dennis(dkl12@duke.edu)/Submission%20attachment(s)/solution.pdf">状態にベルヌーイ分布を仮定した確率モデルをMCMCで推定する方法</a>などがありました。</p>
+<p>本稿では、基本的には元の記事と同じアプローチを取り、ライフゲームの時間発展に使用されているルールを微分可能な形式に緩和し、これを勾配降下法による最適化問題として解いてみることにします。</p>
+<section id="ライフゲームの実装" class="level2">
+<h2 class="anchored" data-anchor-id="ライフゲームの実装">ライフゲームの実装</h2>
+<p>ライフゲームのようなセル・オートマトンはコモナドを使って実装することができます。この話は以前<a href="https://qiita.com/lotz/items/fbc4788b8ea8313cbf76">『コモナドを使った抽象化の威力をライフゲームで試してみた』</a>という記事に書きました。本稿でもその記事の実装を使用するので詳しい仕組みの解説は記事に譲るとします。ただ記事の実装は無限に広がった盤面を仮定していたので、有界で端が存在する盤面を扱うために以下の実装では適切な修正を加えています。</p>
+<p>まずは盤面の型の基礎となるリストのZipperの型と関数の実装です。</p>
+<div id="07f9a3e2-44d2-41b7-8b5e-f194ea611e31" class="cell" data-execution_count="2">
+<div class="sourceCode cell-code" id="cb1"><pre class="sourceCode haskell code-with-copy"><code class="sourceCode haskell"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="kw">import</span> <span class="dt">Control.Comonad</span></span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a><span class="kw">import</span> <span class="dt">Data.List</span> (unfoldr)</span>
+<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a><span class="co">-- | 値を複製する</span></span>
+<span id="cb1-5"><a href="#cb1-5" aria-hidden="true" tabindex="-1"></a><span class="ot">dup ::</span> a <span class="ot">-&gt;</span> (a, a)</span>
+<span id="cb1-6"><a href="#cb1-6" aria-hidden="true" tabindex="-1"></a>dup x <span class="ot">=</span> (x, x)</span>
+<span id="cb1-7"><a href="#cb1-7" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-8"><a href="#cb1-8" aria-hidden="true" tabindex="-1"></a><span class="co">-- | List Zipper</span></span>
+<span id="cb1-9"><a href="#cb1-9" aria-hidden="true" tabindex="-1"></a><span class="kw">data</span> <span class="dt">Z</span> a <span class="ot">=</span> <span class="dt">Z</span> [a] a [a]</span>
+<span id="cb1-10"><a href="#cb1-10" aria-hidden="true" tabindex="-1"></a>           <span class="kw">deriving</span> (<span class="dt">Show</span>, <span class="dt">Functor</span>, <span class="dt">Foldable</span>, <span class="dt">Traversable</span>)</span>
+<span id="cb1-11"><a href="#cb1-11" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-12"><a href="#cb1-12" aria-hidden="true" tabindex="-1"></a><span class="kw">instance</span> <span class="dt">Comonad</span> <span class="dt">Z</span> <span class="kw">where</span></span>
+<span id="cb1-13"><a href="#cb1-13" aria-hidden="true" tabindex="-1"></a>  extract (<span class="dt">Z</span> _ a _) <span class="ot">=</span> a</span>
+<span id="cb1-14"><a href="#cb1-14" aria-hidden="true" tabindex="-1"></a>  duplicate z <span class="ot">=</span> <span class="dt">Z</span> (iterate1 left z) z (iterate1 right z)</span>
+<span id="cb1-15"><a href="#cb1-15" aria-hidden="true" tabindex="-1"></a>  extend f z <span class="ot">=</span> <span class="dt">Z</span> (f <span class="op">&lt;$&gt;</span> iterate1 left z) (f z) (f <span class="op">&lt;$&gt;</span> iterate1 right z)</span>
+<span id="cb1-16"><a href="#cb1-16" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-17"><a href="#cb1-17" aria-hidden="true" tabindex="-1"></a><span class="co">-- | 注目している要素をひとつ左にずらす</span></span>
+<span id="cb1-18"><a href="#cb1-18" aria-hidden="true" tabindex="-1"></a><span class="ot">left ::</span> <span class="dt">Z</span> a <span class="ot">-&gt;</span> <span class="dt">Maybe</span> (<span class="dt">Z</span> a)</span>
+<span id="cb1-19"><a href="#cb1-19" aria-hidden="true" tabindex="-1"></a>left (<span class="dt">Z</span> [] _ _) <span class="ot">=</span> <span class="dt">Nothing</span></span>
+<span id="cb1-20"><a href="#cb1-20" aria-hidden="true" tabindex="-1"></a>left (<span class="dt">Z</span> (l<span class="op">:</span>ls) c rs) <span class="ot">=</span> <span class="dt">Just</span> (<span class="dt">Z</span> ls l (c<span class="op">:</span>rs))</span>
+<span id="cb1-21"><a href="#cb1-21" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-22"><a href="#cb1-22" aria-hidden="true" tabindex="-1"></a><span class="co">-- | 注目している要素をひとつ右にずらす</span></span>
+<span id="cb1-23"><a href="#cb1-23" aria-hidden="true" tabindex="-1"></a><span class="ot">right ::</span> <span class="dt">Z</span> a <span class="ot">-&gt;</span> <span class="dt">Maybe</span> (<span class="dt">Z</span> a)</span>
+<span id="cb1-24"><a href="#cb1-24" aria-hidden="true" tabindex="-1"></a>right (<span class="dt">Z</span> _ _ []) <span class="ot">=</span> <span class="dt">Nothing</span></span>
+<span id="cb1-25"><a href="#cb1-25" aria-hidden="true" tabindex="-1"></a>right (<span class="dt">Z</span> ls c (r<span class="op">:</span>rs)) <span class="ot">=</span> <span class="dt">Just</span> (<span class="dt">Z</span> (c<span class="op">:</span>ls) r rs)</span>
+<span id="cb1-26"><a href="#cb1-26" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-27"><a href="#cb1-27" aria-hidden="true" tabindex="-1"></a><span class="co">-- | 関数を返り値がNothingになるまで繰り返し適用したリストを作成する関数</span></span>
+<span id="cb1-28"><a href="#cb1-28" aria-hidden="true" tabindex="-1"></a><span class="ot">iterate1 ::</span> (a <span class="ot">-&gt;</span> <span class="dt">Maybe</span> a) <span class="ot">-&gt;</span> a <span class="ot">-&gt;</span> [a]</span>
+<span id="cb1-29"><a href="#cb1-29" aria-hidden="true" tabindex="-1"></a>iterate1 f <span class="ot">=</span> unfoldr (<span class="fu">fmap</span> dup <span class="op">.</span> f)</span>
+<span id="cb1-30"><a href="#cb1-30" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-31"><a href="#cb1-31" aria-hidden="true" tabindex="-1"></a><span class="co">-- | リストから Z a に変換する</span></span>
+<span id="cb1-32"><a href="#cb1-32" aria-hidden="true" tabindex="-1"></a><span class="ot">toZ ::</span> [a] <span class="ot">-&gt;</span> <span class="dt">Z</span> a</span>
+<span id="cb1-33"><a href="#cb1-33" aria-hidden="true" tabindex="-1"></a>toZ [] <span class="ot">=</span> <span class="fu">error</span> <span class="st">"toZ can't take an empty list."</span></span>
+<span id="cb1-34"><a href="#cb1-34" aria-hidden="true" tabindex="-1"></a>toZ (x<span class="op">:</span>xs) <span class="ot">=</span> <span class="dt">Z</span> [] x xs</span>
+<span id="cb1-35"><a href="#cb1-35" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-36"><a href="#cb1-36" aria-hidden="true" tabindex="-1"></a><span class="co">-- | Z a からリストに変換する</span></span>
+<span id="cb1-37"><a href="#cb1-37" aria-hidden="true" tabindex="-1"></a><span class="ot">unZ ::</span> <span class="dt">Z</span> a <span class="ot">-&gt;</span> [a]</span>
+<span id="cb1-38"><a href="#cb1-38" aria-hidden="true" tabindex="-1"></a>unZ (<span class="dt">Z</span> ls c rs) <span class="ot">=</span> ls <span class="op">++</span> [c] <span class="op">++</span> rs</span>
+<span id="cb1-39"><a href="#cb1-39" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-40"><a href="#cb1-40" aria-hidden="true" tabindex="-1"></a><span class="co">-- | zip の Z a 版</span></span>
+<span id="cb1-41"><a href="#cb1-41" aria-hidden="true" tabindex="-1"></a><span class="ot">zipZ ::</span> <span class="dt">Z</span> a <span class="ot">-&gt;</span> <span class="dt">Z</span> b <span class="ot">-&gt;</span> <span class="dt">Z</span> (a, b)</span>
+<span id="cb1-42"><a href="#cb1-42" aria-hidden="true" tabindex="-1"></a>zipZ (<span class="dt">Z</span> ls1 c1 rs1) (<span class="dt">Z</span> ls2 c2 rs2) <span class="ot">=</span> <span class="dt">Z</span> (<span class="fu">zip</span> ls1 ls2) (c1, c2) (<span class="fu">zip</span> rs1 rs2)</span>
+<span id="cb1-43"><a href="#cb1-43" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-44"><a href="#cb1-44" aria-hidden="true" tabindex="-1"></a><span class="co">-- | zipWith の Z a 版</span></span>
+<span id="cb1-45"><a href="#cb1-45" aria-hidden="true" tabindex="-1"></a><span class="ot">zipZWith ::</span> (a <span class="ot">-&gt;</span> b <span class="ot">-&gt;</span> c) <span class="ot">-&gt;</span> <span class="dt">Z</span> a <span class="ot">-&gt;</span> <span class="dt">Z</span> b <span class="ot">-&gt;</span> <span class="dt">Z</span> c</span>
+<span id="cb1-46"><a href="#cb1-46" aria-hidden="true" tabindex="-1"></a>zipZWith f za zb <span class="ot">=</span> <span class="fu">uncurry</span> f <span class="op">&lt;$&gt;</span> zipZ za zb</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+<p>次に盤面の型となる <code>Z2 a</code> とその関数を実装します。</p>
+<div id="1cc3beb1-3a15-4744-b964-fd033ce2effa" class="cell" data-execution_count="3">
+<div class="sourceCode cell-code" id="cb2"><pre class="sourceCode haskell code-with-copy"><code class="sourceCode haskell"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="co">--   ライフゲームの盤面を表す型</span></span>
+<span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a><span class="kw">newtype</span> <span class="dt">Z2</span> a <span class="ot">=</span> <span class="dt">Z2</span> (<span class="dt">Z</span> (<span class="dt">Z</span> a))</span>
+<span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a>           <span class="kw">deriving</span> (<span class="dt">Show</span>, <span class="dt">Functor</span>, <span class="dt">Foldable</span>, <span class="dt">Traversable</span>)</span>
+<span id="cb2-4"><a href="#cb2-4" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-5"><a href="#cb2-5" aria-hidden="true" tabindex="-1"></a><span class="kw">instance</span> <span class="dt">Comonad</span> <span class="dt">Z2</span> <span class="kw">where</span></span>
+<span id="cb2-6"><a href="#cb2-6" aria-hidden="true" tabindex="-1"></a>  extract (<span class="dt">Z2</span> zz) <span class="ot">=</span> extract (extract zz)</span>
+<span id="cb2-7"><a href="#cb2-7" aria-hidden="true" tabindex="-1"></a>  duplicate (<span class="dt">Z2</span> zz) <span class="ot">=</span> <span class="fu">fmap</span> <span class="dt">Z2</span> <span class="op">.</span> <span class="dt">Z2</span> <span class="op">.</span> roll <span class="op">$</span> roll zz</span>
+<span id="cb2-8"><a href="#cb2-8" aria-hidden="true" tabindex="-1"></a>    <span class="kw">where</span></span>
+<span id="cb2-9"><a href="#cb2-9" aria-hidden="true" tabindex="-1"></a>      roll zz <span class="ot">=</span> <span class="dt">Z</span> (iterate1 (<span class="fu">mapM</span> left) zz) zz (iterate1 (<span class="fu">mapM</span> right) zz)</span>
+<span id="cb2-10"><a href="#cb2-10" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-11"><a href="#cb2-11" aria-hidden="true" tabindex="-1"></a><span class="co">-- | リストから Z2 a に変換する</span></span>
+<span id="cb2-12"><a href="#cb2-12" aria-hidden="true" tabindex="-1"></a><span class="ot">toZ2 ::</span> [[a]] <span class="ot">-&gt;</span> <span class="dt">Z2</span> a</span>
+<span id="cb2-13"><a href="#cb2-13" aria-hidden="true" tabindex="-1"></a>toZ2 [] <span class="ot">=</span> <span class="fu">error</span> <span class="st">"toZ2 can't take an empty list."</span></span>
+<span id="cb2-14"><a href="#cb2-14" aria-hidden="true" tabindex="-1"></a>toZ2 (x<span class="op">:</span>xs) <span class="ot">=</span> <span class="dt">Z2</span> (<span class="dt">Z</span> [] (toZ x) (<span class="fu">map</span> toZ xs))</span>
+<span id="cb2-15"><a href="#cb2-15" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-16"><a href="#cb2-16" aria-hidden="true" tabindex="-1"></a><span class="co">-- | Z2 a からリストに変換する</span></span>
+<span id="cb2-17"><a href="#cb2-17" aria-hidden="true" tabindex="-1"></a><span class="ot">unZ2 ::</span> <span class="dt">Z2</span> a <span class="ot">-&gt;</span> [[a]]</span>
+<span id="cb2-18"><a href="#cb2-18" aria-hidden="true" tabindex="-1"></a>unZ2 (<span class="dt">Z2</span> (<span class="dt">Z</span> lzs cz rzs)) <span class="ot">=</span> <span class="fu">map</span> unZ lzs <span class="op">++</span> [unZ cz] <span class="op">++</span> <span class="fu">map</span> unZ rzs</span>
+<span id="cb2-19"><a href="#cb2-19" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-20"><a href="#cb2-20" aria-hidden="true" tabindex="-1"></a><span class="co">-- | zipWith の Z2 a 版</span></span>
+<span id="cb2-21"><a href="#cb2-21" aria-hidden="true" tabindex="-1"></a><span class="ot">zipZ2With ::</span> (a <span class="ot">-&gt;</span> b <span class="ot">-&gt;</span> c) <span class="ot">-&gt;</span> <span class="dt">Z2</span> a <span class="ot">-&gt;</span> <span class="dt">Z2</span> b <span class="ot">-&gt;</span> <span class="dt">Z2</span> c</span>
+<span id="cb2-22"><a href="#cb2-22" aria-hidden="true" tabindex="-1"></a>zipZ2With f (<span class="dt">Z2</span> (<span class="dt">Z</span> lzs1 cz1 rzs1)) (<span class="dt">Z2</span> (<span class="dt">Z</span> lzs2 cz2 rzs2)) <span class="ot">=</span></span>
+<span id="cb2-23"><a href="#cb2-23" aria-hidden="true" tabindex="-1"></a>  <span class="dt">Z2</span> (<span class="dt">Z</span> (<span class="fu">zipWith</span> (zipZWith f) lzs1 lzs2)</span>
+<span id="cb2-24"><a href="#cb2-24" aria-hidden="true" tabindex="-1"></a>        (zipZWith f cz1 cz2)</span>
+<span id="cb2-25"><a href="#cb2-25" aria-hidden="true" tabindex="-1"></a>        (<span class="fu">zipWith</span> (zipZWith f) rzs1 rzs2))</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+<p><code>Z a</code> と <code>Z2 a</code> は後に自動微分で使いたいので <code>Traversable</code> のインスタンスまで導出しています。</p>
+<p>最後にライフゲームの状態発展を計算する関数を実装しましょう</p>
+<div id="efc886a5-89b0-497f-a6c3-b634d36ba61e" class="cell" data-execution_count="4">
+<div class="sourceCode cell-code" id="cb3"><pre class="sourceCode haskell code-with-copy"><code class="sourceCode haskell"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="co">--   空リストに対する操作を安全にする関数</span></span>
+<span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a><span class="ot">safe ::</span> ([a] <span class="ot">-&gt;</span> a) <span class="ot">-&gt;</span> [a] <span class="ot">-&gt;</span> <span class="dt">Maybe</span> a</span>
+<span id="cb3-3"><a href="#cb3-3" aria-hidden="true" tabindex="-1"></a>safe f [] <span class="ot">=</span> <span class="dt">Nothing</span></span>
+<span id="cb3-4"><a href="#cb3-4" aria-hidden="true" tabindex="-1"></a>safe f xs <span class="ot">=</span> <span class="dt">Just</span> <span class="op">$</span> f xs</span>
+<span id="cb3-5"><a href="#cb3-5" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-6"><a href="#cb3-6" aria-hidden="true" tabindex="-1"></a><span class="co">-- | 近傍の1列で生きているセルをカウントする関数</span></span>
+<span id="cb3-7"><a href="#cb3-7" aria-hidden="true" tabindex="-1"></a><span class="ot">countNeighbour ::</span> <span class="dt">Bool</span>  <span class="co">-- Trueなら中心もカウントする</span></span>
+<span id="cb3-8"><a href="#cb3-8" aria-hidden="true" tabindex="-1"></a>               <span class="ot">-&gt;</span> <span class="dt">Z</span> <span class="dt">Bool</span></span>
+<span id="cb3-9"><a href="#cb3-9" aria-hidden="true" tabindex="-1"></a>               <span class="ot">-&gt;</span> <span class="dt">Int</span></span>
+<span id="cb3-10"><a href="#cb3-10" aria-hidden="true" tabindex="-1"></a>countNeighbour self (<span class="dt">Z</span> ls c rs) <span class="ot">=</span> <span class="fu">length</span> <span class="op">$</span> <span class="fu">filter</span> <span class="fu">id</span> [</span>
+<span id="cb3-11"><a href="#cb3-11" aria-hidden="true" tabindex="-1"></a>  <span class="dt">Just</span> <span class="dt">True</span> <span class="op">==</span> safe <span class="fu">head</span> ls,</span>
+<span id="cb3-12"><a href="#cb3-12" aria-hidden="true" tabindex="-1"></a>  self <span class="op">&amp;&amp;</span> c,</span>
+<span id="cb3-13"><a href="#cb3-13" aria-hidden="true" tabindex="-1"></a>  <span class="dt">Just</span> <span class="dt">True</span> <span class="op">==</span> safe <span class="fu">head</span> rs</span>
+<span id="cb3-14"><a href="#cb3-14" aria-hidden="true" tabindex="-1"></a>  ]</span>
+<span id="cb3-15"><a href="#cb3-15" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-16"><a href="#cb3-16" aria-hidden="true" tabindex="-1"></a><span class="co">-- | 近傍で生きているセルをカウントする関数</span></span>
+<span id="cb3-17"><a href="#cb3-17" aria-hidden="true" tabindex="-1"></a><span class="ot">countNeighbours ::</span> <span class="dt">Z2</span> <span class="dt">Bool</span> <span class="ot">-&gt;</span> <span class="dt">Int</span></span>
+<span id="cb3-18"><a href="#cb3-18" aria-hidden="true" tabindex="-1"></a>countNeighbours (<span class="dt">Z2</span> (<span class="dt">Z</span> lzs cz rzs)) <span class="ot">=</span> <span class="fu">sum</span> [</span>
+<span id="cb3-19"><a href="#cb3-19" aria-hidden="true" tabindex="-1"></a>  <span class="fu">maybe</span> <span class="dv">0</span> (countNeighbour <span class="dt">True</span>) (safe <span class="fu">head</span> lzs),</span>
+<span id="cb3-20"><a href="#cb3-20" aria-hidden="true" tabindex="-1"></a>  countNeighbour <span class="dt">False</span> cz,</span>
+<span id="cb3-21"><a href="#cb3-21" aria-hidden="true" tabindex="-1"></a>  <span class="fu">maybe</span> <span class="dv">0</span> (countNeighbour <span class="dt">True</span>) (safe <span class="fu">head</span> rzs)</span>
+<span id="cb3-22"><a href="#cb3-22" aria-hidden="true" tabindex="-1"></a>  ]</span>
+<span id="cb3-23"><a href="#cb3-23" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-24"><a href="#cb3-24" aria-hidden="true" tabindex="-1"></a><span class="co">-- | 1セルにおけるライフゲームの状態発展</span></span>
+<span id="cb3-25"><a href="#cb3-25" aria-hidden="true" tabindex="-1"></a><span class="ot">life ::</span> <span class="dt">Z2</span> <span class="dt">Bool</span> <span class="ot">-&gt;</span> <span class="dt">Bool</span></span>
+<span id="cb3-26"><a href="#cb3-26" aria-hidden="true" tabindex="-1"></a>life z <span class="ot">=</span> (a <span class="op">&amp;&amp;</span> (n <span class="op">==</span> <span class="dv">2</span> <span class="op">||</span> n <span class="op">==</span> <span class="dv">3</span>)) <span class="op">||</span> (<span class="fu">not</span> a <span class="op">&amp;&amp;</span> n <span class="op">==</span> <span class="dv">3</span>) <span class="kw">where</span></span>
+<span id="cb3-27"><a href="#cb3-27" aria-hidden="true" tabindex="-1"></a>  a <span class="ot">=</span> extract z</span>
+<span id="cb3-28"><a href="#cb3-28" aria-hidden="true" tabindex="-1"></a>  n <span class="ot">=</span> countNeighbours z</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+<p>コモナドのメソッド <code>extend</code> と1セルにおける状態発展の関数 <code>life</code> を使って、盤面全体の状態発展の関数は <code>extend life</code> として実装することができます。</p>
+<p>実装したライフゲームを使って試しに<a href="https://ja.wikipedia.org/wiki/%E3%83%96%E3%83%AA%E3%83%B3%E3%82%AB%E3%83%BC_(%E3%83%A9%E3%82%A4%E3%83%95%E3%82%B2%E3%83%BC%E3%83%A0)">ブリンカー</a>を動かしてみましょう。</p>
+<div id="214501b5-6aa7-411a-b9f8-6616f0093657" class="cell" data-execution_count="5">
+<div class="sourceCode cell-code" id="cb4"><pre class="sourceCode haskell code-with-copy"><code class="sourceCode haskell"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a><span class="ot">blinker ::</span> <span class="dt">Z2</span> <span class="dt">Bool</span></span>
+<span id="cb4-2"><a href="#cb4-2" aria-hidden="true" tabindex="-1"></a>blinker <span class="ot">=</span> toZ2 [[<span class="dt">False</span>, <span class="dt">True</span>, <span class="dt">False</span>], [<span class="dt">False</span>, <span class="dt">True</span>, <span class="dt">False</span>], [<span class="dt">False</span>, <span class="dt">True</span>, <span class="dt">False</span>]]</span>
+<span id="cb4-3"><a href="#cb4-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb4-4"><a href="#cb4-4" aria-hidden="true" tabindex="-1"></a>extend life blinker</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-display">
+<pre><code>Z2 (Z [] (Z [] False [False,False]) [Z [] True [True,True],Z [] False [False,False]])</code></pre>
+</div>
+</div>
+<div id="27af047f-5220-4d52-ad26-93a08636347f" class="cell" data-execution_count="6">
+<div class="sourceCode cell-code" id="cb6"><pre class="sourceCode haskell code-with-copy"><code class="sourceCode haskell"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a>extend life <span class="op">$</span> extend life blinker</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-display">
+<pre><code>Z2 (Z [] (Z [] False [True,False]) [Z [] False [True,False],Z [] False [True,False]])</code></pre>
+</div>
+</div>
+<p>ブリンカーのパタパタする様子が心の目で見えましたでしょうか。</p>
+<p><code>Z2 a</code> を標準の出力で確認するには限界があるので画像として扱えるようにしておきましょう。</p>
+<div id="3eecfd49-b1f3-4bac-ac95-ab515d637e1f" class="cell" data-execution_count="7">
+<div class="sourceCode cell-code" id="cb8"><pre class="sourceCode haskell code-with-copy"><code class="sourceCode haskell"><span id="cb8-1"><a href="#cb8-1" aria-hidden="true" tabindex="-1"></a><span class="kw">import</span> <span class="dt">Codec.Picture</span></span>
+<span id="cb8-2"><a href="#cb8-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb8-3"><a href="#cb8-3" aria-hidden="true" tabindex="-1"></a><span class="co">-- 二重リストを画像に変換する関数</span></span>
+<span id="cb8-4"><a href="#cb8-4" aria-hidden="true" tabindex="-1"></a><span class="ot">stateToImage ::</span> <span class="dt">Z2</span> <span class="dt">Bool</span> <span class="ot">-&gt;</span> <span class="dt">Image</span> <span class="dt">Pixel8</span></span>
+<span id="cb8-5"><a href="#cb8-5" aria-hidden="true" tabindex="-1"></a>stateToImage z2 <span class="ot">=</span> generateImage pixelRenderer width height</span>
+<span id="cb8-6"><a href="#cb8-6" aria-hidden="true" tabindex="-1"></a>  <span class="kw">where</span></span>
+<span id="cb8-7"><a href="#cb8-7" aria-hidden="true" tabindex="-1"></a>    lst <span class="ot">=</span> unZ2 z2</span>
+<span id="cb8-8"><a href="#cb8-8" aria-hidden="true" tabindex="-1"></a>    width <span class="ot">=</span> <span class="fu">length</span> (<span class="fu">head</span> lst)</span>
+<span id="cb8-9"><a href="#cb8-9" aria-hidden="true" tabindex="-1"></a>    height <span class="ot">=</span> <span class="fu">length</span> lst</span>
+<span id="cb8-10"><a href="#cb8-10" aria-hidden="true" tabindex="-1"></a>    pixelRenderer x y <span class="ot">=</span> pixelValue ((lst <span class="op">!!</span> y) <span class="op">!!</span> x)</span>
+<span id="cb8-11"><a href="#cb8-11" aria-hidden="true" tabindex="-1"></a>    pixelValue x <span class="ot">=</span> <span class="kw">if</span> x <span class="kw">then</span> <span class="dv">0</span> <span class="kw">else</span> <span class="dv">255</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+<div id="922cf3be-d037-4f19-b5dd-92296d7fb951" class="cell" data-execution_count="8">
+<div class="sourceCode cell-code" id="cb9"><pre class="sourceCode haskell code-with-copy"><code class="sourceCode haskell"><span id="cb9-1"><a href="#cb9-1" aria-hidden="true" tabindex="-1"></a>stateToImage blinker</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-display">
+<div>
+<figure class="figure">
+<p><img src="index_files/figure-html/cell-8-output-1.png" class="img-fluid figure-img"></p>
+</figure>
+</div>
+</div>
+</div>
+<div id="84dab130-e5d6-409f-ac50-8f0241abb4a2" class="cell" data-execution_count="9">
+<div class="sourceCode cell-code" id="cb10"><pre class="sourceCode haskell code-with-copy"><code class="sourceCode haskell"><span id="cb10-1"><a href="#cb10-1" aria-hidden="true" tabindex="-1"></a>stateToImage <span class="op">$</span> extend life blinker</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-display">
+<div>
+<figure class="figure">
+<p><img src="index_files/figure-html/cell-9-output-1.png" class="img-fluid figure-img"></p>
+</figure>
+</div>
+</div>
+</div>
+<p>状態を1ピクセルにしたのでかなり小さいですが拡大して見て頂ければうまく動いてることがわかると思います。</p>
+</section>
+<section id="画像の読み込み" class="level2">
+<h2 class="anchored" data-anchor-id="画像の読み込み">画像の読み込み</h2>
+<p>ここからは今回ライフゲームで逆算するもととなる画像データを読み込んでいきます。画像データは “image.txt” というファイルに以下のような形式で用意しています。</p>
+<div id="c3da9ea9-4f8e-41c7-8e51-d4e5814a3bd5" class="cell" data-execution_count="10">
+<div class="sourceCode cell-code" id="cb11"><pre class="sourceCode haskell code-with-copy"><code class="sourceCode haskell"><span id="cb11-1"><a href="#cb11-1" aria-hidden="true" tabindex="-1"></a><span class="fu">take</span> <span class="dv">100</span> <span class="op">&lt;$&gt;</span> <span class="fu">readFile</span> <span class="st">"image.txt"</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-display">
+<pre><code>"w699b11w183b20w177b26w172b31w167b35w163b39w160b45w153b50w148b53w146b55w144b57w142b58w141b64w135b66w2"</code></pre>
+</div>
+</div>
+<p>これは200×200の0と1（白と黒）のビット列を一列にし白（w）が連続して何個並ぶかと黒（b）が連続して何個並ぶかという形式で圧縮したテキストファイルです。要するに画像を<a href="https://ja.wikipedia.org/wiki/%E9%80%A3%E9%95%B7%E5%9C%A7%E7%B8%AE">ランレングス圧縮</a>したものです。今回の画像では生のテキストだと40kb, png画像形式で4kb, ランレングス圧縮だと3kbになり相性が良かったので採用しています。まずはこの圧縮された形式をデコードして画像ファイルに戻してあげましょう。</p>
+<div id="f51c7289-a253-4385-89ea-1feb3393d875" class="cell" data-execution_count="11">
+<div class="sourceCode cell-code" id="cb13"><pre class="sourceCode haskell code-with-copy"><code class="sourceCode haskell"><span id="cb13-1"><a href="#cb13-1" aria-hidden="true" tabindex="-1"></a><span class="kw">import</span> <span class="dt">Data.Char</span> (isDigit)</span>
+<span id="cb13-2"><a href="#cb13-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb13-3"><a href="#cb13-3" aria-hidden="true" tabindex="-1"></a><span class="co">-- | ランレングス圧縮された文字列をデコードする関数</span></span>
+<span id="cb13-4"><a href="#cb13-4" aria-hidden="true" tabindex="-1"></a><span class="ot">decodeRLE ::</span> <span class="dt">String</span> <span class="ot">-&gt;</span> <span class="dt">String</span></span>
+<span id="cb13-5"><a href="#cb13-5" aria-hidden="true" tabindex="-1"></a>decodeRLE [] <span class="ot">=</span> []</span>
+<span id="cb13-6"><a href="#cb13-6" aria-hidden="true" tabindex="-1"></a>decodeRLE (x<span class="op">:</span>xs) <span class="ot">=</span></span>
+<span id="cb13-7"><a href="#cb13-7" aria-hidden="true" tabindex="-1"></a>  <span class="kw">let</span> (n, rest) <span class="ot">=</span> <span class="fu">span</span> <span class="fu">isDigit</span> xs</span>
+<span id="cb13-8"><a href="#cb13-8" aria-hidden="true" tabindex="-1"></a>   <span class="kw">in</span> <span class="fu">replicate</span> (<span class="fu">read</span> n) x <span class="op">++</span> decodeRLE rest</span>
+<span id="cb13-9"><a href="#cb13-9" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb13-10"><a href="#cb13-10" aria-hidden="true" tabindex="-1"></a><span class="co">-- | 与えられたリストをN個ずつのチャンクに分ける関数</span></span>
+<span id="cb13-11"><a href="#cb13-11" aria-hidden="true" tabindex="-1"></a><span class="ot">chunksOf ::</span> <span class="dt">Int</span> <span class="ot">-&gt;</span> [a] <span class="ot">-&gt;</span> [[a]]</span>
+<span id="cb13-12"><a href="#cb13-12" aria-hidden="true" tabindex="-1"></a>chunksOf _ [] <span class="ot">=</span> []</span>
+<span id="cb13-13"><a href="#cb13-13" aria-hidden="true" tabindex="-1"></a>chunksOf n xs <span class="ot">=</span> <span class="fu">take</span> n xs <span class="op">:</span> chunksOf n (<span class="fu">drop</span> n xs)</span>
+<span id="cb13-14"><a href="#cb13-14" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb13-15"><a href="#cb13-15" aria-hidden="true" tabindex="-1"></a><span class="co">-- | 画像ファイルを読み込む</span></span>
+<span id="cb13-16"><a href="#cb13-16" aria-hidden="true" tabindex="-1"></a>targetState <span class="ot">&lt;-</span> (toZ2 <span class="op">.</span> chunksOf <span class="dv">200</span> <span class="op">.</span> <span class="fu">map</span> (<span class="op">==</span><span class="ch">'b'</span>) <span class="op">.</span> decodeRLE) <span class="op">&lt;$&gt;</span> <span class="fu">readFile</span> <span class="st">"image.txt"</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+<p>これで <code>targetState</code> に画像がライフゲームの状態として束縛されています。実際に見てみましょう。</p>
+<div id="dc5949fc-4fad-4189-9f8e-90b852c407d1" class="cell" data-execution_count="12">
+<div class="sourceCode cell-code" id="cb14"><pre class="sourceCode haskell code-with-copy"><code class="sourceCode haskell"><span id="cb14-1"><a href="#cb14-1" aria-hidden="true" tabindex="-1"></a>stateToImage targetState</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-display">
+<div>
+<figure class="figure">
+<p><img src="index_files/figure-html/cell-12-output-1.png" class="img-fluid figure-img"></p>
+</figure>
+</div>
+</div>
+</div>
+<p>うまく行っていますね。これはライフゲームの状態でもあるので1ステップ発展させてみましょう。</p>
+<div id="74b649ff-7ad6-4e74-b2dd-52ad9378b3c0" class="cell" data-execution_count="13">
+<div class="sourceCode cell-code" id="cb15"><pre class="sourceCode haskell code-with-copy"><code class="sourceCode haskell"><span id="cb15-1"><a href="#cb15-1" aria-hidden="true" tabindex="-1"></a>stateToImage <span class="op">$</span> extend' life targetState</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-display">
+<div>
+<figure class="figure">
+<p><img src="index_files/figure-html/cell-13-output-1.png" class="img-fluid figure-img"></p>
+</figure>
+</div>
+</div>
+</div>
+<p>黒が多い部分は過密状態なのでセルが死んでしまっているのが分かりますね。</p>
+<p>もう1,2ステップ時間発展させてみましょう。</p>
+<div id="c7dfea45-9a44-44f4-bae5-9a91f1ebc7a7" class="cell" data-execution_count="13">
+<div class="sourceCode cell-code" id="cb16"><pre class="sourceCode haskell code-with-copy"><code class="sourceCode haskell"><span id="cb16-1"><a href="#cb16-1" aria-hidden="true" tabindex="-1"></a>stateToImage <span class="op">$</span> extend life <span class="op">$</span> extend life targetState</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-display">
+<div>
+<figure class="figure">
+<p><img src="index_files/figure-html/cell-14-output-1.png" class="img-fluid figure-img"></p>
+</figure>
+</div>
+</div>
+</div>
+<div id="58d33681-4b6a-4603-b50a-0d15ada991c4" class="cell" data-execution_count="14">
+<div class="sourceCode cell-code" id="cb17"><pre class="sourceCode haskell code-with-copy"><code class="sourceCode haskell"><span id="cb17-1"><a href="#cb17-1" aria-hidden="true" tabindex="-1"></a>stateToImage <span class="op">$</span> extend life <span class="op">$</span> extend life <span class="op">$</span> extend life targetState</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-display">
+<div>
+<figure class="figure">
+<p><img src="index_files/figure-html/cell-15-output-1.png" class="img-fluid figure-img"></p>
+</figure>
+</div>
+</div>
+</div>
+<p>うわぁ… ライフゲームっぽくなってきましたね😅</p>
+</section>
+<section id="微分可能なライフゲーム" class="level2">
+<h2 class="anchored" data-anchor-id="微分可能なライフゲーム">微分可能なライフゲーム</h2>
+<p>さてここからはライフゲームの1つ前の状態を推定することを考えていきたいと思います。この問題を最適化問題として定式化するにあたって誤差関数を考えます。単純に入力となる状態 <span class="math inline">\(Y\)</span> を <span class="math inline">\({\rm life}\)</span> 関数によって時間発展させたときにターゲットとなる画像 <span class="math inline">\(X\)</span> との差分の平均二乗誤差を誤差関数としましょう。</p>
+<p><span class="math display">\[
+L(Y) = \frac{1}{n}\|X - {\rm life}(Y)\|^2
+\]</span></p>
+<p>さてこの誤差を最小にするような <span class="math inline">\(Y\)</span> を見つけるためには <span class="math inline">\(L\)</span> を <span class="math inline">\(Y\)</span> で微分する必要がありますが、そのためには <span class="math inline">\({\rm life}\)</span> が微分可能な関数である必要があります。しかし状態は真偽値であり <span class="math inline">\({\rm life}\)</span> は論理式で構成されているため微分可能な関数ではありません。</p>
+<p>そこでファジィ論理や確率論理と同様に真偽値を <span class="math inline">\([0, 1]\)</span> の値として連続的に扱えるように拡張しましょう。その場合に論理式やプログラムの制御構文がどのように微分可能な形に拡張できるかについては <a href="https://arxiv.org/abs/2403.14606">“The Elements of Differentiable Programming”</a> の5章 Control flows に詳細な記述があります。</p>
+<p>例えば真偽値を <span class="math inline">\(\{0, 1\}\)</span> とすると2つの実数を比較して1つ目の数が2つ目の数より大きいかどうかを返す関数 <span class="math inline">\({\rm gt}(x, y)\)</span> は</p>
+<p><span class="math display">\[
+\begin{matrix}
+{\rm gt}(x, y) &amp;=&amp; \begin{cases}
+1,\ {\rm if}\ x\geq y\\
+0,\ {\rm otherwise}\\
+\end{cases} \\
+&amp;=&amp; {\rm step}(x-y)
+\end{matrix}
+\]</span></p>
+<p>のように書けます。 ここで <span class="math inline">\({\rm step}\)</span> 関数は以下のように定義されているものです。</p>
+<p><span class="math display">\[
+{\rm step}(x) = \begin{cases}
+1,\ {\rm if}\ x \geq 0\\
+0,\ {\rm otherwise} \\
+\end{cases}
+\]</span></p>
+<p>これを <span class="math inline">\([0, 1]\)</span> に値を取るように微分可能な形に緩和すると <span class="math inline">\({\rm step}\)</span> 関数をシグモイド関数 <span class="math inline">\({\rm sigmoid}\)</span> にするのが自然でしょう。</p>
+<p><span class="math display">\[
+{\rm sigmoid}_D(x) = \frac{1}{1+\exp\left(-\frac{x}{D}\right)}
+\]</span></p>
+<p>これを使って微分可能な形に緩和した比較関数 <span class="math inline">\({\rm gt}_D(x, y)\)</span> を</p>
+<p><span class="math display">\[
+{\rm gt}_D(x, y) = {\rm sigmoid}_D(x-y)
+\]</span></p>
+<p>と定義します。</p>
+<p>シグモイド関数に置き換えたこの関数は変数がある確率分布に従うと仮定して期待値をとったものと解釈することも可能です。</p>
+<p>同様の方法で”小なり”や”等号”に対応する関数を定義することも可能です。（先に挙げた<a href="https://arxiv.org/abs/2403.14606">“The Elements of Differentiable Programming”</a>で <span class="math inline">\({\rm lt}(x, y) = 1 - {\rm gt}(x, y)\)</span> と定義されており、これだと後述する否定を使って <span class="math inline">\({\rm lt}(x, y) = {\rm not}({\rm gt}(x, y))\)</span> と書けるため等号部分が異なる気がするのですが、この部分は微分可能な形に緩和すれば確率0で気にならなくなるので本稿でも同様に実装することにします。）</p>
+<p><span class="math inline">\([0, 1]\)</span> に値を取る真偽値の論理演算子は以下のように提議することができます。</p>
+<p>まず否定 <span class="math inline">\({\rm not}\)</span> は0を1に、1を0に移すので単純に1からの減算と考えれるでしょう。</p>
+<p><span class="math display">\[
+{\rm not}(x) = 1 - x
+\]</span></p>
+<p>次に論理積 <span class="math inline">\({\rm and}(x, y)\)</span> は <span class="math inline">\(x, y\)</span> いずれかの値が0なら0になり両方が1なら1になります。単純な積はこの性質を満たしていることがわかるでしょう。</p>
+<p><span class="math display">\[
+{\rm and}(x, y) = xy
+\]</span></p>
+<p>次に論理和 <span class="math inline">\({\rm or}(x, y)\)</span> は <span class="math inline">\(x, y\)</span> いずれかの値が1なら1になり両方が0なら0になります。このような性質を満たす計算を見つけるのは簡単ではありませんが、既に否定と論理積があるのでド・モルガンの法則を使って</p>
+<p><span class="math display">\[
+\begin{matrix}
+{\rm or}(x, y) &amp;=&amp; {\rm not}({\rm and}({\rm not}(x), {\rm not}(y))) \\
+&amp;=&amp; 1 - (1-x)(1-y) \\
+&amp;=&amp; x + y - xy \\
+\end{matrix}
+\]</span></p>
+<p>のように定義できることが分かります。</p>
+<p>このように論理和・論理積を <span class="math inline">\([0, 1]\)</span> に拡張したものは代数和・代数積と呼ばれていて実は上記の定義以外にも無数に存在することが知られています。気になる人は以下を参照してみてください。</p>
+<ul>
+<li><a href="https://mathlog.info/articles/145">ファジィ理論とその応用 | Mathlog</a></li>
+<li><a href="https://en.wikipedia.org/wiki/T-norm">T-norm - Wikipedia</a></li>
+</ul>
+<p><code>if</code> などの制御構文も微分可能な形に実装することができますが、今回のライフゲームの実装では必要ありません。上記を参考に微分可能な比較演算子と論理演算子を実装してみましょう。</p>
+<div id="1d253404-ad65-4fe7-aceb-1154c3aadd65" class="cell" data-execution_count="14">
+<div class="sourceCode cell-code" id="cb18"><pre class="sourceCode haskell code-with-copy"><code class="sourceCode haskell"><span id="cb18-1"><a href="#cb18-1" aria-hidden="true" tabindex="-1"></a><span class="co">--   x &gt; y</span></span>
+<span id="cb18-2"><a href="#cb18-2" aria-hidden="true" tabindex="-1"></a><span class="ot">gtD ::</span> <span class="dt">Floating</span> a <span class="ot">=&gt;</span> a <span class="ot">-&gt;</span> a <span class="ot">-&gt;</span> a</span>
+<span id="cb18-3"><a href="#cb18-3" aria-hidden="true" tabindex="-1"></a>gtD x y <span class="ot">=</span> <span class="dv">1</span> <span class="op">/</span> (<span class="dv">1</span> <span class="op">+</span> <span class="fu">exp</span> (<span class="op">-</span><span class="dv">4</span> <span class="op">*</span> (x <span class="op">-</span> y)))</span>
+<span id="cb18-4"><a href="#cb18-4" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb18-5"><a href="#cb18-5" aria-hidden="true" tabindex="-1"></a><span class="co">-- | x &lt; y</span></span>
+<span id="cb18-6"><a href="#cb18-6" aria-hidden="true" tabindex="-1"></a><span class="ot">ltD ::</span> <span class="dt">Floating</span> a <span class="ot">=&gt;</span> a <span class="ot">-&gt;</span> a <span class="ot">-&gt;</span> a</span>
+<span id="cb18-7"><a href="#cb18-7" aria-hidden="true" tabindex="-1"></a>ltD x y <span class="ot">=</span> <span class="dv">1</span> <span class="op">-</span> gtD x y</span>
+<span id="cb18-8"><a href="#cb18-8" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb18-9"><a href="#cb18-9" aria-hidden="true" tabindex="-1"></a><span class="co">-- | x == y</span></span>
+<span id="cb18-10"><a href="#cb18-10" aria-hidden="true" tabindex="-1"></a><span class="ot">eqD ::</span> <span class="dt">Floating</span> a <span class="ot">=&gt;</span> a <span class="ot">-&gt;</span> a <span class="ot">-&gt;</span> a</span>
+<span id="cb18-11"><a href="#cb18-11" aria-hidden="true" tabindex="-1"></a>eqD x y <span class="ot">=</span> <span class="fu">exp</span> <span class="op">$</span> <span class="op">-</span>(<span class="dv">4</span> <span class="op">*</span> (x <span class="op">-</span> y))<span class="op">^</span><span class="dv">2</span><span class="op">/</span><span class="dv">2</span></span>
+<span id="cb18-12"><a href="#cb18-12" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb18-13"><a href="#cb18-13" aria-hidden="true" tabindex="-1"></a><span class="co">-- | !x</span></span>
+<span id="cb18-14"><a href="#cb18-14" aria-hidden="true" tabindex="-1"></a><span class="ot">notD ::</span> <span class="dt">Num</span> a <span class="ot">=&gt;</span> a <span class="ot">-&gt;</span> a</span>
+<span id="cb18-15"><a href="#cb18-15" aria-hidden="true" tabindex="-1"></a>notD x <span class="ot">=</span> <span class="dv">1</span> <span class="op">-</span> x</span>
+<span id="cb18-16"><a href="#cb18-16" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb18-17"><a href="#cb18-17" aria-hidden="true" tabindex="-1"></a><span class="co">-- | x &amp;&amp; y</span></span>
+<span id="cb18-18"><a href="#cb18-18" aria-hidden="true" tabindex="-1"></a><span class="ot">andD ::</span> <span class="dt">Num</span> a <span class="ot">=&gt;</span> a <span class="ot">-&gt;</span> a <span class="ot">-&gt;</span> a</span>
+<span id="cb18-19"><a href="#cb18-19" aria-hidden="true" tabindex="-1"></a>andD x y <span class="ot">=</span> x <span class="op">*</span> y</span>
+<span id="cb18-20"><a href="#cb18-20" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb18-21"><a href="#cb18-21" aria-hidden="true" tabindex="-1"></a><span class="co">-- | x || y</span></span>
+<span id="cb18-22"><a href="#cb18-22" aria-hidden="true" tabindex="-1"></a><span class="ot">orD ::</span> <span class="dt">Num</span> a <span class="ot">=&gt;</span> a <span class="ot">-&gt;</span> a <span class="ot">-&gt;</span> a</span>
+<span id="cb18-23"><a href="#cb18-23" aria-hidden="true" tabindex="-1"></a>orD x y <span class="ot">=</span> x <span class="op">+</span> y <span class="op">-</span> x <span class="op">*</span> y</span>
+<span id="cb18-24"><a href="#cb18-24" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb18-25"><a href="#cb18-25" aria-hidden="true" tabindex="-1"></a><span class="co">-- | x ≧ y</span></span>
+<span id="cb18-26"><a href="#cb18-26" aria-hidden="true" tabindex="-1"></a><span class="ot">geqD ::</span> <span class="dt">Floating</span> a <span class="ot">=&gt;</span> a <span class="ot">-&gt;</span> a <span class="ot">-&gt;</span> a</span>
+<span id="cb18-27"><a href="#cb18-27" aria-hidden="true" tabindex="-1"></a>geqD x y <span class="ot">=</span> eqD x y <span class="ot">`orD`</span> gtD x y</span>
+<span id="cb18-28"><a href="#cb18-28" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb18-29"><a href="#cb18-29" aria-hidden="true" tabindex="-1"></a><span class="co">-- | x ≦ y</span></span>
+<span id="cb18-30"><a href="#cb18-30" aria-hidden="true" tabindex="-1"></a><span class="ot">leqD ::</span> <span class="dt">Floating</span> a <span class="ot">=&gt;</span> a <span class="ot">-&gt;</span> a <span class="ot">-&gt;</span> a</span>
+<span id="cb18-31"><a href="#cb18-31" aria-hidden="true" tabindex="-1"></a>leqD x y <span class="ot">=</span> eqD x y <span class="ot">`orD`</span> ltD x y</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+<p><code>gtD</code> と <code>ltD</code> は引数が一致する場合に値が <span class="math inline">\(\frac{1}{2}\)</span> となるため等号のない <span class="math inline">\(&gt;, &lt;\)</span> を表していると解釈し、等号も含めた演算子 <span class="math inline">\(\geq, \leq\)</span> を別途 <code>geqD, leqD</code> として実装しています。</p>
+<p>それではこれらの演算子を使ってライフゲームの微分可能な状態発展を実装してみましょう。</p>
+<div id="0ef19698-077b-45d4-95fd-2518df3d5129" class="cell" data-execution_count="15">
+<div class="sourceCode cell-code" id="cb19"><pre class="sourceCode haskell code-with-copy"><code class="sourceCode haskell"><span id="cb19-1"><a href="#cb19-1" aria-hidden="true" tabindex="-1"></a><span class="kw">import</span> <span class="dt">Data.Maybe</span> (fromMaybe)</span>
+<span id="cb19-2"><a href="#cb19-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb19-3"><a href="#cb19-3" aria-hidden="true" tabindex="-1"></a><span class="co">-- | 近傍の1列で生きているセルを合計する関数</span></span>
+<span id="cb19-4"><a href="#cb19-4" aria-hidden="true" tabindex="-1"></a><span class="ot">sumNeighbour ::</span> <span class="dt">Num</span> a</span>
+<span id="cb19-5"><a href="#cb19-5" aria-hidden="true" tabindex="-1"></a>             <span class="ot">=&gt;</span> <span class="dt">Bool</span>  <span class="co">-- Trueなら中心もカウントする</span></span>
+<span id="cb19-6"><a href="#cb19-6" aria-hidden="true" tabindex="-1"></a>             <span class="ot">-&gt;</span> <span class="dt">Z</span> a</span>
+<span id="cb19-7"><a href="#cb19-7" aria-hidden="true" tabindex="-1"></a>             <span class="ot">-&gt;</span> a</span>
+<span id="cb19-8"><a href="#cb19-8" aria-hidden="true" tabindex="-1"></a>sumNeighbour self (<span class="dt">Z</span> ls c rs) <span class="ot">=</span> <span class="fu">sum</span> [</span>
+<span id="cb19-9"><a href="#cb19-9" aria-hidden="true" tabindex="-1"></a>  fromMaybe <span class="dv">0</span> (safe <span class="fu">head</span> ls),</span>
+<span id="cb19-10"><a href="#cb19-10" aria-hidden="true" tabindex="-1"></a>  <span class="kw">if</span> self <span class="kw">then</span> c <span class="kw">else</span> <span class="dv">0</span>,</span>
+<span id="cb19-11"><a href="#cb19-11" aria-hidden="true" tabindex="-1"></a>  fromMaybe <span class="dv">0</span> (safe <span class="fu">head</span> rs)</span>
+<span id="cb19-12"><a href="#cb19-12" aria-hidden="true" tabindex="-1"></a>  ]</span>
+<span id="cb19-13"><a href="#cb19-13" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb19-14"><a href="#cb19-14" aria-hidden="true" tabindex="-1"></a><span class="co">-- | 近傍で生きているセルを合計する関数</span></span>
+<span id="cb19-15"><a href="#cb19-15" aria-hidden="true" tabindex="-1"></a><span class="ot">sumNeighbours ::</span> <span class="dt">Num</span> a</span>
+<span id="cb19-16"><a href="#cb19-16" aria-hidden="true" tabindex="-1"></a>              <span class="ot">=&gt;</span> <span class="dt">Z2</span> a</span>
+<span id="cb19-17"><a href="#cb19-17" aria-hidden="true" tabindex="-1"></a>              <span class="ot">-&gt;</span> a</span>
+<span id="cb19-18"><a href="#cb19-18" aria-hidden="true" tabindex="-1"></a>sumNeighbours (<span class="dt">Z2</span> (<span class="dt">Z</span> lzs cz rzs)) <span class="ot">=</span> <span class="fu">sum</span> [</span>
+<span id="cb19-19"><a href="#cb19-19" aria-hidden="true" tabindex="-1"></a>  <span class="fu">maybe</span> <span class="dv">0</span> (sumNeighbour <span class="dt">True</span>) (safe <span class="fu">head</span> lzs),</span>
+<span id="cb19-20"><a href="#cb19-20" aria-hidden="true" tabindex="-1"></a>  sumNeighbour <span class="dt">False</span> cz,</span>
+<span id="cb19-21"><a href="#cb19-21" aria-hidden="true" tabindex="-1"></a>  <span class="fu">maybe</span> <span class="dv">0</span> (sumNeighbour <span class="dt">True</span>) (safe <span class="fu">head</span> rzs)</span>
+<span id="cb19-22"><a href="#cb19-22" aria-hidden="true" tabindex="-1"></a>  ]</span>
+<span id="cb19-23"><a href="#cb19-23" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb19-24"><a href="#cb19-24" aria-hidden="true" tabindex="-1"></a><span class="co">-- | 1セルにおけるライフゲームの微分可能な状態発展</span></span>
+<span id="cb19-25"><a href="#cb19-25" aria-hidden="true" tabindex="-1"></a><span class="ot">lifeD ::</span> <span class="dt">Floating</span> a <span class="ot">=&gt;</span> <span class="dt">Z2</span> a <span class="ot">-&gt;</span> a</span>
+<span id="cb19-26"><a href="#cb19-26" aria-hidden="true" tabindex="-1"></a>lifeD z <span class="ot">=</span> (a <span class="ot">`andD`</span> (geqD n <span class="dv">2</span> <span class="ot">`andD`</span> leqD n <span class="dv">3</span>)) <span class="ot">`orD`</span> (notD a <span class="ot">`andD`</span> eqD n <span class="dv">3</span>)</span>
+<span id="cb19-27"><a href="#cb19-27" aria-hidden="true" tabindex="-1"></a>  <span class="kw">where</span></span>
+<span id="cb19-28"><a href="#cb19-28" aria-hidden="true" tabindex="-1"></a>    a <span class="ot">=</span> extract z</span>
+<span id="cb19-29"><a href="#cb19-29" aria-hidden="true" tabindex="-1"></a>    n <span class="ot">=</span> sumNeighbours z</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+<p><code>lifeD</code> の実装をよく見ると <code>Bool</code> に対する <code>life</code> の実装とよく対応していることが分かります。</p>
+<div class="sourceCode" id="cb20"><pre class="sourceCode hs code-with-copy"><code class="sourceCode haskell"><span id="cb20-1"><a href="#cb20-1" aria-hidden="true" tabindex="-1"></a><span class="ot">life ::</span> <span class="dt">Z2</span> <span class="dt">Bool</span> <span class="ot">-&gt;</span> <span class="dt">Bool</span></span>
+<span id="cb20-2"><a href="#cb20-2" aria-hidden="true" tabindex="-1"></a>life z <span class="ot">=</span> (a <span class="op">&amp;&amp;</span> (n <span class="op">==</span> <span class="dv">2</span> <span class="op">||</span> n <span class="op">==</span> <span class="dv">3</span>)) <span class="op">||</span> (<span class="fu">not</span> a <span class="op">&amp;&amp;</span> n <span class="op">==</span> <span class="dv">3</span>) <span class="kw">where</span></span>
+<span id="cb20-3"><a href="#cb20-3" aria-hidden="true" tabindex="-1"></a>  a <span class="ot">=</span> extract z</span>
+<span id="cb20-4"><a href="#cb20-4" aria-hidden="true" tabindex="-1"></a>  n <span class="ot">=</span> countNeighbours z</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<p>実際に <code>lifeD</code> を使ってライフゲームを状態発展させてみましょう。</p>
+<div id="f37e6f8e-1e89-41bf-9aeb-62027c3cf8df" class="cell" data-execution_count="17">
+<div class="sourceCode cell-code" id="cb21"><pre class="sourceCode haskell code-with-copy"><code class="sourceCode haskell"><span id="cb21-1"><a href="#cb21-1" aria-hidden="true" tabindex="-1"></a>stateToImage <span class="op">$</span> <span class="fu">fmap</span> (<span class="op">&gt;</span> <span class="fl">0.5</span>) <span class="op">$</span> extend lifeD <span class="op">$</span> (\b <span class="ot">-&gt;</span> <span class="kw">if</span> b <span class="kw">then</span> <span class="fl">1.0</span> <span class="kw">else</span> <span class="fl">0.0</span>) <span class="op">&lt;$&gt;</span> targetState</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-display">
+<div>
+<figure class="figure">
+<p><img src="index_files/figure-html/cell-18-output-1.png" class="img-fluid figure-img"></p>
+</figure>
+</div>
+</div>
+</div>
+<p>先程見た結果と一致していそうですね。</p>
+</section>
+<section id="つ前の状態を推定する" class="level2">
+<h2 class="anchored" data-anchor-id="つ前の状態を推定する">1つ前の状態を推定する</h2>
+<p>それでは勾配降下法を使って目標となる画像に発展する1つ前の状態を求めてみましょう。入力となるセルの値が <span class="math inline">\([0,1]\)</span> だと途中で範囲外に出てしまう可能性があるため、値は実数を取れるようにしてシグモイド関数で <span class="math inline">\([0, 1]\)</span> に含まれるように変換することにします。</p>
+<div id="80f87c29-0a79-486d-baab-4bc34aedf290" class="cell" data-execution_count="19">
+<div class="sourceCode cell-code" id="cb22"><pre class="sourceCode haskell code-with-copy"><code class="sourceCode haskell"><span id="cb22-1"><a href="#cb22-1" aria-hidden="true" tabindex="-1"></a><span class="kw">import</span> <span class="dt">Data.Function</span> (fix)</span>
+<span id="cb22-2"><a href="#cb22-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb22-3"><a href="#cb22-3" aria-hidden="true" tabindex="-1"></a><span class="kw">import</span> <span class="dt">Graphics.Rendering.Chart.Easy</span></span>
+<span id="cb22-4"><a href="#cb22-4" aria-hidden="true" tabindex="-1"></a><span class="kw">import</span> <span class="dt">Numeric.AD</span></span>
+<span id="cb22-5"><a href="#cb22-5" aria-hidden="true" tabindex="-1"></a><span class="kw">import</span> <span class="dt">System.Random</span> (randomIO)</span>
+<span id="cb22-6"><a href="#cb22-6" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb22-7"><a href="#cb22-7" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb22-8"><a href="#cb22-8" aria-hidden="true" tabindex="-1"></a>(resultState, losses) <span class="ot">&lt;-</span> <span class="kw">do</span></span>
+<span id="cb22-9"><a href="#cb22-9" aria-hidden="true" tabindex="-1"></a>  <span class="co">-- 初期状態をランダムに作成</span></span>
+<span id="cb22-10"><a href="#cb22-10" aria-hidden="true" tabindex="-1"></a>  initialState <span class="ot">&lt;-</span> toZ2 <span class="op">.</span> chunksOf <span class="dv">200</span> <span class="op">.</span> <span class="fu">map</span> (\b <span class="ot">-&gt;</span> <span class="kw">if</span> b <span class="kw">then</span> <span class="dv">1</span> <span class="kw">else</span> <span class="op">-</span><span class="dv">1</span>) <span class="op">&lt;$&gt;</span> <span class="fu">sequence</span> (<span class="fu">replicate</span> (<span class="dv">200</span> <span class="op">*</span> <span class="dv">200</span>) randomIO)</span>
+<span id="cb22-11"><a href="#cb22-11" aria-hidden="true" tabindex="-1"></a>  </span>
+<span id="cb22-12"><a href="#cb22-12" aria-hidden="true" tabindex="-1"></a>  <span class="kw">let</span> <span class="co">-- ターゲットとなる画像を Z2 Double に変換</span></span>
+<span id="cb22-13"><a href="#cb22-13" aria-hidden="true" tabindex="-1"></a>      target <span class="ot">=</span> (\b <span class="ot">-&gt;</span> <span class="kw">if</span> b <span class="kw">then</span> <span class="dv">1</span> <span class="kw">else</span> <span class="dv">0</span>) <span class="op">&lt;$&gt;</span> targetState</span>
+<span id="cb22-14"><a href="#cb22-14" aria-hidden="true" tabindex="-1"></a>      <span class="co">-- 定義域を [0, 1] から実数全体にするためシグモイド関数で変換する</span></span>
+<span id="cb22-15"><a href="#cb22-15" aria-hidden="true" tabindex="-1"></a>      sigmoid x <span class="ot">=</span> <span class="dv">1</span> <span class="op">/</span> (<span class="dv">1</span> <span class="op">+</span> <span class="fu">exp</span> (<span class="op">-</span>x))</span>
+<span id="cb22-16"><a href="#cb22-16" aria-hidden="true" tabindex="-1"></a>      <span class="co">-- 誤差関数</span></span>
+<span id="cb22-17"><a href="#cb22-17" aria-hidden="true" tabindex="-1"></a>      loss state <span class="ot">=</span> <span class="fu">sum</span> <span class="op">.</span> <span class="fu">fmap</span> (<span class="op">^</span><span class="dv">2</span>) <span class="op">$</span> zipZ2With (<span class="op">-</span>) target (extend lifeD (<span class="fu">fmap</span> sigmoid state))</span>
+<span id="cb22-18"><a href="#cb22-18" aria-hidden="true" tabindex="-1"></a>  <span class="co">-- 初期値の誤差を表示する</span></span>
+<span id="cb22-19"><a href="#cb22-19" aria-hidden="true" tabindex="-1"></a>  <span class="fu">putStrLn</span> <span class="op">$</span> <span class="fu">concat</span> [<span class="st">"initial, loss = "</span>, <span class="fu">show</span> (loss target)]</span>
+<span id="cb22-20"><a href="#cb22-20" aria-hidden="true" tabindex="-1"></a>  <span class="co">-- 勾配降下法で最適化を行う</span></span>
+<span id="cb22-21"><a href="#cb22-21" aria-hidden="true" tabindex="-1"></a>  <span class="co">-- flip fix (initialState, 12000, []) $ \loop (state, n, losses) -&gt; do</span></span>
+<span id="cb22-22"><a href="#cb22-22" aria-hidden="true" tabindex="-1"></a>  <span class="fu">flip</span> fix (initialState, <span class="dv">3</span>, []) <span class="op">$</span> \loop (state, n, losses) <span class="ot">-&gt;</span> <span class="kw">do</span></span>
+<span id="cb22-23"><a href="#cb22-23" aria-hidden="true" tabindex="-1"></a>    <span class="kw">if</span> n <span class="op">==</span> <span class="dv">0</span></span>
+<span id="cb22-24"><a href="#cb22-24" aria-hidden="true" tabindex="-1"></a>      <span class="co">-- n が 0 になったら結果を整形して終了</span></span>
+<span id="cb22-25"><a href="#cb22-25" aria-hidden="true" tabindex="-1"></a>      <span class="kw">then</span> <span class="fu">pure</span> (<span class="fu">fmap</span> sigmoid state, <span class="fu">reverse</span> losses)</span>
+<span id="cb22-26"><a href="#cb22-26" aria-hidden="true" tabindex="-1"></a>      <span class="kw">else</span> <span class="kw">do</span></span>
+<span id="cb22-27"><a href="#cb22-27" aria-hidden="true" tabindex="-1"></a>        <span class="kw">let</span> <span class="co">-- 勾配降下法</span></span>
+<span id="cb22-28"><a href="#cb22-28" aria-hidden="true" tabindex="-1"></a>            state' <span class="ot">=</span> zipZ2With (<span class="op">-</span>) state (<span class="fu">fmap</span> (<span class="fl">0.1</span><span class="op">*</span>) (grad loss state))</span>
+<span id="cb22-29"><a href="#cb22-29" aria-hidden="true" tabindex="-1"></a>            <span class="co">-- 誤差の評価</span></span>
+<span id="cb22-30"><a href="#cb22-30" aria-hidden="true" tabindex="-1"></a>            l <span class="ot">=</span> loss state'</span>
+<span id="cb22-31"><a href="#cb22-31" aria-hidden="true" tabindex="-1"></a>        <span class="co">-- 定期的に進捗をログに出力する</span></span>
+<span id="cb22-32"><a href="#cb22-32" aria-hidden="true" tabindex="-1"></a>        <span class="kw">if</span> <span class="fu">mod</span> n <span class="dv">1</span> <span class="op">==</span> <span class="dv">0</span></span>
+<span id="cb22-33"><a href="#cb22-33" aria-hidden="true" tabindex="-1"></a>          <span class="kw">then</span> <span class="fu">putStrLn</span> <span class="op">$</span> <span class="fu">concat</span> [<span class="st">"n = "</span>, <span class="fu">show</span> n, <span class="st">", loss = "</span>, <span class="fu">show</span> l]</span>
+<span id="cb22-34"><a href="#cb22-34" aria-hidden="true" tabindex="-1"></a>          <span class="kw">else</span> <span class="fu">pure</span> ()</span>
+<span id="cb22-35"><a href="#cb22-35" aria-hidden="true" tabindex="-1"></a>        <span class="co">-- 状態を更新してループする</span></span>
+<span id="cb22-36"><a href="#cb22-36" aria-hidden="true" tabindex="-1"></a>        loop (state', n<span class="op">-</span><span class="dv">1</span>, l<span class="op">:</span>losses)</span>
+<span id="cb22-37"><a href="#cb22-37" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb22-38"><a href="#cb22-38" aria-hidden="true" tabindex="-1"></a>toRenderable <span class="op">$</span> plot (line <span class="st">""</span> [<span class="fu">zip</span> [<span class="dv">0</span><span class="op">..</span>] losses])</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-display">
+<pre><code>initial, loss = 14174.446314774947
+n = 3, loss = 12269.358543836524
+n = 2, loss = 10916.167582268035
+n = 1, loss = 10168.527533365344</code></pre>
+</div>
+<div class="cell-output cell-output-display">
+<div>
+<figure class="figure">
+<p><img src="index_files/figure-html/cell-19-output-2.svg" class="img-fluid figure-img"></p>
+</figure>
+</div>
+</div>
+</div>
+<p>グラフから誤差を小さくできていることが分かりますね👏 ループの部分は<a href="https://qiita.com/lotz/items/0894079a44e87dc8b73e"><code>flip fix</code> を使って</a>雑に書いていますが適切なfold系の関数を使って実装することも可能でしょう。</p>
+<p>得られた結果がどうなっているか確認しましょう。</p>
+<div id="3d1a802d-d0fb-45f2-9886-9f22843c0406" class="cell" data-execution_count="28">
+<div class="sourceCode cell-code" id="cb24"><pre class="sourceCode haskell code-with-copy"><code class="sourceCode haskell"><span id="cb24-1"><a href="#cb24-1" aria-hidden="true" tabindex="-1"></a>stateToImage <span class="op">$</span> <span class="fu">fmap</span> (<span class="op">&gt;</span> <span class="fl">0.5</span>) resultState</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-display">
+<div>
+<figure class="figure">
+<p><img src="index_files/figure-html/cell-20-output-1.png" class="img-fluid figure-img"></p>
+</figure>
+</div>
+</div>
+</div>
+<p>既にかなり面影があります😅 これをライフゲームとして1ステップ状態発展させてみましょう。</p>
+<div id="e5388f44-0acf-4c43-a334-3d8c1da65397" class="cell" data-execution_count="29">
+<div class="sourceCode cell-code" id="cb25"><pre class="sourceCode haskell code-with-copy"><code class="sourceCode haskell"><span id="cb25-1"><a href="#cb25-1" aria-hidden="true" tabindex="-1"></a>stateToImage <span class="op">$</span> extend life <span class="op">$</span> <span class="fu">fmap</span> (<span class="op">&gt;</span> <span class="fl">0.5</span>) resultState</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-display">
+<div>
+<figure class="figure">
+<p><img src="index_files/figure-html/cell-21-output-1.png" class="img-fluid figure-img"></p>
+</figure>
+</div>
+</div>
+</div>
+<p>見事目標としていた画像に近いパターンが得られています。</p>
+<p>ライフゲームのルール上黒いベタ塗りなどは表現しにくいのですが、<a href="https://hardmath123.github.io/conways-gradient.html">元記事</a>でも指摘されているように1つ前の状態としてチューリング・パターンのような模様が現れているのは不思議ですよね👀</p>
+<div id="8069dbc6-8f64-4bf1-91f9-22f14524cfd9" class="cell" data-execution_count="12">
+<div class="sourceCode cell-code" id="cb26"><pre class="sourceCode haskell code-with-copy"><code class="sourceCode haskell"><span id="cb26-1"><a href="#cb26-1" aria-hidden="true" tabindex="-1"></a><span class="kw">import</span> <span class="dt">Numeric.AD</span></span>
+<span id="cb26-2"><a href="#cb26-2" aria-hidden="true" tabindex="-1"></a><span class="kw">import</span> <span class="dt">System.Random</span> (randomIO)</span>
+<span id="cb26-3"><a href="#cb26-3" aria-hidden="true" tabindex="-1"></a><span class="kw">import</span> <span class="dt">Data.Function</span> (fix)</span>
+<span id="cb26-4"><a href="#cb26-4" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb26-5"><a href="#cb26-5" aria-hidden="true" tabindex="-1"></a>result <span class="ot">&lt;-</span> <span class="kw">do</span></span>
+<span id="cb26-6"><a href="#cb26-6" aria-hidden="true" tabindex="-1"></a>  initState <span class="ot">&lt;-</span> toZ2 <span class="op">.</span> chunksOf <span class="dv">200</span> <span class="op">.</span> <span class="fu">map</span> (\b <span class="ot">-&gt;</span> <span class="kw">if</span> b <span class="kw">then</span> <span class="dv">1</span> <span class="kw">else</span> <span class="op">-</span><span class="dv">1</span>) <span class="op">&lt;$&gt;</span> <span class="fu">sequence</span> (<span class="fu">replicate</span> (<span class="dv">200</span> <span class="op">*</span> <span class="dv">200</span>) randomIO)</span>
+<span id="cb26-7"><a href="#cb26-7" aria-hidden="true" tabindex="-1"></a>  <span class="kw">let</span> target <span class="ot">=</span> (\b <span class="ot">-&gt;</span> <span class="kw">if</span> b <span class="kw">then</span> <span class="dv">1</span> <span class="kw">else</span> <span class="dv">0</span>) <span class="op">&lt;$&gt;</span> toZ2 targetState</span>
+<span id="cb26-8"><a href="#cb26-8" aria-hidden="true" tabindex="-1"></a>      sigmoid x <span class="ot">=</span> <span class="dv">1</span> <span class="op">/</span> (<span class="dv">1</span> <span class="op">+</span> <span class="fu">exp</span> (<span class="op">-</span>x))</span>
+<span id="cb26-9"><a href="#cb26-9" aria-hidden="true" tabindex="-1"></a>      loss state <span class="ot">=</span> <span class="fu">sum</span> <span class="op">.</span> <span class="fu">fmap</span> (<span class="op">^</span><span class="dv">2</span>) <span class="op">$</span> zipZ2With (<span class="op">-</span>) target (extend lifeD (<span class="fu">fmap</span> sigmoid state))</span>
+<span id="cb26-10"><a href="#cb26-10" aria-hidden="true" tabindex="-1"></a>  <span class="fu">print</span> <span class="op">$</span> loss target</span>
+<span id="cb26-11"><a href="#cb26-11" aria-hidden="true" tabindex="-1"></a>  <span class="fu">flip</span> fix (initState, <span class="dv">10000</span>) <span class="op">$</span> \loop (state, n) <span class="ot">-&gt;</span> <span class="kw">do</span></span>
+<span id="cb26-12"><a href="#cb26-12" aria-hidden="true" tabindex="-1"></a>    <span class="kw">if</span> n <span class="op">==</span> <span class="dv">0</span></span>
+<span id="cb26-13"><a href="#cb26-13" aria-hidden="true" tabindex="-1"></a>      <span class="kw">then</span> <span class="fu">pure</span> (<span class="fu">fmap</span> sigmoid state)</span>
+<span id="cb26-14"><a href="#cb26-14" aria-hidden="true" tabindex="-1"></a>      <span class="kw">else</span> <span class="kw">do</span></span>
+<span id="cb26-15"><a href="#cb26-15" aria-hidden="true" tabindex="-1"></a>        <span class="kw">let</span> state' <span class="ot">=</span> zipZ2With (<span class="op">-</span>) state (<span class="fu">fmap</span> (<span class="fl">0.1</span><span class="op">*</span>) (grad loss state))</span>
+<span id="cb26-16"><a href="#cb26-16" aria-hidden="true" tabindex="-1"></a>        <span class="kw">if</span> <span class="fu">mod</span> n <span class="dv">10</span> <span class="op">==</span> <span class="dv">0</span></span>
+<span id="cb26-17"><a href="#cb26-17" aria-hidden="true" tabindex="-1"></a>          <span class="kw">then</span> <span class="fu">putStrLn</span> <span class="op">$</span> <span class="fu">concat</span> [<span class="st">"n = "</span>, <span class="fu">show</span> n, <span class="st">", loss = "</span>, <span class="fu">show</span> (loss state')]</span>
+<span id="cb26-18"><a href="#cb26-18" aria-hidden="true" tabindex="-1"></a>          <span class="kw">else</span> <span class="fu">pure</span> ()</span>
+<span id="cb26-19"><a href="#cb26-19" aria-hidden="true" tabindex="-1"></a>        loop (state', n<span class="op">-</span><span class="dv">1</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-display">
+<pre><code>14174.446314774947
+n = 10000, loss = 12536.926091714551
+n = 9990, loss = 6661.342698244121
+n = 9980, loss = 4108.475548903415
+n = 9970, loss = 2696.657146765671
+n = 9960, loss = 2052.079319989089
+n = 9950, loss = 1754.876587522294
+n = 9940, loss = 1569.3492933141292
+n = 9930, loss = 1441.4889280822615
+n = 9920, loss = 1351.8865808793018
+n = 9910, loss = 1287.6992717894188
+n = 9900, loss = 1235.0064639046682
+n = 9890, loss = 1191.4211792502965
+n = 9880, loss = 1151.3725145669
+n = 9870, loss = 1119.6556455651662
+n = 9860, loss = 1092.6677665572345
+n = 9850, loss = 1066.8839922558793
+n = 9840, loss = 1044.5252632928775
+n = 9830, loss = 1024.4774758514059
+n = 9820, loss = 1007.0245266942644
+n = 9810, loss = 991.5735714583072
+n = 9800, loss = 976.3632682961602
+n = 9790, loss = 963.2687376603433
+n = 9780, loss = 949.6661636662582
+n = 9770, loss = 937.2186852654925
+n = 9760, loss = 926.0324562117953
+n = 9750, loss = 915.9176962455202
+n = 9740, loss = 905.593842456396
+n = 9730, loss = 896.6773761220813
+n = 9720, loss = 888.0001613921792
+n = 9710, loss = 879.7408888870866
+n = 9700, loss = 871.9827217369708
+n = 9690, loss = 863.0336169059574
+n = 9680, loss = 855.1107893886619
+n = 9670, loss = 847.3979295896743
+n = 9660, loss = 839.9353525967642
+n = 9650, loss = 832.6174004536338
+n = 9640, loss = 825.6174738481168
+n = 9630, loss = 819.6501140281651
+n = 9620, loss = 814.1125913606697
+n = 9610, loss = 808.8557868101101
+n = 9600, loss = 803.9545632227416
+n = 9590, loss = 799.1999077489637
+n = 9580, loss = 794.0394381768172
+n = 9570, loss = 789.1527347857284
+n = 9560, loss = 784.8175573320016
+n = 9550, loss = 780.4167205639659
+n = 9540, loss = 775.8914891008501
+n = 9530, loss = 771.6324736284824
+n = 9520, loss = 767.3434539235153
+n = 9510, loss = 763.4242481509286
+n = 9500, loss = 759.5733450597879
+n = 9490, loss = 755.5709811812892
+n = 9480, loss = 751.8930692433019
+n = 9470, loss = 748.5500609625368
+n = 9460, loss = 745.3143230414194
+n = 9450, loss = 742.0781165073581
+n = 9440, loss = 738.7401071072359
+n = 9430, loss = 735.6324577968991
+n = 9420, loss = 732.3860098214026
+n = 9410, loss = 728.7606665586063
+n = 9400, loss = 725.1894431163929
+n = 9390, loss = 721.503435746749
+n = 9380, loss = 718.556697951667
+n = 9370, loss = 715.3242773306072
+n = 9360, loss = 712.6668967290491
+n = 9350, loss = 710.1264399794015
+n = 9340, loss = 707.5741060191258
+n = 9330, loss = 704.94589090227
+n = 9320, loss = 702.432731823145
+n = 9310, loss = 699.8050546915987
+n = 9300, loss = 697.4376259091998
+n = 9290, loss = 695.1463098097133
+n = 9280, loss = 692.2046438013817
+n = 9270, loss = 689.6511483069303
+n = 9260, loss = 687.1943025158588
+n = 9250, loss = 685.1743776056251
+n = 9240, loss = 683.2100099639277
+n = 9230, loss = 681.2779356781997
+n = 9220, loss = 679.3397892473977
+n = 9210, loss = 677.0067492605758
+n = 9200, loss = 674.6488498345909
+n = 9190, loss = 672.4695473554115
+n = 9180, loss = 670.5905675679443
+n = 9170, loss = 668.7540898630942
+n = 9160, loss = 666.7500809255324
+n = 9150, loss = 664.5871265177581
+n = 9140, loss = 662.5198595708046
+n = 9130, loss = 660.7773329743528
+n = 9120, loss = 659.110739029538
+n = 9110, loss = 657.4876357855405
+n = 9100, loss = 655.8934914582326
+n = 9090, loss = 654.3177095218382
+n = 9080, loss = 652.752924381625
+n = 9070, loss = 651.2023562011566
+n = 9060, loss = 649.6781605948719
+n = 9050, loss = 648.1862672800289
+n = 9040, loss = 646.7252590482491
+n = 9030, loss = 645.292079156768
+n = 9020, loss = 643.883824809255
+n = 9010, loss = 642.497212751158
+n = 9000, loss = 641.1253631716373
+n = 8990, loss = 639.7250665434608
+n = 8980, loss = 637.8230635297436
+n = 8970, loss = 636.3906558378387
+n = 8960, loss = 635.07066237963
+n = 8950, loss = 633.7861828818586
+n = 8940, loss = 632.5260015506517
+n = 8930, loss = 631.2855906248925
+n = 8920, loss = 630.0623971013185
+n = 8910, loss = 628.8547123897117
+n = 8900, loss = 627.6612757117092
+n = 8890, loss = 626.481088598861
+n = 8880, loss = 625.3132935361906
+n = 8870, loss = 624.1570376306504
+n = 8860, loss = 623.0111623094241
+n = 8850, loss = 621.873232679186
+n = 8840, loss = 620.7355133135553
+n = 8830, loss = 619.5471020575399
+n = 8820, loss = 617.4783047835431
+n = 8810, loss = 615.0947520219878
+n = 8800, loss = 613.2635605309544
+n = 8790, loss = 611.0429412409196
+n = 8780, loss = 609.704247113949
+n = 8770, loss = 608.505900855784
+n = 8760, loss = 607.4090952717152
+n = 8750, loss = 606.3494943653018
+n = 8740, loss = 605.3089312982457
+n = 8730, loss = 604.2773796587352
+n = 8720, loss = 603.235370158833
+n = 8710, loss = 602.1198509917923
+n = 8700, loss = 600.8083290868144
+n = 8690, loss = 599.4874781588803
+n = 8680, loss = 598.3325780853602
+n = 8670, loss = 597.3167112880253
+n = 8660, loss = 596.33930553118
+n = 8650, loss = 595.3154639122477
+n = 8640, loss = 593.9900578366389
+n = 8630, loss = 592.9311671328533
+n = 8620, loss = 591.8432564251794
+n = 8610, loss = 590.369050569823
+n = 8600, loss = 589.435089772916
+n = 8590, loss = 588.5652824000992
+n = 8580, loss = 587.718319625715
+n = 8570, loss = 586.8855838078046
+n = 8560, loss = 586.0618579494965
+n = 8550, loss = 585.2393545911995
+n = 8540, loss = 584.3951141168927
+n = 8530, loss = 583.4456413833609
+n = 8520, loss = 582.106244680593
+n = 8510, loss = 580.8326675548753
+n = 8500, loss = 579.9921068575655
+n = 8490, loss = 579.1993170631882
+n = 8480, loss = 578.4314150562118
+n = 8470, loss = 577.680564883005
+n = 8460, loss = 576.9430245856147
+n = 8450, loss = 576.2167319525863
+n = 8440, loss = 575.5006116741009
+n = 8430, loss = 574.7943320748452
+n = 8420, loss = 574.0978537831812
+n = 8410, loss = 573.4108165657483
+n = 8400, loss = 572.7322478481674
+n = 8390, loss = 572.0603869004403
+n = 8380, loss = 571.3913974610198
+n = 8370, loss = 570.7091945866458
+n = 8360, loss = 569.7898722153351
+n = 8350, loss = 568.7355580516928
+n = 8340, loss = 568.0431618118305
+n = 8330, loss = 567.3897946041739
+n = 8320, loss = 566.7546725664373
+n = 8310, loss = 566.1319221175982
+n = 8300, loss = 565.5189158362751
+n = 8290, loss = 564.9141612766582
+n = 8280, loss = 564.3167063744542
+n = 8270, loss = 563.7259509420132
+n = 8260, loss = 563.141594484991
+n = 8250, loss = 562.5635907691415
+n = 8240, loss = 561.992027921642
+n = 8230, loss = 561.4269508777306
+n = 8220, loss = 560.8682297998744
+n = 8210, loss = 560.3155317623153
+n = 8200, loss = 559.7683435764636
+n = 8190, loss = 559.2259444732525
+n = 8180, loss = 558.6871723607879
+n = 8170, loss = 558.1494030192018
+n = 8160, loss = 557.6024533161332
+n = 8150, loss = 556.930277845916
+n = 8140, loss = 555.824128625716
+n = 8130, loss = 555.2677287901209
+n = 8120, loss = 554.7358123756723
+n = 8110, loss = 554.1953193874144
+n = 8100, loss = 553.5685316191439
+n = 8090, loss = 552.6357430118273
+n = 8080, loss = 552.0198954003696
+n = 8070, loss = 551.4855499194695
+n = 8060, loss = 550.9669575669035
+n = 8050, loss = 550.4399444473562
+n = 8040, loss = 549.8065003350789
+n = 8030, loss = 549.0003149321057
+n = 8020, loss = 548.3950401628915
+n = 8010, loss = 547.8635631446699
+n = 8000, loss = 547.3625367124272
+n = 7990, loss = 546.8792871300452
+n = 7980, loss = 546.4088134052232
+n = 7970, loss = 545.9486303039432
+n = 7960, loss = 545.4972801761983
+n = 7950, loss = 545.0537741016316
+n = 7940, loss = 544.6173478304756
+n = 7930, loss = 544.1873596568778
+n = 7920, loss = 543.7632557252043
+n = 7910, loss = 543.3445610205948
+n = 7900, loss = 542.9308760482959
+n = 7890, loss = 542.5218728445035
+n = 7880, loss = 542.1172895046742
+n = 7870, loss = 541.716923460657
+n = 7860, loss = 541.3206235594446
+n = 7850, loss = 540.9282810155844
+n = 7840, loss = 540.539819642062
+n = 7830, loss = 540.1551860577382
+n = 7820, loss = 539.7743405731637
+n = 7810, loss = 539.3972492040155
+n = 7800, loss = 539.0238769393007
+n = 7790, loss = 538.6541821448526
+n = 7780, loss = 538.2881118391314
+n = 7770, loss = 537.9255974843971
+n = 7760, loss = 537.566550815229
+n = 7750, loss = 537.2108589963766
+n = 7740, loss = 536.858377958767
+n = 7730, loss = 536.5089219168852
+n = 7720, loss = 536.162245413051
+n = 7710, loss = 535.8180108233802
+n = 7700, loss = 535.4757268618933
+n = 7690, loss = 535.1346268664186
+n = 7680, loss = 534.7934169725168
+n = 7670, loss = 534.4497394897492
+n = 7660, loss = 534.0990679165669
+n = 7650, loss = 533.7330217258688
+n = 7640, loss = 533.3405203265187
+n = 7630, loss = 532.9227442316904
+n = 7620, loss = 532.5066358873123
+n = 7610, loss = 532.1140950074421
+n = 7600, loss = 531.744774388446
+n = 7590, loss = 531.3917124274935
+n = 7580, loss = 531.0496152594543
+n = 7570, loss = 530.7153350196937
+n = 7560, loss = 530.3870345538456
+n = 7550, loss = 530.0635834552824
+n = 7540, loss = 529.744231408954
+n = 7530, loss = 529.4284409320741
+n = 7520, loss = 529.1158009844343
+n = 7510, loss = 528.8059816672372
+n = 7500, loss = 528.4987117139677
+n = 7490, loss = 528.1937710414898
+n = 7480, loss = 527.8909951674714
+n = 7470, loss = 527.5902884480961
+n = 7460, loss = 527.2916388690791
+n = 7450, loss = 526.9951206314731
+n = 7440, loss = 526.7008699783361
+n = 7430, loss = 526.4090334894427
+n = 7420, loss = 526.1197097563761
+n = 7410, loss = 525.8329116008207
+n = 7400, loss = 525.5485582802697
+n = 7390, loss = 525.266486278998
+n = 7380, loss = 524.9864623941463
+n = 7370, loss = 524.7081906608267
+n = 7360, loss = 524.431315006601
+n = 7350, loss = 524.1554298984056
+n = 7340, loss = 523.8801238741089
+n = 7330, loss = 523.6050891119972
+n = 7320, loss = 523.3303010796375
+n = 7310, loss = 523.0561684390761
+n = 7300, loss = 522.7834651331323
+n = 7290, loss = 522.5130118645227
+n = 7280, loss = 522.245364600724
+n = 7270, loss = 521.9807342776378
+n = 7260, loss = 521.7190838014532
+n = 7250, loss = 521.4602513264682
+n = 7240, loss = 521.2040301737962
+n = 7230, loss = 520.9502065872674
+n = 7220, loss = 520.6985735362471
+n = 7210, loss = 520.4489337610603
+n = 7200, loss = 520.2010986951312
+n = 7190, loss = 519.9548860670075
+n = 7180, loss = 519.7101171155094
+n = 7170, loss = 519.4666133424444
+n = 7160, loss = 519.2241918927822
+n = 7150, loss = 518.9826574718584
+n = 7140, loss = 518.7417864024667
+n = 7130, loss = 518.5012931065239
+n = 7120, loss = 518.2607554209663
+n = 7110, loss = 518.01943403366
+n = 7100, loss = 517.7757813214662
+n = 7090, loss = 517.5258843754234
+n = 7080, loss = 517.2577729510862
+n = 7070, loss = 516.9355194528322
+n = 7060, loss = 516.5512025826444
+n = 7050, loss = 516.2171187170642
+n = 7040, loss = 515.9329179583633
+n = 7030, loss = 515.6704134463366
+n = 7020, loss = 515.4188341524036
+n = 7010, loss = 515.1739677897148
+n = 7000, loss = 514.9338581949164
+n = 6990, loss = 514.6974662420108
+n = 6980, loss = 514.464176310381
+n = 6970, loss = 514.2335869653608
+n = 6960, loss = 514.0054146790849
+n = 6950, loss = 513.7794470124073
+n = 6940, loss = 513.5555186574833
+n = 6930, loss = 513.3334985162331
+n = 6920, loss = 513.1132822919689
+n = 6910, loss = 512.8947878259611
+n = 6900, loss = 512.677951645478
+n = 6890, loss = 512.4627257965275
+n = 6880, loss = 512.2490744205012
+n = 6870, loss = 512.0369698649092
+n = 6860, loss = 511.8263884225784
+n = 6850, loss = 511.6173060147906
+n = 6840, loss = 511.409694204904
+n = 6830, loss = 511.20351683536836
+n = 6820, loss = 510.998727377463
+n = 6810, loss = 510.7952668599215
+n = 6800, loss = 510.59306206883264
+n = 6790, loss = 510.39202360187113
+n = 6780, loss = 510.19204328288765
+n = 6770, loss = 509.9929903333596
+n = 6760, loss = 509.79470546650225
+n = 6750, loss = 509.59699155176975
+n = 6740, loss = 509.3995982763663
+n = 6730, loss = 509.20219502471656
+n = 6720, loss = 509.0043165787652
+n = 6710, loss = 508.80523285187405
+n = 6700, loss = 508.60355519323986
+n = 6690, loss = 508.39563753255095
+n = 6680, loss = 508.1652916986267
+n = 6670, loss = 507.7402661546461
+n = 6660, loss = 507.06899156732254
+n = 6650, loss = 506.81911869187593
+n = 6640, loss = 506.5980903622075
+n = 6630, loss = 506.3806274879952
+n = 6620, loss = 506.164285353141
+n = 6610, loss = 505.94935434657236
+n = 6600, loss = 505.73617309843206
+n = 6590, loss = 505.5244115393083
+n = 6580, loss = 505.3133800675392
+n = 6570, loss = 505.10268635889275
+n = 6560, loss = 504.89294046655925
+n = 6550, loss = 504.6860764553401
+n = 6540, loss = 504.48430321164346
+n = 6530, loss = 504.28835652824574
+n = 6520, loss = 504.0974581344537
+n = 6510, loss = 503.9102895888863
+n = 6500, loss = 503.72539492131733
+n = 6490, loss = 503.54084337137937
+n = 6480, loss = 503.352471987892
+n = 6470, loss = 503.14279382233667
+n = 6460, loss = 502.7132949156115
+n = 6450, loss = 502.1189661662933
+n = 6440, loss = 501.88854671800084
+n = 6430, loss = 501.6957840343563
+n = 6420, loss = 501.51550304890395
+n = 6410, loss = 501.3414389807729
+n = 6400, loss = 501.17115011300257
+n = 6390, loss = 501.00339809842416
+n = 6380, loss = 500.83740532842955
+n = 6370, loss = 500.67255432314766
+n = 6360, loss = 500.5082008825767
+n = 6350, loss = 500.3434647900992
+n = 6340, loss = 500.17684344373384
+n = 6330, loss = 500.0052861928217
+n = 6320, loss = 499.8217652982968
+n = 6310, loss = 499.61044547845745
+n = 6300, loss = 499.35643802867503
+n = 6290, loss = 499.1005238213255
+n = 6280, loss = 498.8808543765711
+n = 6270, loss = 498.6859739595535
+n = 6260, loss = 498.50478694006586
+n = 6250, loss = 498.3320527766584
+n = 6240, loss = 498.1650787488973
+n = 6230, loss = 498.0023045089437
+n = 6220, loss = 497.84274376679406
+n = 6210, loss = 497.68573318432715
+n = 6200, loss = 497.53080534466665
+n = 6190, loss = 497.37761880289224
+n = 6180, loss = 497.2259171721199
+n = 6170, loss = 497.07550404618314
+n = 6160, loss = 496.92622692705766
+n = 6150, loss = 496.7779663321308
+n = 6140, loss = 496.6306278061587
+n = 6130, loss = 496.4841354457954
+n = 6120, loss = 496.338426099595
+n = 6110, loss = 496.1934437665357
+n = 6100, loss = 496.0491339100141
+n = 6090, loss = 495.9054374224059
+n = 6080, loss = 495.76228379696806
+n = 6070, loss = 495.6195826486659
+n = 6060, loss = 495.4772119640987
+n = 6050, loss = 495.33500005713717
+n = 6040, loss = 495.1926954291237
+n = 6030, loss = 495.0499127774529
+n = 6020, loss = 494.90602962881866
+n = 6010, loss = 494.759973820136
+n = 6000, loss = 494.6097505892523
+n = 5990, loss = 494.45130256087214
+n = 5980, loss = 494.27564756620103
+n = 5970, loss = 494.0630864547171
+n = 5960, loss = 493.7892318559714
+n = 5950, loss = 493.49044259605796
+n = 5940, loss = 493.2330671704066
+n = 5930, loss = 493.01472830804664
+n = 5920, loss = 492.8131976744389
+n = 5910, loss = 492.5973478206745
+n = 5900, loss = 492.32690522337987
+n = 5890, loss = 492.0647558104797
+n = 5880, loss = 491.8627006052851
+n = 5870, loss = 491.6886440129978
+n = 5860, loss = 491.5282285054725
+n = 5850, loss = 491.37626471553403
+n = 5840, loss = 491.23022048524064
+n = 5830, loss = 491.08861115327073
+n = 5820, loss = 490.9504679966936
+n = 5810, loss = 490.81511182802416
+n = 5800, loss = 490.68203863540265
+n = 5790, loss = 490.5508548586845
+n = 5780, loss = 490.42123848225117
+n = 5770, loss = 490.29291526784203
+n = 5760, loss = 490.1656445788842
+n = 5750, loss = 490.03921156626984
+n = 5740, loss = 489.91342354984505
+n = 5730, loss = 489.78810873594443
+n = 5720, loss = 489.6631152250303
+n = 5710, loss = 489.5383078865859
+n = 5700, loss = 489.4135604577394
+n = 5690, loss = 489.2887403482674
+n = 5680, loss = 489.16368381025853
+n = 5670, loss = 489.0381584157396
+n = 5660, loss = 488.91180709976504
+n = 5650, loss = 488.78406425960156
+n = 5640, loss = 488.65404068582626
+n = 5630, loss = 488.52044243888844
+n = 5620, loss = 488.38186223375004
+n = 5610, loss = 488.2381640125125
+n = 5600, loss = 488.0923079983107
+n = 5590, loss = 487.9487931597407
+n = 5580, loss = 487.80988487995495
+n = 5570, loss = 487.6754387106012
+n = 5560, loss = 487.5445895835025
+n = 5550, loss = 487.4165560578841
+n = 5540, loss = 487.29076666678645
+n = 5530, loss = 487.1668163402492
+n = 5520, loss = 487.04441289136196
+n = 5510, loss = 486.92333936890367
+n = 5500, loss = 486.8034303175958
+n = 5490, loss = 486.6845570871894
+n = 5480, loss = 486.5666185100076
+n = 5470, loss = 486.44953457562195
+n = 5460, loss = 486.3332416507598
+n = 5450, loss = 486.2176883802116
+n = 5440, loss = 486.10283175196975
+n = 5430, loss = 485.98863294370346
+n = 5420, loss = 485.8750524448519
+n = 5410, loss = 485.7620434563048
+n = 5400, loss = 485.6495414856158
+n = 5390, loss = 485.5374458950304
+n = 5380, loss = 485.4255848920408
+n = 5370, loss = 485.31364752554043
+n = 5360, loss = 485.2010564098415
+n = 5350, loss = 485.0867724998826
+n = 5340, loss = 484.96920280857205
+n = 5330, loss = 484.8468723110385
+n = 5320, loss = 484.72016461686906
+n = 5310, loss = 484.59160296070604
+n = 5300, loss = 484.4633426968262
+n = 5290, loss = 484.3354645000098
+n = 5280, loss = 484.20524303915573
+n = 5270, loss = 484.0618900147249
+n = 5260, loss = 483.83881868251837
+n = 5250, loss = 483.2989343485129
+n = 5240, loss = 483.03969464147025
+n = 5230, loss = 482.8927551946437
+n = 5220, loss = 482.7668022827976
+n = 5210, loss = 482.6485634416054
+n = 5200, loss = 482.53431046260675
+n = 5190, loss = 482.42256720444976
+n = 5180, loss = 482.3126429285951
+n = 5170, loss = 482.204172756351
+n = 5160, loss = 482.0969400456031
+n = 5150, loss = 481.9908010606205
+n = 5140, loss = 481.8856509104366
+n = 5130, loss = 481.78140727487477
+n = 5120, loss = 481.6780022918428
+n = 5110, loss = 481.57537842758245
+n = 5100, loss = 481.47348638788003
+n = 5090, loss = 481.37228407626833
+n = 5080, loss = 481.27173601761666
+n = 5070, loss = 481.17181286050646
+n = 5060, loss = 481.07249069434823
+n = 5050, loss = 480.97375003691246
+n = 5040, loss = 480.8755744815064
+n = 5030, loss = 480.77794911916027
+n = 5020, loss = 480.6808589256173
+n = 5010, loss = 480.58428728644014
+n = 5000, loss = 480.48821472207686
+n = 4990, loss = 480.39261769974735
+n = 4980, loss = 480.29746722709723
+n = 4970, loss = 480.20272674019577
+n = 4960, loss = 480.1083485816264
+n = 4950, loss = 480.0142679571266
+n = 4940, loss = 479.9203922767068
+n = 4930, loss = 479.82658129596894
+n = 4920, loss = 479.73260683397405
+n = 4910, loss = 479.63806115876025
+n = 4900, loss = 479.54211426265493
+n = 4890, loss = 479.4427138949691
+n = 4880, loss = 479.3328425765973
+n = 4870, loss = 479.1661094278149
+n = 4860, loss = 478.50445530444745
+n = 4850, loss = 478.2856264401376
+n = 4840, loss = 478.1680896589356
+n = 4830, loss = 478.06733197932687
+n = 4820, loss = 477.9728739226298
+n = 4810, loss = 477.8815212247857
+n = 4800, loss = 477.7919929497166
+n = 4790, loss = 477.7036788246919
+n = 4780, loss = 477.61625070489663
+n = 4770, loss = 477.5295153022049
+n = 4760, loss = 477.4433502443947
+n = 4750, loss = 477.3576733951497
+n = 4740, loss = 477.272427006909
+n = 4730, loss = 477.1875691090073
+n = 4720, loss = 477.10306869591534
+n = 4710, loss = 477.01890302261694
+n = 4700, loss = 476.9350560909061
+n = 4690, loss = 476.85151777610884
+n = 4680, loss = 476.768283233804
+n = 4670, loss = 476.68535234484864
+n = 4660, loss = 476.60272905213594
+n = 4650, loss = 476.52042052826573
+n = 4640, loss = 476.43843618752936
+n = 4630, loss = 476.3567866098475
+n = 4620, loss = 476.27548247136707
+n = 4610, loss = 476.1945335761593
+n = 4600, loss = 476.11394806313416
+n = 4590, loss = 476.03373183173676
+n = 4580, loss = 475.9538882001319
+n = 4570, loss = 475.87441778605273
+n = 4560, loss = 475.7953185862611
+n = 4550, loss = 475.7165862242575
+n = 4540, loss = 475.6382143351195
+n = 4530, loss = 475.5601950591798
+n = 4520, loss = 475.4825196186126
+n = 4510, loss = 475.40517895263156
+n = 4500, loss = 475.3281643834915
+n = 4490, loss = 475.2514682774843
+n = 4480, loss = 475.17508465130487
+n = 4470, loss = 475.0990096589343
+n = 4460, loss = 475.0232418841189
+n = 4450, loss = 474.94778236866057
+n = 4440, loss = 474.8726343355316
+n = 4430, loss = 474.79780262024883
+n = 4420, loss = 474.7232928915996
+n = 4410, loss = 474.6491108015866
+n = 4400, loss = 474.57526122838016
+n = 4390, loss = 474.50174775208245
+n = 4380, loss = 474.42857243999293
+n = 4370, loss = 474.3557359398657
+n = 4360, loss = 474.28323781545765
+n = 4350, loss = 474.2110770241037
+n = 4340, loss = 474.1392524335315
+n = 4330, loss = 474.06776329333087
+n = 4320, loss = 473.9966096044323
+n = 4310, loss = 473.92579235713674
+n = 4300, loss = 473.8553136297986
+n = 4290, loss = 473.7851765559505
+n = 4280, loss = 473.7153851758415
+n = 4270, loss = 473.6459441921352
+n = 4260, loss = 473.57685864817233
+n = 4250, loss = 473.50813354353375
+n = 4240, loss = 473.43977339815876
+n = 4230, loss = 473.37178177412255
+n = 4220, loss = 473.3041607663481
+n = 4210, loss = 473.2369104774011
+n = 4200, loss = 473.17002849546066
+n = 4190, loss = 473.1035093939475
+n = 4180, loss = 473.03734426434016
+n = 4170, loss = 472.9715202811386
+n = 4160, loss = 472.90602028368295
+n = 4150, loss = 472.84082234818777
+n = 4140, loss = 472.77589932141285
+n = 4130, loss = 472.7112182989907
+n = 4120, loss = 472.6467400642897
+n = 4110, loss = 472.5824185693231
+n = 4100, loss = 472.5182006575299
+n = 4090, loss = 472.45402643069156
+n = 4080, loss = 472.3898309702988
+n = 4070, loss = 472.3255485018582
+n = 4060, loss = 472.2611202932659
+n = 4050, loss = 472.19650696267917
+n = 4040, loss = 472.1317034831534
+n = 4030, loss = 472.0667509242843
+n = 4020, loss = 472.0017359161848
+n = 4010, loss = 471.936772718255
+n = 4000, loss = 471.8719743594114
+n = 3990, loss = 471.8074280222635
+n = 3980, loss = 471.7431854150152
+n = 3970, loss = 471.67926691798016
+n = 3960, loss = 471.61567161186707
+n = 3950, loss = 471.5523867661301
+n = 3940, loss = 471.4893944391455
+n = 3930, loss = 471.4266753828524
+n = 3920, loss = 471.36421113871216
+n = 3910, loss = 471.3019850698302
+n = 3900, loss = 471.2399827896617
+n = 3890, loss = 471.1781922460064
+n = 3880, loss = 471.1166036101739
+n = 3870, loss = 471.0552090669981
+n = 3860, loss = 470.9940025730552
+n = 3850, loss = 470.93297963046524
+n = 3840, loss = 470.8721371074324
+n = 3830, loss = 470.81147312034125
+n = 3820, loss = 470.75098697671564
+n = 3810, loss = 470.69067916199975
+n = 3800, loss = 470.63055133812543
+n = 3790, loss = 470.5706063073679
+n = 3780, loss = 470.510847885881
+n = 3770, loss = 470.4512806297735
+n = 3760, loss = 470.3919093682067
+n = 3750, loss = 470.3327385233581
+n = 3740, loss = 470.27377123556437
+n = 3730, loss = 470.215008354523
+n = 3720, loss = 470.1564473949844
+n = 3710, loss = 470.0980815764636
+n = 3700, loss = 470.0398990682533
+n = 3690, loss = 469.98188254635124
+n = 3680, loss = 469.92400914767757
+n = 3670, loss = 469.866250888059
+n = 3660, loss = 469.80857559595927
+n = 3650, loss = 469.75094839792746
+n = 3640, loss = 469.6933337575024
+n = 3630, loss = 469.6356980018651
+n = 3620, loss = 469.5780121628458
+n = 3610, loss = 469.5202548262208
+n = 3600, loss = 469.4624145673952
+n = 3590, loss = 469.40449151517305
+n = 3580, loss = 469.34649767591173
+n = 3570, loss = 469.2884558746925
+n = 3560, loss = 469.2303974649253
+n = 3550, loss = 469.1723592208401
+n = 3540, loss = 469.1143799630628
+n = 3530, loss = 469.05649744249934
+n = 3520, loss = 468.9987458559731
+n = 3510, loss = 468.9411541638593
+n = 3500, loss = 468.8837451974241
+n = 3490, loss = 468.8265354224616
+n = 3480, loss = 468.769535173783
+n = 3470, loss = 468.71274917518735
+n = 3460, loss = 468.6561771908947
+n = 3450, loss = 468.5998146964076
+n = 3440, loss = 468.543653497078
+n = 3430, loss = 468.4876822568421
+n = 3420, loss = 468.4318869249568
+n = 3410, loss = 468.3762510688163
+n = 3400, loss = 468.3207561375943
+n = 3390, loss = 468.26538169854524
+n = 3380, loss = 468.2101057067337
+n = 3370, loss = 468.1549048908723
+n = 3360, loss = 468.0997553582668
+n = 3350, loss = 468.0446335300476
+n = 3340, loss = 467.98951749583136
+n = 3330, loss = 467.9343888002821
+n = 3320, loss = 467.87923452916203
+n = 3310, loss = 467.8240493689124
+n = 3300, loss = 467.7688371447471
+n = 3290, loss = 467.71361131143
+n = 3280, loss = 467.65839406002465
+n = 3270, loss = 467.6032140787479
+n = 3260, loss = 467.54810340260366
+n = 3250, loss = 467.49309401294346
+n = 3240, loss = 467.43821481822306
+n = 3230, loss = 467.38348942708507
+n = 3220, loss = 467.328934851673
+n = 3210, loss = 467.2745610652696
+n = 3200, loss = 467.22037122313304
+n = 3190, loss = 467.1663623241055
+n = 3180, loss = 467.1125261088372
+n = 3170, loss = 467.05885002964607
+n = 3160, loss = 467.00531817138443
+n = 3150, loss = 466.95191204553646
+n = 3140, loss = 466.89861122552173
+n = 3130, loss = 466.84539384179567
+n = 3120, loss = 466.7922370173435
+n = 3110, loss = 466.73911739604574
+n = 3100, loss = 466.68601198799513
+n = 3090, loss = 466.63289959891677
+n = 3080, loss = 466.5797630658059
+n = 3070, loss = 466.52659230006964
+n = 3060, loss = 466.4733876646813
+n = 3050, loss = 466.4201625427851
+n = 3040, loss = 466.36694344370426
+n = 3030, loss = 466.3137662536707
+n = 3020, loss = 466.26066863224105
+n = 3010, loss = 466.20768048949697
+n = 3000, loss = 466.15481555121175
+n = 2990, loss = 466.1020663706042
+n = 2980, loss = 466.0494034536597
+n = 2970, loss = 465.9967778689899
+n = 2960, loss = 465.944126523033
+n = 2950, loss = 465.89137977219747
+n = 2940, loss = 465.8384713004067
+n = 2930, loss = 465.7853495408349
+n = 2920, loss = 465.7319884337498
+n = 2910, loss = 465.67839404721474
+n = 2900, loss = 465.6246040791677
+n = 2890, loss = 465.57067997549296
+n = 2880, loss = 465.5166947000771
+n = 2870, loss = 465.462720647011
+n = 2860, loss = 465.408821041037
+n = 2850, loss = 465.3550458202418
+n = 2840, loss = 465.30143118453947
+n = 2830, loss = 465.2480013663068
+n = 2820, loss = 465.1947713897501
+n = 2810, loss = 465.14175006525625
+n = 2800, loss = 465.0889428711373
+n = 2790, loss = 465.0363546079975
+n = 2780, loss = 464.98399179044435
+n = 2770, loss = 464.93186471679155
+n = 2760, loss = 464.8799890759249
+n = 2750, loss = 464.8283868620945
+n = 2740, loss = 464.7770863321311
+n = 2730, loss = 464.726120818231
+n = 2720, loss = 464.67552643081564
+n = 2710, loss = 464.6253389981448
+n = 2700, loss = 464.57559085529317
+n = 2690, loss = 464.52630816423925
+n = 2680, loss = 464.4775092643314
+n = 2670, loss = 464.4292042100025
+n = 2660, loss = 464.38139532186864
+n = 2650, loss = 464.3340783896457
+n = 2640, loss = 464.2872441455775
+n = 2630, loss = 464.24087971692734
+n = 2620, loss = 464.19496988976545
+n = 2610, loss = 464.14949811976294
+n = 2600, loss = 464.10444729254056
+n = 2590, loss = 464.0598002685589
+n = 2580, loss = 464.0155402570885
+n = 2570, loss = 463.97165106196013
+n = 2560, loss = 463.92811723431294
+n = 2550, loss = 463.8849241595786
+n = 2540, loss = 463.84205809900556
+n = 2530, loss = 463.7995062001246
+n = 2520, loss = 463.75725648628134
+n = 2510, loss = 463.71529783228
+n = 2500, loss = 463.67361993085444
+n = 2490, loss = 463.63221325308956
+n = 2480, loss = 463.59106900492617
+n = 2470, loss = 463.55017908116565
+n = 2460, loss = 463.5095360177596
+n = 2450, loss = 463.46913294314487
+n = 2440, loss = 463.42896352902386
+n = 2430, loss = 463.3890219411921
+n = 2420, loss = 463.34930279066947
+n = 2410, loss = 463.3098010858415
+n = 2400, loss = 463.27051218592453
+n = 2390, loss = 463.2314317565244
+n = 2380, loss = 463.19255572755753
+n = 2370, loss = 463.15388025427745
+n = 2360, loss = 463.1154016816567
+n = 2350, loss = 463.0771165124629
+n = 2340, loss = 463.03902137928486
+n = 2330, loss = 463.00111302051664
+n = 2320, loss = 462.96338826016586
+n = 2310, loss = 462.92584399142356
+n = 2300, loss = 462.8884771635846
+n = 2290, loss = 462.8512847719541
+n = 2280, loss = 462.8142638503648
+n = 2270, loss = 462.77741146576005
+n = 2260, loss = 462.7407247144312
+n = 2250, loss = 462.7042007194652
+n = 2240, loss = 462.66783662892095
+n = 2230, loss = 462.6316296144019
+n = 2220, loss = 462.59557686976103
+n = 2210, loss = 462.5596756094975
+n = 2200, loss = 462.52392306680474
+n = 2190, loss = 462.4883164909665
+n = 2180, loss = 462.45285314406624
+n = 2170, loss = 462.4175302967585
+n = 2160, loss = 462.38234522318214
+n = 2150, loss = 462.34729519481414
+n = 2140, loss = 462.31237747326225
+n = 2130, loss = 462.2775893018231
+n = 2120, loss = 462.24292789576316
+n = 2110, loss = 462.20839043115654
+n = 2100, loss = 462.17397403208446
+n = 2090, loss = 462.1396757559112
+n = 2080, loss = 462.10549257649296
+n = 2070, loss = 462.0714213648263
+n = 2060, loss = 462.03745886679684
+n = 2050, loss = 462.0036016775837
+n = 2040, loss = 461.96984621223885
+n = 2030, loss = 461.9361886717702
+n = 2020, loss = 461.90262500433516
+n = 2010, loss = 461.8691508609506
+n = 2000, loss = 461.8357615451778
+n = 1990, loss = 461.80245195681283
+n = 1980, loss = 461.7692165294126
+n = 1970, loss = 461.7360491626142
+n = 1960, loss = 461.70294315069737
+n = 1950, loss = 461.6698911104709
+n = 1940, loss = 461.63688491327633
+n = 1930, loss = 461.6039156285818
+n = 1920, loss = 461.5709734897889
+n = 1910, loss = 461.53804789671983
+n = 1900, loss = 461.5051274731811
+n = 1890, loss = 461.47220020102674
+n = 1880, loss = 461.43925365292995
+n = 1870, loss = 461.40627534236813
+n = 1860, loss = 461.37325319871155
+n = 1850, loss = 461.3401761560208
+n = 1840, loss = 461.3070348168797
+n = 1830, loss = 461.2738221206917
+n = 1820, loss = 461.24053391887503
+n = 1810, loss = 461.2071693481699
+n = 1800, loss = 461.1737309082363
+n = 1790, loss = 461.1402241930979
+n = 1780, loss = 461.10665728964767
+n = 1770, loss = 461.0730399207252
+n = 1760, loss = 461.03938245589427
+n = 1750, loss = 461.0056949262163
+n = 1740, loss = 460.9719861609519
+n = 1730, loss = 460.9382631255654
+n = 1720, loss = 460.9045304968293
+n = 1710, loss = 460.87079047520547
+n = 1700, loss = 460.83704281271287
+n = 1690, loss = 460.80328502527294
+n = 1680, loss = 460.7695127582278
+n = 1670, loss = 460.7357202762273
+n = 1660, loss = 460.7019010494907
+n = 1650, loss = 460.66804840483763
+n = 1640, loss = 460.63415620114745
+n = 1630, loss = 460.6002194780352
+n = 1620, loss = 460.5662350167984
+n = 1610, loss = 460.5322017509865
+n = 1600, loss = 460.4981209740611
+n = 1590, loss = 460.4639963151071
+n = 1580, loss = 460.42983348753256
+n = 1570, loss = 460.39563985189295
+n = 1560, loss = 460.3614238628747
+n = 1550, loss = 460.32719448453673
+n = 1540, loss = 460.29296065371096
+n = 1530, loss = 460.25873085289004
+n = 1520, loss = 460.2245128267556
+n = 1510, loss = 460.19031344900804
+n = 1500, loss = 460.15613872389144
+n = 1490, loss = 460.1219938923856
+n = 1480, loss = 460.08788360657263
+n = 1470, loss = 460.0538121356931
+n = 1460, loss = 460.0197835713224
+n = 1450, loss = 459.98580200578755
+n = 1440, loss = 459.9518716657107
+n = 1430, loss = 459.9179969908437
+n = 1420, loss = 459.88418265646385
+n = 1410, loss = 459.8504335448897
+n = 1400, loss = 459.8167546774562
+n = 1390, loss = 459.7831511219322
+n = 1380, loss = 459.74962789110384
+n = 1370, loss = 459.71618984721187
+n = 1360, loss = 459.6828416227881
+n = 1350, loss = 459.6495875646319
+n = 1340, loss = 459.6164317023838
+n = 1330, loss = 459.5833777398079
+n = 1320, loss = 459.5504290638356
+n = 1310, loss = 459.517588765144
+n = 1300, loss = 459.4848596640142
+n = 1290, loss = 459.4522443357378
+n = 1280, loss = 459.4197451310816
+n = 1270, loss = 459.38736418892717
+n = 1260, loss = 459.35510343938
+n = 1250, loss = 459.3229645970554
+n = 1240, loss = 459.29094914519425
+n = 1230, loss = 459.2590583118122
+n = 1220, loss = 459.22729303977536
+n = 1210, loss = 459.1956539525805
+n = 1200, loss = 459.16414131787604
+n = 1190, loss = 459.132755010359
+n = 1180, loss = 459.10149447583825
+n = 1170, loss = 459.0703586976878
+n = 1160, loss = 459.039346167086
+n = 1150, loss = 459.0084548581021
+n = 1140, loss = 458.97768220890333
+n = 1130, loss = 458.94702511046466
+n = 1120, loss = 458.91647990427003
+n = 1110, loss = 458.8860423910434
+n = 1100, loss = 458.8557078527482
+n = 1090, loss = 458.8254710903069
+n = 1080, loss = 458.7953264798936
+n = 1070, loss = 458.76526805014026
+n = 1060, loss = 458.73528958233175
+n = 1050, loss = 458.7053847344178
+n = 1040, loss = 458.6755471879955
+n = 1030, loss = 458.645770815099
+n = 1020, loss = 458.61604985891097
+n = 1010, loss = 458.5863791195939
+n = 1000, loss = 458.5567541336743
+n = 990, loss = 458.5271713337146
+n = 980, loss = 458.4976281744611
+n = 970, loss = 458.46812321279486
+n = 960, loss = 458.4386561320824
+n = 950, loss = 458.40922770604334
+n = 940, loss = 458.3798397029741
+n = 930, loss = 458.35049473690634
+n = 920, loss = 458.3211960769532
+n = 910, loss = 458.2919474296345
+n = 900, loss = 458.26275271006625
+n = 890, loss = 458.2336158170959
+n = 880, loss = 458.20454042514456
+n = 870, loss = 458.1755298019359
+n = 860, loss = 458.146586657424
+n = 850, loss = 458.11771302565904
+n = 840, loss = 458.08891017787823
+n = 830, loss = 458.0601785631982
+n = 820, loss = 458.0315177715211
+n = 810, loss = 458.002926512649
+n = 800, loss = 457.97440260528043
+n = 790, loss = 457.9459429700542
+n = 780, loss = 457.9175436209557
+n = 770, loss = 457.88919965004675
+n = 760, loss = 457.8609052010055
+n = 750, loss = 457.83265342736706
+n = 740, loss = 457.8044364316588
+n = 730, loss = 457.7762451821943
+n = 720, loss = 457.74806940441476
+n = 710, loss = 457.7198974441672
+n = 700, loss = 457.691716101287
+n = 690, loss = 457.66351043271527
+n = 680, loss = 457.63526352655487
+n = 670, loss = 457.6069562511756
+n = 660, loss = 457.57856698806654
+n = 650, loss = 457.55007136373337
+n = 640, loss = 457.5214420056573
+n = 630, loss = 457.4926483624317
+n = 620, loss = 457.4636566495964
+n = 610, loss = 457.434430014793
+n = 600, loss = 457.40492905830564
+n = 590, loss = 457.37511289339136
+n = 580, loss = 457.34494096479824
+n = 570, loss = 457.31437581819023
+n = 560, loss = 457.28338685998153
+n = 550, loss = 457.2519548109593
+n = 540, loss = 457.2200760759696
+n = 530, loss = 457.18776583496816
+n = 520, loss = 457.1550586442728
+n = 510, loss = 457.12200593560897
+n = 500, loss = 457.08867083070834
+n = 490, loss = 457.05512159417765
+n = 480, loss = 457.0214253266023
+n = 470, loss = 456.987643099919
+n = 460, loss = 456.95382701726436
+n = 450, loss = 456.92001905605593
+n = 440, loss = 456.88625122669487
+n = 430, loss = 456.85254652506336
+n = 420, loss = 456.8189202539372
+n = 410, loss = 456.7853814286534
+n = 400, loss = 456.7519341044491
+n = 390, loss = 456.7185785494531
+n = 380, loss = 456.68531223907127
+n = 370, loss = 456.6521306747973
+n = 360, loss = 456.61902804083104
+n = 350, loss = 456.5859977133174
+n = 340, loss = 456.55303263331484
+n = 330, loss = 456.5201255487915
+n = 320, loss = 456.48726912601626
+n = 310, loss = 456.4544559276802
+n = 300, loss = 456.42167825613876
+n = 290, loss = 456.38892786645897
+n = 280, loss = 456.3561955659095
+n = 270, loss = 456.323470735209
+n = 260, loss = 456.29074083119104
+n = 250, loss = 456.25799095928534
+n = 240, loss = 456.2252036348682
+n = 230, loss = 456.1923588748507
+n = 220, loss = 456.15943476165825
+n = 210, loss = 456.12640857512054
+n = 200, loss = 456.09325847195163
+n = 190, loss = 456.0599655030632
+n = 180, loss = 456.0265155400457
+n = 170, loss = 455.9929005383419
+n = 160, loss = 455.95911861940675
+n = 150, loss = 455.9251727634018
+n = 140, loss = 455.89106837026765
+n = 130, loss = 455.8568103493671
+n = 120, loss = 455.82240053379655
+n = 110, loss = 455.7878360467377
+n = 100, loss = 455.7531089058653
+n = 90, loss = 455.7182068225256
+n = 80, loss = 455.6831149486843
+n = 70, loss = 455.64781825536915
+n = 60, loss = 455.6123042372168
+n = 50, loss = 455.57656566525384
+n = 40, loss = 455.54060311341925
+n = 30, loss = 455.50442695668494
+n = 20, loss = 455.468058502526
+n = 10, loss = 455.43152992428384</code></pre>
+</div>
+</div>
+<div id="7b1f5497-c8b7-4f79-9291-8347ec8258f1" class="cell" data-execution_count="13">
+<div class="sourceCode cell-code" id="cb28"><pre class="sourceCode haskell code-with-copy"><code class="sourceCode haskell"><span id="cb28-1"><a href="#cb28-1" aria-hidden="true" tabindex="-1"></a>stateToImage <span class="op">$</span> unZ2 <span class="op">$</span> <span class="fu">fmap</span> (<span class="op">&gt;</span> <span class="fl">0.5</span>) result</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-display">
+<div>
+<figure class="figure">
+<p><img src="index_files/figure-html/cell-23-output-1.png" class="img-fluid figure-img"></p>
+</figure>
+</div>
+</div>
+</div>
+<div id="ca2a81a1-d43b-4db3-ae83-b708535f2ebe" class="cell" data-execution_count="14">
+<div class="sourceCode cell-code" id="cb29"><pre class="sourceCode haskell code-with-copy"><code class="sourceCode haskell"><span id="cb29-1"><a href="#cb29-1" aria-hidden="true" tabindex="-1"></a>stateToImage <span class="op">$</span> unZ2 <span class="op">$</span> extend life <span class="op">$</span> <span class="fu">fmap</span> (<span class="op">&gt;</span> <span class="fl">0.5</span>) result</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-display">
+<div>
+<figure class="figure">
+<p><img src="index_files/figure-html/cell-24-output-1.png" class="img-fluid figure-img"></p>
+</figure>
+</div>
+</div>
+</div>
+
+
+</section>
+
+</main> <!-- /main -->
+<script id="quarto-html-after-body" type="application/javascript">
+window.document.addEventListener("DOMContentLoaded", function (event) {
+  const toggleBodyColorMode = (bsSheetEl) => {
+    const mode = bsSheetEl.getAttribute("data-mode");
+    const bodyEl = window.document.querySelector("body");
+    if (mode === "dark") {
+      bodyEl.classList.add("quarto-dark");
+      bodyEl.classList.remove("quarto-light");
+    } else {
+      bodyEl.classList.add("quarto-light");
+      bodyEl.classList.remove("quarto-dark");
+    }
+  }
+  const toggleBodyColorPrimary = () => {
+    const bsSheetEl = window.document.querySelector("link#quarto-bootstrap");
+    if (bsSheetEl) {
+      toggleBodyColorMode(bsSheetEl);
+    }
+  }
+  toggleBodyColorPrimary();  
+  const icon = "";
+  const anchorJS = new window.AnchorJS();
+  anchorJS.options = {
+    placement: 'right',
+    icon: icon
+  };
+  anchorJS.add('.anchored');
+  const isCodeAnnotation = (el) => {
+    for (const clz of el.classList) {
+      if (clz.startsWith('code-annotation-')) {                     
+        return true;
+      }
+    }
+    return false;
+  }
+  const onCopySuccess = function(e) {
+    // button target
+    const button = e.trigger;
+    // don't keep focus
+    button.blur();
+    // flash "checked"
+    button.classList.add('code-copy-button-checked');
+    var currentTitle = button.getAttribute("title");
+    button.setAttribute("title", "Copied!");
+    let tooltip;
+    if (window.bootstrap) {
+      button.setAttribute("data-bs-toggle", "tooltip");
+      button.setAttribute("data-bs-placement", "left");
+      button.setAttribute("data-bs-title", "Copied!");
+      tooltip = new bootstrap.Tooltip(button, 
+        { trigger: "manual", 
+          customClass: "code-copy-button-tooltip",
+          offset: [0, -8]});
+      tooltip.show();    
+    }
+    setTimeout(function() {
+      if (tooltip) {
+        tooltip.hide();
+        button.removeAttribute("data-bs-title");
+        button.removeAttribute("data-bs-toggle");
+        button.removeAttribute("data-bs-placement");
+      }
+      button.setAttribute("title", currentTitle);
+      button.classList.remove('code-copy-button-checked');
+    }, 1000);
+    // clear code selection
+    e.clearSelection();
+  }
+  const getTextToCopy = function(trigger) {
+      const codeEl = trigger.previousElementSibling.cloneNode(true);
+      for (const childEl of codeEl.children) {
+        if (isCodeAnnotation(childEl)) {
+          childEl.remove();
+        }
+      }
+      return codeEl.innerText;
+  }
+  const clipboard = new window.ClipboardJS('.code-copy-button:not([data-in-quarto-modal])', {
+    text: getTextToCopy
+  });
+  clipboard.on('success', onCopySuccess);
+  if (window.document.getElementById('quarto-embedded-source-code-modal')) {
+    // For code content inside modals, clipBoardJS needs to be initialized with a container option
+    // TODO: Check when it could be a function (https://github.com/zenorocha/clipboard.js/issues/860)
+    const clipboardModal = new window.ClipboardJS('.code-copy-button[data-in-quarto-modal]', {
+      text: getTextToCopy,
+      container: window.document.getElementById('quarto-embedded-source-code-modal')
+    });
+    clipboardModal.on('success', onCopySuccess);
+  }
+    var localhostRegex = new RegExp(/^(?:http|https):\/\/localhost\:?[0-9]*\//);
+    var mailtoRegex = new RegExp(/^mailto:/);
+      var filterRegex = new RegExp("https:\/\/lotz84\.github\.io\/haskell-notebooks");
+    var isInternal = (href) => {
+        return filterRegex.test(href) || localhostRegex.test(href) || mailtoRegex.test(href);
+    }
+    // Inspect non-navigation links and adorn them if external
+ 	var links = window.document.querySelectorAll('a[href]:not(.nav-link):not(.navbar-brand):not(.toc-action):not(.sidebar-link):not(.sidebar-item-toggle):not(.pagination-link):not(.no-external):not([aria-hidden]):not(.dropdown-item):not(.quarto-navigation-tool):not(.about-link)');
+    for (var i=0; i<links.length; i++) {
+      const link = links[i];
+      if (!isInternal(link.href)) {
+        // undo the damage that might have been done by quarto-nav.js in the case of
+        // links that we want to consider external
+        if (link.dataset.originalHref !== undefined) {
+          link.href = link.dataset.originalHref;
+        }
+      }
+    }
+  function tippyHover(el, contentFn, onTriggerFn, onUntriggerFn) {
+    const config = {
+      allowHTML: true,
+      maxWidth: 500,
+      delay: 100,
+      arrow: false,
+      appendTo: function(el) {
+          return el.parentElement;
+      },
+      interactive: true,
+      interactiveBorder: 10,
+      theme: 'quarto',
+      placement: 'bottom-start',
+    };
+    if (contentFn) {
+      config.content = contentFn;
+    }
+    if (onTriggerFn) {
+      config.onTrigger = onTriggerFn;
+    }
+    if (onUntriggerFn) {
+      config.onUntrigger = onUntriggerFn;
+    }
+    window.tippy(el, config); 
+  }
+  const noterefs = window.document.querySelectorAll('a[role="doc-noteref"]');
+  for (var i=0; i<noterefs.length; i++) {
+    const ref = noterefs[i];
+    tippyHover(ref, function() {
+      // use id or data attribute instead here
+      let href = ref.getAttribute('data-footnote-href') || ref.getAttribute('href');
+      try { href = new URL(href).hash; } catch {}
+      const id = href.replace(/^#\/?/, "");
+      const note = window.document.getElementById(id);
+      if (note) {
+        return note.innerHTML;
+      } else {
+        return "";
+      }
+    });
+  }
+  const xrefs = window.document.querySelectorAll('a.quarto-xref');
+  const processXRef = (id, note) => {
+    // Strip column container classes
+    const stripColumnClz = (el) => {
+      el.classList.remove("page-full", "page-columns");
+      if (el.children) {
+        for (const child of el.children) {
+          stripColumnClz(child);
+        }
+      }
+    }
+    stripColumnClz(note)
+    if (id === null || id.startsWith('sec-')) {
+      // Special case sections, only their first couple elements
+      const container = document.createElement("div");
+      if (note.children && note.children.length > 2) {
+        container.appendChild(note.children[0].cloneNode(true));
+        for (let i = 1; i < note.children.length; i++) {
+          const child = note.children[i];
+          if (child.tagName === "P" && child.innerText === "") {
+            continue;
+          } else {
+            container.appendChild(child.cloneNode(true));
+            break;
+          }
+        }
+        if (window.Quarto?.typesetMath) {
+          window.Quarto.typesetMath(container);
+        }
+        return container.innerHTML
+      } else {
+        if (window.Quarto?.typesetMath) {
+          window.Quarto.typesetMath(note);
+        }
+        return note.innerHTML;
+      }
+    } else {
+      // Remove any anchor links if they are present
+      const anchorLink = note.querySelector('a.anchorjs-link');
+      if (anchorLink) {
+        anchorLink.remove();
+      }
+      if (window.Quarto?.typesetMath) {
+        window.Quarto.typesetMath(note);
+      }
+      // TODO in 1.5, we should make sure this works without a callout special case
+      if (note.classList.contains("callout")) {
+        return note.outerHTML;
+      } else {
+        return note.innerHTML;
+      }
+    }
+  }
+  for (var i=0; i<xrefs.length; i++) {
+    const xref = xrefs[i];
+    tippyHover(xref, undefined, function(instance) {
+      instance.disable();
+      let url = xref.getAttribute('href');
+      let hash = undefined; 
+      if (url.startsWith('#')) {
+        hash = url;
+      } else {
+        try { hash = new URL(url).hash; } catch {}
+      }
+      if (hash) {
+        const id = hash.replace(/^#\/?/, "");
+        const note = window.document.getElementById(id);
+        if (note !== null) {
+          try {
+            const html = processXRef(id, note.cloneNode(true));
+            instance.setContent(html);
+          } finally {
+            instance.enable();
+            instance.show();
+          }
+        } else {
+          // See if we can fetch this
+          fetch(url.split('#')[0])
+          .then(res => res.text())
+          .then(html => {
+            const parser = new DOMParser();
+            const htmlDoc = parser.parseFromString(html, "text/html");
+            const note = htmlDoc.getElementById(id);
+            if (note !== null) {
+              const html = processXRef(id, note);
+              instance.setContent(html);
+            } 
+          }).finally(() => {
+            instance.enable();
+            instance.show();
+          });
+        }
+      } else {
+        // See if we can fetch a full url (with no hash to target)
+        // This is a special case and we should probably do some content thinning / targeting
+        fetch(url)
+        .then(res => res.text())
+        .then(html => {
+          const parser = new DOMParser();
+          const htmlDoc = parser.parseFromString(html, "text/html");
+          const note = htmlDoc.querySelector('main.content');
+          if (note !== null) {
+            // This should only happen for chapter cross references
+            // (since there is no id in the URL)
+            // remove the first header
+            if (note.children.length > 0 && note.children[0].tagName === "HEADER") {
+              note.children[0].remove();
+            }
+            const html = processXRef(null, note);
+            instance.setContent(html);
+          } 
+        }).finally(() => {
+          instance.enable();
+          instance.show();
+        });
+      }
+    }, function(instance) {
+    });
+  }
+      let selectedAnnoteEl;
+      const selectorForAnnotation = ( cell, annotation) => {
+        let cellAttr = 'data-code-cell="' + cell + '"';
+        let lineAttr = 'data-code-annotation="' +  annotation + '"';
+        const selector = 'span[' + cellAttr + '][' + lineAttr + ']';
+        return selector;
+      }
+      const selectCodeLines = (annoteEl) => {
+        const doc = window.document;
+        const targetCell = annoteEl.getAttribute("data-target-cell");
+        const targetAnnotation = annoteEl.getAttribute("data-target-annotation");
+        const annoteSpan = window.document.querySelector(selectorForAnnotation(targetCell, targetAnnotation));
+        const lines = annoteSpan.getAttribute("data-code-lines").split(",");
+        const lineIds = lines.map((line) => {
+          return targetCell + "-" + line;
+        })
+        let top = null;
+        let height = null;
+        let parent = null;
+        if (lineIds.length > 0) {
+            //compute the position of the single el (top and bottom and make a div)
+            const el = window.document.getElementById(lineIds[0]);
+            top = el.offsetTop;
+            height = el.offsetHeight;
+            parent = el.parentElement.parentElement;
+          if (lineIds.length > 1) {
+            const lastEl = window.document.getElementById(lineIds[lineIds.length - 1]);
+            const bottom = lastEl.offsetTop + lastEl.offsetHeight;
+            height = bottom - top;
+          }
+          if (top !== null && height !== null && parent !== null) {
+            // cook up a div (if necessary) and position it 
+            let div = window.document.getElementById("code-annotation-line-highlight");
+            if (div === null) {
+              div = window.document.createElement("div");
+              div.setAttribute("id", "code-annotation-line-highlight");
+              div.style.position = 'absolute';
+              parent.appendChild(div);
+            }
+            div.style.top = top - 2 + "px";
+            div.style.height = height + 4 + "px";
+            div.style.left = 0;
+            let gutterDiv = window.document.getElementById("code-annotation-line-highlight-gutter");
+            if (gutterDiv === null) {
+              gutterDiv = window.document.createElement("div");
+              gutterDiv.setAttribute("id", "code-annotation-line-highlight-gutter");
+              gutterDiv.style.position = 'absolute';
+              const codeCell = window.document.getElementById(targetCell);
+              const gutter = codeCell.querySelector('.code-annotation-gutter');
+              gutter.appendChild(gutterDiv);
+            }
+            gutterDiv.style.top = top - 2 + "px";
+            gutterDiv.style.height = height + 4 + "px";
+          }
+          selectedAnnoteEl = annoteEl;
+        }
+      };
+      const unselectCodeLines = () => {
+        const elementsIds = ["code-annotation-line-highlight", "code-annotation-line-highlight-gutter"];
+        elementsIds.forEach((elId) => {
+          const div = window.document.getElementById(elId);
+          if (div) {
+            div.remove();
+          }
+        });
+        selectedAnnoteEl = undefined;
+      };
+        // Handle positioning of the toggle
+    window.addEventListener(
+      "resize",
+      throttle(() => {
+        elRect = undefined;
+        if (selectedAnnoteEl) {
+          selectCodeLines(selectedAnnoteEl);
+        }
+      }, 10)
+    );
+    function throttle(fn, ms) {
+    let throttle = false;
+    let timer;
+      return (...args) => {
+        if(!throttle) { // first call gets through
+            fn.apply(this, args);
+            throttle = true;
+        } else { // all the others get throttled
+            if(timer) clearTimeout(timer); // cancel #2
+            timer = setTimeout(() => {
+              fn.apply(this, args);
+              timer = throttle = false;
+            }, ms);
+        }
+      };
+    }
+      // Attach click handler to the DT
+      const annoteDls = window.document.querySelectorAll('dt[data-target-cell]');
+      for (const annoteDlNode of annoteDls) {
+        annoteDlNode.addEventListener('click', (event) => {
+          const clickedEl = event.target;
+          if (clickedEl !== selectedAnnoteEl) {
+            unselectCodeLines();
+            const activeEl = window.document.querySelector('dt[data-target-cell].code-annotation-active');
+            if (activeEl) {
+              activeEl.classList.remove('code-annotation-active');
+            }
+            selectCodeLines(clickedEl);
+            clickedEl.classList.add('code-annotation-active');
+          } else {
+            // Unselect the line
+            unselectCodeLines();
+            clickedEl.classList.remove('code-annotation-active');
+          }
+        });
+      }
+  const findCites = (el) => {
+    const parentEl = el.parentElement;
+    if (parentEl) {
+      const cites = parentEl.dataset.cites;
+      if (cites) {
+        return {
+          el,
+          cites: cites.split(' ')
+        };
+      } else {
+        return findCites(el.parentElement)
+      }
+    } else {
+      return undefined;
+    }
+  };
+  var bibliorefs = window.document.querySelectorAll('a[role="doc-biblioref"]');
+  for (var i=0; i<bibliorefs.length; i++) {
+    const ref = bibliorefs[i];
+    const citeInfo = findCites(ref);
+    if (citeInfo) {
+      tippyHover(citeInfo.el, function() {
+        var popup = window.document.createElement('div');
+        citeInfo.cites.forEach(function(cite) {
+          var citeDiv = window.document.createElement('div');
+          citeDiv.classList.add('hanging-indent');
+          citeDiv.classList.add('csl-entry');
+          var biblioDiv = window.document.getElementById('ref-' + cite);
+          if (biblioDiv) {
+            citeDiv.innerHTML = biblioDiv.innerHTML;
+          }
+          popup.appendChild(citeDiv);
+        });
+        return popup.innerHTML;
+      });
+    }
+  }
+});
+</script>
+</div> <!-- /content -->
+
+
+
+
+</body></html>
